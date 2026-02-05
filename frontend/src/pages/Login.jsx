@@ -23,8 +23,14 @@ export default function Login() {
     setLoading(true)
 
     try {
-      await login(email, password)
-      navigate('/dashboard')
+      const userData = await login(email, password)
+
+      // Redirect superadmin to admin panel
+      if (userData.role === 'superadmin') {
+        navigate('/admin')
+      } else {
+        navigate('/dashboard')
+      }
     } catch (err) {
       setError(err.message || t('auth.loginError'))
     } finally {

@@ -53,11 +53,13 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', token)
     setUser(userData)
 
-    // Set default restaurant
-    if (userData.restaurants?.length > 0) {
+    // Set default restaurant (only for non-superadmin)
+    if (userData.role !== 'superadmin' && userData.restaurants?.length > 0) {
       setCurrentRestaurant(userData.restaurants[0])
       localStorage.setItem('currentRestaurant', JSON.stringify(userData.restaurants[0]))
     }
+
+    console.log('Login successful, user role:', userData.role) // Debug log
 
     return userData
   }
@@ -67,6 +69,12 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem('token', token)
     setUser(newUser)
+
+    // Set default restaurant if created
+    if (newUser.restaurants?.length > 0) {
+      setCurrentRestaurant(newUser.restaurants[0])
+      localStorage.setItem('currentRestaurant', JSON.stringify(newUser.restaurants[0]))
+    }
 
     return newUser
   }
