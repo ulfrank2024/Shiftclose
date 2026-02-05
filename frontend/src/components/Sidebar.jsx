@@ -50,25 +50,25 @@ export default function Sidebar() {
 
   return (
     <aside className={`hidden md:flex flex-col bg-slate-800 border-r border-slate-700 transition-all duration-300 ${
-      collapsed ? 'w-20' : 'w-64'
+      collapsed ? 'w-24' : 'w-72'
     }`}>
-      {/* Logo */}
-      <div className={`h-16 flex items-center border-b border-slate-700 ${
-        collapsed ? 'justify-center px-2' : 'justify-between px-4'
+      {/* Logo Header */}
+      <div className={`h-20 flex items-center border-b border-slate-700 ${
+        collapsed ? 'justify-center px-4' : 'justify-between px-6'
       }`}>
-        <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+        <div className={`flex items-center gap-4 ${collapsed ? 'justify-center' : ''}`}>
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
             isSuperAdmin ? 'bg-amber-500' : 'bg-blue-500'
           }`}>
             {isSuperAdmin ? (
-              <Shield className="text-white" size={22} />
+              <Shield className="text-white" size={24} />
             ) : (
-              <span className="text-white font-bold text-lg">S</span>
+              <span className="text-white font-bold text-xl">S</span>
             )}
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <span className="text-white font-semibold text-lg block leading-tight truncate">ShiftClose</span>
+              <span className="text-white font-semibold text-lg block leading-tight">ShiftClose</span>
               {isSuperAdmin && (
                 <span className="text-amber-400 text-xs">Administration</span>
               )}
@@ -78,28 +78,30 @@ export default function Sidebar() {
         {!collapsed && (
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white flex-shrink-0"
+            className="p-2.5 hover:bg-slate-700 rounded-xl transition-colors text-slate-400 hover:text-white flex-shrink-0"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={20} />
           </button>
         )}
       </div>
 
       {/* Expand button when collapsed */}
       {collapsed && (
-        <button
-          onClick={() => setCollapsed(false)}
-          className="mx-auto mt-2 p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
-        >
-          <ChevronRight size={18} />
-        </button>
+        <div className="flex justify-center py-4">
+          <button
+            onClick={() => setCollapsed(false)}
+            className="p-2.5 hover:bg-slate-700 rounded-xl transition-colors text-slate-400 hover:text-white"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
       )}
 
       {/* Restaurant Selector (for non-admin) */}
       {!isSuperAdmin && currentRestaurant && !collapsed && (
-        <div className="px-3 py-4 border-b border-slate-700">
-          <div className="flex items-center gap-3 px-4 py-3 bg-slate-700/50 rounded-xl">
-            <Building2 size={18} className="text-blue-400 flex-shrink-0" />
+        <div className="px-5 py-5 border-b border-slate-700">
+          <div className="flex items-center gap-4 px-4 py-4 bg-slate-700/50 rounded-xl">
+            <Building2 size={20} className="text-blue-400 flex-shrink-0" />
             <div className="overflow-hidden flex-1">
               <p className="text-white text-sm font-medium truncate">{currentRestaurant.name}</p>
               <p className="text-slate-400 text-xs capitalize">{currentRestaurant.role}</p>
@@ -109,23 +111,23 @@ export default function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+      <nav className={`flex-1 py-6 space-y-2 overflow-y-auto ${collapsed ? 'px-3' : 'px-5'}`}>
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             end={item.path === '/admin' || item.path === '/dashboard'}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+              `flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${
                 isActive
                   ? isSuperAdmin
                     ? 'bg-amber-500/20 text-amber-400'
                     : 'bg-blue-500/20 text-blue-400'
                   : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'
-              } ${collapsed ? 'justify-center' : ''}`
+              } ${collapsed ? 'justify-center px-3' : ''}`
             }
           >
-            <item.icon size={20} className="flex-shrink-0" />
+            <item.icon size={22} className="flex-shrink-0" />
             {!collapsed && (
               <span className="font-medium truncate">{item.label}</span>
             )}
@@ -134,13 +136,13 @@ export default function Sidebar() {
       </nav>
 
       {/* User Section */}
-      <div className="px-3 py-4 border-t border-slate-700">
+      <div className={`py-5 border-t border-slate-700 ${collapsed ? 'px-3' : 'px-5'}`}>
         {!collapsed ? (
-          <div className="flex items-center gap-3 px-3 py-2 mb-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+          <div className="flex items-center gap-4 px-4 py-3 mb-4 bg-slate-700/30 rounded-xl">
+            <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
               isSuperAdmin ? 'bg-amber-500' : 'bg-blue-500'
             }`}>
-              <span className="text-white font-medium">
+              <span className="text-white font-medium text-lg">
                 {user?.firstName?.charAt(0) || 'U'}
               </span>
             </div>
@@ -152,11 +154,11 @@ export default function Sidebar() {
             </div>
           </div>
         ) : (
-          <div className="flex justify-center mb-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+          <div className="flex justify-center mb-4">
+            <div className={`w-11 h-11 rounded-full flex items-center justify-center ${
               isSuperAdmin ? 'bg-amber-500' : 'bg-blue-500'
             }`}>
-              <span className="text-white font-medium">
+              <span className="text-white font-medium text-lg">
                 {user?.firstName?.charAt(0) || 'U'}
               </span>
             </div>
@@ -165,11 +167,11 @@ export default function Sidebar() {
 
         <button
           onClick={logout}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors ${
-            collapsed ? 'justify-center' : ''
+          className={`flex items-center gap-4 w-full px-4 py-3.5 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors ${
+            collapsed ? 'justify-center px-3' : ''
           }`}
         >
-          <LogOut size={20} />
+          <LogOut size={22} />
           {!collapsed && <span className="font-medium">{t('auth.logout')}</span>}
         </button>
       </div>

@@ -14,10 +14,12 @@ export default function Layout() {
         {/* Top Bar - Mobile header */}
         <TopBar />
 
-        {/* Page Content */}
-        <main className="flex-1 p-4 md:p-8 lg:p-10 pb-24 md:pb-10 overflow-auto">
-          <div className="max-w-7xl mx-auto w-full">
-            <Outlet />
+        {/* Page Content with generous padding */}
+        <main className="flex-1 overflow-auto">
+          <div className="p-6 md:p-10 lg:p-12 pb-28 md:pb-12">
+            <div className="max-w-7xl mx-auto">
+              <Outlet />
+            </div>
           </div>
         </main>
 
