@@ -1,0 +1,318 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useAuth } from '../contexts/AuthContext'
+import {
+  FileText,
+  Check,
+  X,
+  Clock,
+  ChevronDown,
+  Filter,
+  Download,
+  Eye
+} from 'lucide-react'
+
+export default function Reports() {
+  const { t } = useTranslation()
+  const { isManager } = useAuth()
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [selectedReport, setSelectedReport] = useState(null)
+
+  // Mock data
+  const reports = [
+    {
+      id: 1,
+      employee: 'Marie Lambert',
+      date: '2024-01-15',
+      time: '22:30',
+      totalSales: 1245.50,
+      totalTips: 187.25,
+      tipOut: 5.62,
+      netTips: 181.63,
+      difference: 0,
+      status: 'pending'
+    },
+    {
+      id: 2,
+      employee: 'Jean Dupont',
+      date: '2024-01-15',
+      time: '22:15',
+      totalSales: 987.00,
+      totalTips: 142.50,
+      tipOut: 4.28,
+      netTips: 138.22,
+      difference: -2.50,
+      status: 'validated'
+    },
+    {
+      id: 3,
+      employee: 'Sophie Martin',
+      date: '2024-01-14',
+      time: '23:00',
+      totalSales: 1560.75,
+      totalTips: 234.00,
+      tipOut: 7.02,
+      netTips: 226.98,
+      difference: 1.25,
+      status: 'validated'
+    },
+    {
+      id: 4,
+      employee: 'Pierre Tremblay',
+      date: '2024-01-14',
+      time: '22:45',
+      totalSales: 876.25,
+      totalTips: 112.00,
+      tipOut: 3.36,
+      netTips: 108.64,
+      difference: -5.00,
+      status: 'rejected'
+    }
+  ]
+
+  const filteredReports = filterStatus === 'all'
+    ? reports
+    : reports.filter(r => r.status === filterStatus)
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      pending: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+      validated: 'bg-green-500/10 text-green-400 border-green-500/30',
+      rejected: 'bg-red-500/10 text-red-400 border-red-500/30'
+    }
+    const icons = {
+      pending: <Clock size={14} />,
+      validated: <Check size={14} />,
+      rejected: <X size={14} />
+    }
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
+        {icons[status]}
+        {t(`reports.${status}`)}
+      </span>
+    )
+  }
+
+  const handleValidate = (reportId) => {
+    console.log('Validating report:', reportId)
+    // TODO: Update in Firebase
+  }
+
+  const handleReject = (reportId) => {
+    console.log('Rejecting report:', reportId)
+    // TODO: Update in Firebase
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-bold text-white">{t('reports.title')}</h1>
+
+        <div className="flex gap-2">
+          {/* Filter */}
+          <div className="relative">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="appearance-none bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 pr-10 text-white text-sm focus:outline-none focus:border-blue-500"
+            >
+              <option value="all">{t('common.all')}</option>
+              <option value="pending">{t('reports.pending')}</option>
+              <option value="validated">{t('reports.validated')}</option>
+              <option value="rejected">{t('reports.rejected')}</option>
+            </select>
+            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Export */}
+          <button className="btn btn-secondary text-sm py-2">
+            <Download size={16} />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Reports List */}
+      {filteredReports.length === 0 ? (
+        <div className="card text-center py-12">
+          <FileText size={48} className="mx-auto text-slate-500 mb-4" />
+          <p className="text-slate-400">{t('reports.noReports')}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredReports.map((report) => (
+            <div
+              key={report.id}
+              className="card hover:border-slate-500 transition-colors"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Left: Employee & Date */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-white font-medium">
+                      {report.employee.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{report.employee}</p>
+                    <p className="text-sm text-slate-400">
+                      {report.date} à {report.time}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Center: Stats */}
+                <div className="flex flex-wrap gap-4 sm:gap-6">
+                  <div>
+                    <p className="text-xs text-slate-400">{t('cashOut.totalSales')}</p>
+                    <p className="text-white font-medium">${report.totalSales.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">{t('cashOut.netTips')}</p>
+                    <p className="text-green-400 font-medium">${report.netTips.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">{t('cashOut.difference')}</p>
+                    <p className={`font-medium ${
+                      report.difference === 0 ? 'text-green-400' :
+                      report.difference > 0 ? 'text-blue-400' : 'text-red-400'
+                    }`}>
+                      {report.difference === 0 ? '✓' :
+                       report.difference > 0 ? `+$${report.difference.toFixed(2)}` :
+                       `-$${Math.abs(report.difference).toFixed(2)}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Status & Actions */}
+                <div className="flex items-center gap-3">
+                  {getStatusBadge(report.status)}
+
+                  {isManager && report.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleValidate(report.id)}
+                        className="p-2 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors"
+                        title={t('reports.validate')}
+                      >
+                        <Check size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleReject(report.id)}
+                        className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                        title={t('reports.reject')}
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setSelectedReport(report)}
+                    className="p-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
+                    title={t('reports.details')}
+                  >
+                    <Eye size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedReport && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-fade-in">
+            <div className="p-6 border-b border-slate-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">{t('reports.details')}</h2>
+                <button
+                  onClick={() => setSelectedReport(null)}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-slate-400" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-4 pb-4 border-b border-slate-700">
+                <div className="w-14 h-14 bg-slate-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium text-lg">
+                    {selectedReport.employee.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-white font-medium text-lg">{selectedReport.employee}</p>
+                  <p className="text-slate-400">{selectedReport.date} à {selectedReport.time}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">{t('cashOut.totalSales')}</span>
+                  <span className="text-white font-medium">${selectedReport.totalSales.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">{t('cashOut.totalTips')}</span>
+                  <span className="text-white font-medium">${selectedReport.totalTips.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">{t('cashOut.tipOutAmount')}</span>
+                  <span className="text-amber-400">-${selectedReport.tipOut.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between pt-3 border-t border-slate-700">
+                  <span className="text-white font-medium">{t('cashOut.netTips')}</span>
+                  <span className="text-green-400 font-bold">${selectedReport.netTips.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between pt-3 border-t border-slate-700">
+                  <span className="text-white font-medium">{t('cashOut.difference')}</span>
+                  <span className={`font-bold ${
+                    selectedReport.difference === 0 ? 'text-green-400' :
+                    selectedReport.difference > 0 ? 'text-blue-400' : 'text-red-400'
+                  }`}>
+                    {selectedReport.difference === 0 ? t('cashOut.balanced') :
+                     selectedReport.difference > 0 ? `+$${selectedReport.difference.toFixed(2)}` :
+                     `-$${Math.abs(selectedReport.difference).toFixed(2)}`}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                {getStatusBadge(selectedReport.status)}
+              </div>
+            </div>
+
+            {isManager && selectedReport.status === 'pending' && (
+              <div className="p-6 border-t border-slate-700 flex gap-3">
+                <button
+                  onClick={() => {
+                    handleReject(selectedReport.id)
+                    setSelectedReport(null)
+                  }}
+                  className="btn btn-secondary flex-1 text-red-400 border-red-500/30 hover:bg-red-500/10"
+                >
+                  <X size={18} />
+                  {t('reports.reject')}
+                </button>
+                <button
+                  onClick={() => {
+                    handleValidate(selectedReport.id)
+                    setSelectedReport(null)
+                  }}
+                  className="btn btn-success flex-1"
+                >
+                  <Check size={18} />
+                  {t('reports.validate')}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
