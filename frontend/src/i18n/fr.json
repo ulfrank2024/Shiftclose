@@ -213,11 +213,17 @@
   },
   "admin": {
     "title": "Administration",
+    "overview": "Vue d'ensemble",
     "subscriptions": "Abonnements",
     "allRestaurants": "Tous les restaurants",
     "users": "Utilisateurs",
     "analytics": "Statistiques",
-    "systemHealth": "État du système"
+    "systemHealth": "État du système",
+    "totalRestaurants": "Restaurants",
+    "activeSubscriptions": "Abonnés actifs",
+    "trialUsers": "En essai",
+    "monthlyRevenue": "Revenus mensuels",
+    "recentActivity": "Activité récente"
   },
   "pwa": {
     "installPrompt": "Installer ShiftClose",

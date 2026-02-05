@@ -213,11 +213,17 @@
   },
   "admin": {
     "title": "Administration",
+    "overview": "Overview",
     "subscriptions": "Subscriptions",
     "allRestaurants": "All Restaurants",
     "users": "Users",
     "analytics": "Analytics",
-    "systemHealth": "System Health"
+    "systemHealth": "System Health",
+    "totalRestaurants": "Restaurants",
+    "activeSubscriptions": "Active subscribers",
+    "trialUsers": "On trial",
+    "monthlyRevenue": "Monthly revenue",
+    "recentActivity": "Recent activity"
   },
   "pwa": {
     "installPrompt": "Install ShiftClose",

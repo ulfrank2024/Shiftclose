@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.js'
 import restaurantRoutes from './routes/restaurants.js'
 import reportRoutes from './routes/reports.js'
 import invitationRoutes from './routes/invitations.js'
+import adminRoutes from './routes/admin.js'
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -55,6 +56,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/restaurants', restaurantRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/invitations', invitationRoutes)
+app.use('/api/admin', adminRoutes)
 
 // 404 handler
 app.use((req, res) => {

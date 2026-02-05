@@ -10,6 +10,7 @@ import Reports from './pages/Reports'
 import Team from './pages/Team'
 import Settings from './pages/Settings'
 import Profile from './pages/Profile'
+import Admin from './pages/Admin'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -54,6 +55,16 @@ function ManagerRoute({ children }) {
   const { isManager } = useAuth()
 
   if (!isManager) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
+}
+
+function SuperAdminRoute({ children }) {
+  const { user } = useAuth()
+
+  if (user?.role !== 'superadmin') {
     return <Navigate to="/dashboard" replace />
   }
 
@@ -106,6 +117,14 @@ export default function App() {
           />
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} />
+          <Route
+            path="/admin"
+            element={
+              <SuperAdminRoute>
+                <Admin />
+              </SuperAdminRoute>
+            }
+          />
         </Route>
 
         {/* Redirect root to dashboard or login */}

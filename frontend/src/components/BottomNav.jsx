@@ -6,18 +6,24 @@ import {
   Calculator,
   FileText,
   Users,
-  Settings
+  Settings,
+  Shield
 } from 'lucide-react'
 
 export default function BottomNav() {
   const { t } = useTranslation()
-  const { isManager } = useAuth()
+  const { isManager, user } = useAuth()
+  const isSuperAdmin = user?.role === 'superadmin'
 
   const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
-    { path: '/cash-out', icon: Calculator, label: t('nav.cashOut') },
+    // Super Admin sees Admin panel instead of Cash Out
+    ...(isSuperAdmin
+      ? [{ path: '/admin', icon: Shield, label: t('nav.admin') }]
+      : [{ path: '/cash-out', icon: Calculator, label: t('nav.cashOut') }]
+    ),
     { path: '/reports', icon: FileText, label: t('nav.reports') },
-    ...(isManager ? [{ path: '/team', icon: Users, label: t('nav.team') }] : []),
+    ...(isManager && !isSuperAdmin ? [{ path: '/team', icon: Users, label: t('nav.team') }] : []),
     { path: '/settings', icon: Settings, label: t('nav.settings') }
   ]
 

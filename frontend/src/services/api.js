@@ -206,9 +206,31 @@ export const invitationAPI = {
     })
 }
 
+// Admin API (Super Admin only)
+export const adminAPI = {
+  getStats: () => fetchWithAuth('/admin/stats'),
+
+  getRestaurants: () => fetchWithAuth('/admin/restaurants'),
+
+  suspendRestaurant: (restaurantId) =>
+    fetchWithAuth(`/admin/restaurants/${restaurantId}/suspend`, {
+      method: 'PUT'
+    }),
+
+  activateRestaurant: (restaurantId) =>
+    fetchWithAuth(`/admin/restaurants/${restaurantId}/activate`, {
+      method: 'PUT'
+    }),
+
+  getUsers: () => fetchWithAuth('/admin/users'),
+
+  getPlans: () => fetchWithAuth('/admin/plans')
+}
+
 export default {
   auth: authAPI,
   restaurant: restaurantAPI,
   report: reportAPI,
-  invitation: invitationAPI
+  invitation: invitationAPI,
+  admin: adminAPI
 }
