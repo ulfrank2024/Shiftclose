@@ -60,4 +60,84 @@
 - **Gestion des Rôles :**
     - **Super Admin :** Accès à tous les restaurants, gestion des abonnements.
     - **Manager :** Peut inviter des employés, configurer les % de Tip Out, valider les rapports.
-    -
+    - **Serveur :** Peut soumettre ses rapports de Cash Out et consulter son historique.
+
+## 5. Structure du Projet
+
+```
+ShiftClose/
+├── public/
+│   └── favicon.svg
+├── src/
+│   ├── components/
+│   │   ├── Layout.jsx
+│   │   ├── Navbar.jsx
+│   │   └── BottomNav.jsx
+│   ├── contexts/
+│   │   ├── AuthContext.jsx
+│   │   └── LanguageContext.jsx
+│   ├── i18n/
+│   │   ├── index.js
+│   │   ├── fr.json
+│   │   └── en.json
+│   ├── pages/
+│   │   ├── Login.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── CashOut.jsx
+│   │   ├── Reports.jsx
+│   │   ├── Team.jsx
+│   │   ├── Settings.jsx
+│   │   └── Profile.jsx
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── index.css
+├── index.html
+├── vite.config.js
+└── package.json
+```
+
+---
+
+## Historique des Modifications
+
+### 2026-02-04 - Version 1.0.0 (Initial Release)
+
+**Création initiale du projet :**
+
+1. **Configuration du projet**
+   - Initialisation React + Vite
+   - Configuration Tailwind CSS v4
+   - Configuration PWA (vite-plugin-pwa)
+   - Support i18n (react-i18next)
+
+2. **Pages créées**
+   - `Login.jsx` - Page de connexion avec support multilingue
+   - `Dashboard.jsx` - Tableau de bord avec statistiques
+   - `CashOut.jsx` - Formulaire de fermeture de caisse en 4 étapes
+   - `Reports.jsx` - Liste et validation des rapports
+   - `Team.jsx` - Gestion de l'équipe (Manager only)
+   - `Settings.jsx` - Paramètres (langue, notifications, Tip Out)
+   - `Profile.jsx` - Profil utilisateur
+
+3. **Composants créés**
+   - `Layout.jsx` - Structure principale
+   - `Navbar.jsx` - Navigation desktop avec sélecteur de restaurant
+   - `BottomNav.jsx` - Navigation mobile (bottom bar)
+
+4. **Fonctionnalités**
+   - Thème dark par défaut
+   - Design Mobile-First responsive
+   - Multilingue FR/EN
+   - PWA installable
+   - Authentification mock (simulation)
+   - Multi-restaurant (switch entre restaurants)
+
+5. **Déploiement**
+   - Code poussé sur GitHub : https://github.com/ulfrank2024/Shiftclose
+
+**Prochaines étapes :**
+- Intégration Firebase Auth
+- Intégration Firestore
+- Backend Node.js/Express
+- Notifications email (Nodemailer)
+- Déploiement Vercel/Render
