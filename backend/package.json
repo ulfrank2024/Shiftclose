@@ -1,6 +1,6 @@
 {
   "name": "shiftclose-backend",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Backend API for ShiftClose - Cash Out Management",
   "main": "src/index.js",
   "type": "module",
