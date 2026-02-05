@@ -10,41 +10,93 @@ ShiftClose aide les serveurs et managers de restaurants à gérer efficacement l
 - Validation des rapports par les managers
 - Interface multilingue (Français/Anglais)
 
-## Fonctionnalités
+## Structure du Projet
 
-- **Serveurs** : Calcul rapide du Cash Out, suivi des pourboires
-- **Managers** : Validation des rapports, gestion de l'équipe, configuration du Tip Out
-- **Super Admin** : Gestion des restaurants et abonnements
+```
+ShiftClose/
+├── frontend/          # Application React (PWA)
+│   ├── src/
+│   │   ├── components/
+│   │   ├── contexts/
+│   │   ├── i18n/
+│   │   └── pages/
+│   └── package.json
+│
+├── backend/           # API Node.js/Express
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   └── routes/
+│   └── package.json
+│
+├── CLAUDE.MD          # Documentation projet
+└── README.md
+```
 
 ## Stack Technique
 
-- **Frontend** : React.js + Tailwind CSS
-- **Backend** : Node.js + Express (à venir)
-- **Base de données** : Firebase
-- **PWA** : Installable sur iOS, Android, Windows, Mac
+| Composant | Technologies |
+|-----------|-------------|
+| **Frontend** | React 19, Vite, Tailwind CSS v4 |
+| **Backend** | Node.js, Express |
+| **Base de données** | Firebase (Firestore) |
+| **Authentification** | Firebase Auth |
+| **Emails** | Nodemailer |
+| **PWA** | vite-plugin-pwa |
 
 ## Installation
 
+### Prérequis
+
+- Node.js 18+
+- npm ou yarn
+- Compte Firebase (pour la base de données)
+
+### Frontend
+
 ```bash
-# Cloner le repo
-git clone https://github.com/ulfrank2024/Shiftclose.git
-cd Shiftclose
-
-# Installer les dépendances
+cd frontend
 npm install
-
-# Lancer en développement
 npm run dev
-
-# Build pour production
-npm run build
 ```
 
-## Scripts
+Le frontend démarre sur **http://localhost:3000**
 
-- `npm run dev` - Démarre le serveur de développement
-- `npm run build` - Génère la version de production
-- `npm run preview` - Prévisualise la version de production
+### Backend
+
+```bash
+cd backend
+cp .env.example .env
+# Configurer les variables d'environnement
+npm install
+npm run dev
+```
+
+Le backend démarre sur **http://localhost:5000**
+
+## Fonctionnalités par Rôle
+
+### Serveurs
+- Soumettre un rapport de Cash Out
+- Calculer automatiquement le Tip Out
+- Consulter l'historique des rapports
+
+### Managers
+- Valider/Rejeter les rapports
+- Gérer l'équipe (invitations)
+- Configurer les règles de Tip Out
+- Voir les statistiques
+
+### Super Admin
+- Gérer tous les restaurants
+- Gérer les abonnements
+- Statistiques globales
+
+## Déploiement
+
+- **Frontend** : Vercel
+- **Backend** : Render
 
 ## Licence
 

@@ -62,59 +62,81 @@
     - **Manager :** Peut inviter des employés, configurer les % de Tip Out, valider les rapports.
     - **Serveur :** Peut soumettre ses rapports de Cash Out et consulter son historique.
 
-## 5. Structure du Projet
+## 5. Structure du Projet (Monorepo)
 
 ```
 ShiftClose/
+│
+├── frontend/                   # Application React (PWA)
+│   ├── public/
+│   │   └── favicon.svg
+│   ├── src/
+│   │   ├── components/         # Composants réutilisables
+│   │   │   ├── Layout.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   └── BottomNav.jsx
+│   │   ├── contexts/           # Contextes React
+│   │   │   ├── AuthContext.jsx
+│   │   │   └── LanguageContext.jsx
+│   │   ├── hooks/              # Hooks personnalisés
+│   │   ├── i18n/               # Traductions
+│   │   │   ├── index.js
+│   │   │   ├── fr.json
+│   │   │   └── en.json
+│   │   ├── pages/              # Pages de l'app
+│   │   │   ├── Login.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── CashOut.jsx
+│   │   │   ├── Reports.jsx
+│   │   │   ├── Team.jsx
+│   │   │   ├── Settings.jsx
+│   │   │   └── Profile.jsx
+│   │   ├── services/           # Services API
+│   │   ├── utils/              # Utilitaires
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── index.html
+│   ├── vite.config.js
+│   ├── .env.example
+│   └── package.json
+│
 ├── backend/                    # API Node.js/Express
 │   ├── src/
-│   │   ├── config/
+│   │   ├── config/             # Configuration
 │   │   │   ├── firebase.js     # Firebase Admin SDK
-│   │   │   └── email.js        # Nodemailer config
-│   │   ├── controllers/
+│   │   │   └── email.js        # Nodemailer + templates
+│   │   ├── controllers/        # Logique métier
 │   │   │   ├── authController.js
 │   │   │   ├── restaurantController.js
 │   │   │   ├── reportController.js
 │   │   │   └── inviteController.js
-│   │   ├── middleware/
-│   │   │   └── auth.js         # JWT verification
-│   │   ├── routes/
+│   │   ├── middleware/         # Middleware Express
+│   │   │   └── auth.js         # Token + rôles
+│   │   ├── routes/             # Routes API
 │   │   │   ├── auth.js
 │   │   │   ├── restaurants.js
 │   │   │   ├── reports.js
 │   │   │   └── invitations.js
-│   │   └── index.js            # Entry point
+│   │   └── index.js            # Point d'entrée
 │   ├── .env.example
 │   └── package.json
-├── public/
-│   └── favicon.svg
-├── src/                        # Frontend React
-│   ├── components/
-│   │   ├── Layout.jsx
-│   │   ├── Navbar.jsx
-│   │   └── BottomNav.jsx
-│   ├── contexts/
-│   │   ├── AuthContext.jsx
-│   │   └── LanguageContext.jsx
-│   ├── i18n/
-│   │   ├── index.js
-│   │   ├── fr.json
-│   │   └── en.json
-│   ├── pages/
-│   │   ├── Login.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── CashOut.jsx
-│   │   ├── Reports.jsx
-│   │   ├── Team.jsx
-│   │   ├── Settings.jsx
-│   │   └── Profile.jsx
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── index.css
-├── index.html
-├── vite.config.js
-└── package.json
+│
+├── package.json                # Scripts racine (monorepo)
+├── .gitignore
+├── README.md
+└── CLAUDE.MD
 ```
+
+## 6. Scripts NPM (Racine)
+
+| Commande | Description |
+|----------|-------------|
+| `npm run dev` | Lance frontend + backend en parallèle |
+| `npm run dev:frontend` | Lance uniquement le frontend |
+| `npm run dev:backend` | Lance uniquement le backend |
+| `npm run build` | Build le frontend pour production |
+| `npm run install:all` | Installe toutes les dépendances |
 
 ---
 
@@ -189,6 +211,29 @@ ShiftClose/
 4. **Templates email**
    - Invitation à rejoindre un restaurant
    - Notification de validation de rapport
+
+---
+
+### 2026-02-04 - Version 1.2.0 (Restructuration Monorepo)
+
+**Réorganisation du projet en monorepo :**
+
+1. **Nouvelle structure**
+   - Séparation claire `frontend/` et `backend/`
+   - Package.json racine avec scripts unifiés
+   - README.md dédié pour chaque partie
+
+2. **Scripts racine ajoutés**
+   - `npm run dev` - Lance tout en parallèle
+   - `npm run dev:frontend` - Frontend seul
+   - `npm run dev:backend` - Backend seul
+   - `npm run install:all` - Installe tout
+
+3. **Documentation**
+   - README.md principal avec vue d'ensemble
+   - README.md frontend avec détails techniques
+   - README.md backend avec documentation API
+   - .env.example pour chaque partie
 
 **Prochaines étapes :**
 - Intégration Firebase côté frontend
