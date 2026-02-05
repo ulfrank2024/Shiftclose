@@ -3,6 +3,7 @@
     "appName": "ShiftClose",
     "loading": "Chargement...",
     "save": "Enregistrer",
+    "saved": "Enregistré !",
     "cancel": "Annuler",
     "delete": "Supprimer",
     "edit": "Modifier",
@@ -20,7 +21,9 @@
     "error": "Erreur",
     "success": "Succès",
     "warning": "Attention",
-    "info": "Information"
+    "info": "Information",
+    "add": "Ajouter",
+    "close": "Fermer"
   },
   "auth": {
     "login": "Connexion",
@@ -37,6 +40,14 @@
     "registerSuccess": "Inscription réussie !",
     "welcomeBack": "Bon retour !",
     "enterCredentials": "Entrez vos identifiants pour continuer"
+  },
+  "roles": {
+    "server": "Serveur",
+    "manager": "Manager",
+    "superadmin": "Super Admin",
+    "bartender": "Barman",
+    "busboy": "Busboy",
+    "host": "Hôte"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -58,7 +69,10 @@
     "quickActions": "Actions rapides",
     "startCashOut": "Démarrer Cash Out",
     "viewReports": "Voir les rapports",
-    "recentActivity": "Activité récente"
+    "recentActivity": "Activité récente",
+    "noRestaurant": "Aucun restaurant",
+    "createFirstRestaurant": "Créer votre premier restaurant",
+    "joinRestaurant": "Rejoindre un restaurant"
   },
   "cashOut": {
     "title": "Cash Out",
@@ -85,7 +99,9 @@
     "submitReport": "Soumettre le rapport",
     "summary": "Récapitulatif",
     "step": "Étape",
-    "of": "sur"
+    "of": "sur",
+    "tipsReceived": "Pourboires reçus",
+    "fromColleagues": "De vos collègues"
   },
   "reports": {
     "title": "Rapports",
@@ -103,12 +119,14 @@
     "noReports": "Aucun rapport trouvé",
     "filterByDate": "Filtrer par date",
     "filterByEmployee": "Filtrer par employé",
-    "filterByStatus": "Filtrer par statut"
+    "filterByStatus": "Filtrer par statut",
+    "viewDetails": "Voir les détails"
   },
   "team": {
     "title": "Équipe",
     "members": "Membres",
-    "invite": "Inviter un membre",
+    "invite": "Inviter",
+    "inviteMember": "Inviter un membre",
     "inviteEmail": "Email d'invitation",
     "sendInvite": "Envoyer l'invitation",
     "role": "Rôle",
@@ -118,8 +136,18 @@
     "active": "Actif",
     "inactive": "Inactif",
     "pending": "En attente",
+    "pendingInvites": "invitations en attente",
     "removeMember": "Retirer le membre",
-    "changeRole": "Changer le rôle"
+    "changeRole": "Changer le rôle",
+    "confirmRemove": "Êtes-vous sûr de vouloir retirer ce membre ?",
+    "noMembers": "Aucun membre dans l'équipe",
+    "noPending": "Aucune invitation en attente",
+    "invitedBy": "Invité par",
+    "tipOutConfig": "Configuration Tip Out",
+    "totalTipOut": "Total Tip Out",
+    "positionName": "Nom du poste",
+    "serverDesc": "Peut faire des Cash Out",
+    "managerDesc": "Accès complet au restaurant"
   },
   "settings": {
     "title": "Paramètres",
@@ -148,14 +176,30 @@
     "updateProfile": "Mettre à jour le profil",
     "changePassword": "Changer le mot de passe",
     "currentPassword": "Mot de passe actuel",
-    "newPassword": "Nouveau mot de passe"
+    "newPassword": "Nouveau mot de passe",
+    "passwordChanged": "Mot de passe modifié !",
+    "emailCannotChange": "L'email ne peut pas être modifié",
+    "dangerZone": "Zone de danger",
+    "deleteAccount": "Supprimer le compte",
+    "deleteAccountWarning": "Cette action est irréversible. Toutes vos données seront supprimées."
   },
   "restaurants": {
     "title": "Restaurants",
     "select": "Sélectionner un restaurant",
     "switchRestaurant": "Changer de restaurant",
     "addRestaurant": "Ajouter un restaurant",
-    "myRestaurants": "Mes restaurants"
+    "myRestaurants": "Mes restaurants",
+    "createRestaurant": "Créer un restaurant"
+  },
+  "invitation": {
+    "invalid": "Invitation invalide",
+    "createAccount": "Créer votre compte",
+    "createAccountDesc": "Complétez vos informations pour rejoindre l'équipe",
+    "invitedBy": "Invité par",
+    "acceptAndCreate": "Accepter et créer le compte",
+    "readyToJoin": "Prêt à rejoindre !",
+    "clickToAccept": "Cliquez pour accepter l'invitation",
+    "accept": "Accepter l'invitation"
   },
   "admin": {
     "title": "Administration",
@@ -179,6 +223,7 @@
     "networkError": "Erreur de connexion",
     "serverError": "Erreur serveur",
     "unauthorized": "Non autorisé",
-    "notFound": "Non trouvé"
+    "notFound": "Non trouvé",
+    "invitationInvalid": "Cette invitation n'est plus valide"
   }
 }

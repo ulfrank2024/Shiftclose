@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import AcceptInvite from './pages/AcceptInvite'
 import Dashboard from './pages/Dashboard'
 import CashOut from './pages/CashOut'
 import Reports from './pages/Reports'
@@ -80,6 +81,9 @@ export default function App() {
             </PublicRoute>
           }
         />
+
+        {/* Invitation Route */}
+        <Route path="/invite/:token" element={<AcceptInvite />} />
 
         {/* Protected Routes */}
         <Route

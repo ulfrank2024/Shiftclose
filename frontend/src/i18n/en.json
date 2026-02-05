@@ -3,6 +3,7 @@
     "appName": "ShiftClose",
     "loading": "Loading...",
     "save": "Save",
+    "saved": "Saved!",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -20,7 +21,9 @@
     "error": "Error",
     "success": "Success",
     "warning": "Warning",
-    "info": "Information"
+    "info": "Information",
+    "add": "Add",
+    "close": "Close"
   },
   "auth": {
     "login": "Login",
@@ -37,6 +40,14 @@
     "registerSuccess": "Registration successful!",
     "welcomeBack": "Welcome back!",
     "enterCredentials": "Enter your credentials to continue"
+  },
+  "roles": {
+    "server": "Server",
+    "manager": "Manager",
+    "superadmin": "Super Admin",
+    "bartender": "Bartender",
+    "busboy": "Busboy",
+    "host": "Host"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -58,7 +69,10 @@
     "quickActions": "Quick Actions",
     "startCashOut": "Start Cash Out",
     "viewReports": "View Reports",
-    "recentActivity": "Recent Activity"
+    "recentActivity": "Recent Activity",
+    "noRestaurant": "No restaurant",
+    "createFirstRestaurant": "Create your first restaurant",
+    "joinRestaurant": "Join a restaurant"
   },
   "cashOut": {
     "title": "Cash Out",
@@ -85,7 +99,9 @@
     "submitReport": "Submit Report",
     "summary": "Summary",
     "step": "Step",
-    "of": "of"
+    "of": "of",
+    "tipsReceived": "Tips Received",
+    "fromColleagues": "From your colleagues"
   },
   "reports": {
     "title": "Reports",
@@ -103,12 +119,14 @@
     "noReports": "No reports found",
     "filterByDate": "Filter by date",
     "filterByEmployee": "Filter by employee",
-    "filterByStatus": "Filter by status"
+    "filterByStatus": "Filter by status",
+    "viewDetails": "View details"
   },
   "team": {
     "title": "Team",
     "members": "Members",
-    "invite": "Invite a member",
+    "invite": "Invite",
+    "inviteMember": "Invite a member",
     "inviteEmail": "Invitation email",
     "sendInvite": "Send invitation",
     "role": "Role",
@@ -118,8 +136,18 @@
     "active": "Active",
     "inactive": "Inactive",
     "pending": "Pending",
+    "pendingInvites": "pending invitations",
     "removeMember": "Remove member",
-    "changeRole": "Change role"
+    "changeRole": "Change role",
+    "confirmRemove": "Are you sure you want to remove this member?",
+    "noMembers": "No team members",
+    "noPending": "No pending invitations",
+    "invitedBy": "Invited by",
+    "tipOutConfig": "Tip Out Configuration",
+    "totalTipOut": "Total Tip Out",
+    "positionName": "Position name",
+    "serverDesc": "Can do Cash Outs",
+    "managerDesc": "Full access to restaurant"
   },
   "settings": {
     "title": "Settings",
@@ -148,14 +176,30 @@
     "updateProfile": "Update profile",
     "changePassword": "Change password",
     "currentPassword": "Current password",
-    "newPassword": "New password"
+    "newPassword": "New password",
+    "passwordChanged": "Password changed!",
+    "emailCannotChange": "Email cannot be changed",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete account",
+    "deleteAccountWarning": "This action is irreversible. All your data will be deleted."
   },
   "restaurants": {
     "title": "Restaurants",
     "select": "Select a restaurant",
     "switchRestaurant": "Switch restaurant",
     "addRestaurant": "Add restaurant",
-    "myRestaurants": "My restaurants"
+    "myRestaurants": "My restaurants",
+    "createRestaurant": "Create restaurant"
+  },
+  "invitation": {
+    "invalid": "Invalid invitation",
+    "createAccount": "Create your account",
+    "createAccountDesc": "Complete your information to join the team",
+    "invitedBy": "Invited by",
+    "acceptAndCreate": "Accept and create account",
+    "readyToJoin": "Ready to join!",
+    "clickToAccept": "Click to accept the invitation",
+    "accept": "Accept invitation"
   },
   "admin": {
     "title": "Administration",
@@ -179,6 +223,7 @@
     "networkError": "Connection error",
     "serverError": "Server error",
     "unauthorized": "Unauthorized",
-    "notFound": "Not found"
+    "notFound": "Not found",
+    "invitationInvalid": "This invitation is no longer valid"
   }
 }

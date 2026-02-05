@@ -312,6 +312,44 @@ NODEMAILER_PASSWORD=...
 FRONTEND_URL=...
 ```
 
+---
+
+### 2026-02-05 - Version 1.5.0 (Fonctionnalités Complètes)
+
+**Système d'invitation complet :**
+
+1. **Page AcceptInvite.jsx**
+   - Acceptation d'invitation via lien email
+   - Création de compte si nouvel utilisateur
+   - Connexion automatique après inscription
+   - Redirection vers le dashboard
+
+2. **Page Team améliorée**
+   - 3 onglets : Membres, Invitations en attente, Configuration Tip Out
+   - Invitation de nouveaux membres (serveur ou manager)
+   - Suppression de membres
+   - Changement de rôle
+   - Configuration des pourcentages de Tip Out par position
+   - Ajout/modification/suppression de règles Tip Out
+
+3. **Page Profile améliorée**
+   - Upload de photo de profil (prévu)
+   - Modification des informations personnelles
+   - Changement de mot de passe sécurisé
+   - Zone de danger (suppression de compte)
+
+4. **Services API mis à jour**
+   - Nouvelles fonctions pour la gestion d'équipe
+   - Routes pour invitations (send, accept, cancel)
+   - Routes pour membres (remove, update role)
+
+5. **Traductions complètes**
+   - Nouvelles clés FR/EN pour toutes les fonctionnalités
+   - Support des rôles, invitations, profil
+
+**Routes ajoutées :**
+- `GET /invite/:token` - Page d'acceptation d'invitation
+
 **Prochaines étapes :**
 - Exécuter la migration SQL dans Supabase
 - Déploiement Vercel (frontend) + Render (backend)
