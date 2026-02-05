@@ -253,12 +253,34 @@ export const getProfile = async (req, res) => {
   try {
     const { password, ...userWithoutPassword } = req.user
 
+    // Get user's restaurants
+    const { data: userRestaurants } = await supabase
+      .from('user_restaurants')
+      .select(`
+        restaurant_id,
+        role,
+        restaurants (
+          id,
+          name
+        )
+      `)
+      .eq('user_id', req.user.id)
+
+    // Format restaurants
+    const restaurants = userRestaurants?.map(ur => ({
+      id: ur.restaurant_id,
+      name: ur.restaurants?.name,
+      role: ur.role
+    })) || []
+
     res.json({
       success: true,
       user: {
         ...userWithoutPassword,
         firstName: req.user.first_name,
-        lastName: req.user.last_name
+        lastName: req.user.last_name,
+        role: req.user.role, // Explicitly include role
+        restaurants
       }
     })
   } catch (error) {
