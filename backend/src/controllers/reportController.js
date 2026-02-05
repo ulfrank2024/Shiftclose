@@ -1,4 +1,4 @@
-import { db } from '../config/firebase.js'
+import { supabase } from '../config/supabase.js'
 import { sendEmail, emailTemplates } from '../config/email.js'
 
 // Create new cash out report
@@ -24,38 +24,45 @@ export const createReport = async (req, res) => {
     const difference = (cashInHand || 0) - expectedCash
 
     const reportData = {
-      restaurantId,
-      employeeId: req.user.uid,
-      employeeName: `${req.user.firstName} ${req.user.lastName}`,
-      employeeEmail: req.user.email,
+      restaurant_id: restaurantId,
+      employee_id: req.user.id,
+      employee_name: `${req.user.first_name} ${req.user.last_name}`,
+      employee_email: req.user.email,
       // Sales
-      cashSales: cashSales || 0,
-      cardSales: cardSales || 0,
-      otherSales: otherSales || 0,
-      totalSales,
+      cash_sales: cashSales || 0,
+      card_sales: cardSales || 0,
+      other_sales: otherSales || 0,
+      total_sales: totalSales,
       // Tips
-      cashTips: cashTips || 0,
-      cardTips: cardTips || 0,
-      totalTips,
+      cash_tips: cashTips || 0,
+      card_tips: cardTips || 0,
+      total_tips: totalTips,
       // Tip Out
-      tipOutPercent,
-      tipOutAmount,
-      netTips,
+      tip_out_percent: tipOutPercent || 0,
+      tip_out_amount: tipOutAmount,
+      net_tips: netTips,
       // Cash balance
-      cashInHand: cashInHand || 0,
-      expectedCash,
-      difference,
+      cash_in_hand: cashInHand || 0,
+      expected_cash: expectedCash,
+      difference: difference,
       // Status
-      status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      status: 'pending'
     }
 
-    const docRef = await db.collection('reports').add(reportData)
+    const { data: newReport, error } = await supabase
+      .from('reports')
+      .insert(reportData)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Create report error:', error)
+      return res.status(500).json({ error: 'Erreur lors de la création du rapport' })
+    }
 
     res.status(201).json({
       success: true,
-      report: { id: docRef.id, ...reportData }
+      report: formatReport(newReport)
     })
   } catch (error) {
     console.error('Create report error:', error)
@@ -69,44 +76,43 @@ export const getReports = async (req, res) => {
     const { restaurantId } = req.params
     const { status, startDate, endDate, employeeId } = req.query
 
-    let query = db.collection('reports')
-      .where('restaurantId', '==', restaurantId)
-      .orderBy('createdAt', 'desc')
+    let query = supabase
+      .from('reports')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .order('created_at', { ascending: false })
 
     // If user is a server, only show their own reports
     const userRole = req.user.restaurants?.find(r => r.id === restaurantId)?.role
     if (userRole === 'server') {
-      query = query.where('employeeId', '==', req.user.uid)
+      query = query.eq('employee_id', req.user.id)
     } else if (employeeId) {
-      query = query.where('employeeId', '==', employeeId)
+      query = query.eq('employee_id', employeeId)
     }
 
-    const snapshot = await query.get()
-    let reports = []
+    // Filter by status
+    if (status) {
+      query = query.eq('status', status)
+    }
 
-    snapshot.forEach(doc => {
-      const data = doc.data()
-      // Filter by status if provided
-      if (status && data.status !== status) return
-      // Filter by date range if provided
-      if (startDate) {
-        const reportDate = data.createdAt.toDate()
-        if (reportDate < new Date(startDate)) return
-      }
-      if (endDate) {
-        const reportDate = data.createdAt.toDate()
-        if (reportDate > new Date(endDate)) return
-      }
+    // Filter by date range
+    if (startDate) {
+      query = query.gte('created_at', startDate)
+    }
+    if (endDate) {
+      query = query.lte('created_at', endDate)
+    }
 
-      reports.push({
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate()
-      })
+    const { data: reports, error } = await query
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+    }
+
+    res.json({
+      success: true,
+      reports: reports.map(formatReport)
     })
-
-    res.json({ success: true, reports })
   } catch (error) {
     console.error('Get reports error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
@@ -117,22 +123,20 @@ export const getReports = async (req, res) => {
 export const getReport = async (req, res) => {
   try {
     const { reportId } = req.params
-    const doc = await db.collection('reports').doc(reportId).get()
 
-    if (!doc.exists) {
+    const { data: report, error } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('id', reportId)
+      .single()
+
+    if (error || !report) {
       return res.status(404).json({ error: 'Rapport non trouvé' })
     }
 
-    const data = doc.data()
-
     res.json({
       success: true,
-      report: {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate()
-      }
+      report: formatReport(report)
     })
   } catch (error) {
     console.error('Get report error:', error)
@@ -150,32 +154,43 @@ export const validateReport = async (req, res) => {
       return res.status(400).json({ error: 'Statut invalide' })
     }
 
-    const reportDoc = await db.collection('reports').doc(reportId).get()
-    if (!reportDoc.exists) {
+    // Get report data first
+    const { data: report, error: fetchError } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('id', reportId)
+      .single()
+
+    if (fetchError || !report) {
       return res.status(404).json({ error: 'Rapport non trouvé' })
     }
 
-    const reportData = reportDoc.data()
+    // Update report
+    const { error } = await supabase
+      .from('reports')
+      .update({
+        status,
+        validated_by: req.user.id,
+        validated_by_name: `${req.user.first_name} ${req.user.last_name}`,
+        validation_note: note || '',
+        validated_at: new Date().toISOString()
+      })
+      .eq('id', reportId)
 
-    await db.collection('reports').doc(reportId).update({
-      status,
-      validatedBy: req.user.uid,
-      validatedByName: `${req.user.firstName} ${req.user.lastName}`,
-      validationNote: note || '',
-      validatedAt: new Date(),
-      updatedAt: new Date()
-    })
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la validation' })
+    }
 
     // Send email notification to employee
-    if (status === 'validated' && reportData.employeeEmail) {
-      const date = reportData.createdAt?.toDate().toLocaleDateString('fr-CA')
+    if (status === 'validated' && report.employee_email) {
+      const date = new Date(report.created_at).toLocaleDateString('fr-CA')
       const template = emailTemplates.reportValidated(
-        reportData.employeeName,
+        report.employee_name,
         date,
-        reportData.netTips.toFixed(2)
+        report.net_tips.toFixed(2)
       )
       await sendEmail({
-        to: reportData.employeeEmail,
+        to: report.employee_email,
         ...template
       })
     }
@@ -198,22 +213,26 @@ export const getDashboardStats = async (req, res) => {
     today.setHours(0, 0, 0, 0)
 
     // Get today's reports
-    const snapshot = await db.collection('reports')
-      .where('restaurantId', '==', restaurantId)
-      .where('createdAt', '>=', today)
-      .get()
+    const { data: reports, error } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .gte('created_at', today.toISOString())
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+    }
 
     let totalSales = 0
     let totalTips = 0
     let pendingReports = 0
     let validatedReports = 0
 
-    snapshot.forEach(doc => {
-      const data = doc.data()
-      totalSales += data.totalSales || 0
-      totalTips += data.totalTips || 0
-      if (data.status === 'pending') pendingReports++
-      if (data.status === 'validated') validatedReports++
+    reports?.forEach(report => {
+      totalSales += parseFloat(report.total_sales) || 0
+      totalTips += parseFloat(report.total_tips) || 0
+      if (report.status === 'pending') pendingReports++
+      if (report.status === 'validated') validatedReports++
     })
 
     res.json({
@@ -223,11 +242,48 @@ export const getDashboardStats = async (req, res) => {
         totalTips,
         pendingReports,
         validatedReports,
-        totalReports: snapshot.size
+        totalReports: reports?.length || 0
       }
     })
   } catch (error) {
     console.error('Get dashboard stats error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Helper function to format report for API response
+function formatReport(report) {
+  return {
+    id: report.id,
+    restaurantId: report.restaurant_id,
+    employeeId: report.employee_id,
+    employeeName: report.employee_name,
+    employeeEmail: report.employee_email,
+    // Sales
+    cashSales: parseFloat(report.cash_sales),
+    cardSales: parseFloat(report.card_sales),
+    otherSales: parseFloat(report.other_sales),
+    totalSales: parseFloat(report.total_sales),
+    // Tips
+    cashTips: parseFloat(report.cash_tips),
+    cardTips: parseFloat(report.card_tips),
+    totalTips: parseFloat(report.total_tips),
+    // Tip Out
+    tipOutPercent: parseFloat(report.tip_out_percent),
+    tipOutAmount: parseFloat(report.tip_out_amount),
+    netTips: parseFloat(report.net_tips),
+    // Cash balance
+    cashInHand: parseFloat(report.cash_in_hand),
+    expectedCash: parseFloat(report.expected_cash),
+    difference: parseFloat(report.difference),
+    // Status
+    status: report.status,
+    validatedBy: report.validated_by,
+    validatedByName: report.validated_by_name,
+    validationNote: report.validation_note,
+    validatedAt: report.validated_at,
+    // Timestamps
+    createdAt: report.created_at,
+    updatedAt: report.updated_at
   }
 }

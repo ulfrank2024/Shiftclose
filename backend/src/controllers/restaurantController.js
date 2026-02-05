@@ -1,25 +1,41 @@
-import { db } from '../config/firebase.js'
+import { supabase } from '../config/supabase.js'
 
 // Get all restaurants for current user
 export const getMyRestaurants = async (req, res) => {
   try {
-    const restaurants = req.user.restaurants || []
+    const { data: userRestaurants, error } = await supabase
+      .from('user_restaurants')
+      .select(`
+        restaurant_id,
+        role,
+        restaurants (
+          id,
+          name,
+          address,
+          timezone,
+          currency,
+          tip_out_rules,
+          created_at
+        )
+      `)
+      .eq('user_id', req.user.id)
 
-    // Get full restaurant data for each
-    const restaurantData = await Promise.all(
-      restaurants.map(async (r) => {
-        const doc = await db.collection('restaurants').doc(r.id).get()
-        if (doc.exists) {
-          return { id: doc.id, ...doc.data(), userRole: r.role }
-        }
-        return null
-      })
-    )
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+    }
 
-    res.json({
-      success: true,
-      restaurants: restaurantData.filter(r => r !== null)
-    })
+    const restaurants = userRestaurants?.map(ur => ({
+      id: ur.restaurants.id,
+      name: ur.restaurants.name,
+      address: ur.restaurants.address,
+      timezone: ur.restaurants.timezone,
+      currency: ur.restaurants.currency,
+      tipOutRules: ur.restaurants.tip_out_rules,
+      userRole: ur.role,
+      createdAt: ur.restaurants.created_at
+    })) || []
+
+    res.json({ success: true, restaurants })
   } catch (error) {
     console.error('Get restaurants error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
@@ -30,15 +46,28 @@ export const getMyRestaurants = async (req, res) => {
 export const getRestaurant = async (req, res) => {
   try {
     const { restaurantId } = req.params
-    const doc = await db.collection('restaurants').doc(restaurantId).get()
 
-    if (!doc.exists) {
+    const { data: restaurant, error } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('id', restaurantId)
+      .single()
+
+    if (error || !restaurant) {
       return res.status(404).json({ error: 'Restaurant non trouvé' })
     }
 
     res.json({
       success: true,
-      restaurant: { id: doc.id, ...doc.data() }
+      restaurant: {
+        id: restaurant.id,
+        name: restaurant.name,
+        address: restaurant.address,
+        timezone: restaurant.timezone,
+        currency: restaurant.currency,
+        tipOutRules: restaurant.tip_out_rules,
+        createdAt: restaurant.created_at
+      }
     })
   } catch (error) {
     console.error('Get restaurant error:', error)
@@ -46,39 +75,64 @@ export const getRestaurant = async (req, res) => {
   }
 }
 
-// Create new restaurant (Super Admin only)
+// Create new restaurant (Super Admin or first restaurant for Manager)
 export const createRestaurant = async (req, res) => {
   try {
     const { name, address, timezone, currency } = req.body
+
+    if (!name) {
+      return res.status(400).json({ error: 'Le nom du restaurant est requis' })
+    }
 
     const restaurantData = {
       name,
       address: address || '',
       timezone: timezone || 'America/Montreal',
       currency: currency || 'CAD',
-      tipOutRules: [
+      tip_out_rules: [
         { position: 'Busboy', percentage: 1.5 },
         { position: 'Bartender', percentage: 1.0 },
         { position: 'Host', percentage: 0.5 }
       ],
-      createdBy: req.user.uid,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      created_by: req.user.id
     }
 
-    const docRef = await db.collection('restaurants').add(restaurantData)
+    // Create restaurant
+    const { data: newRestaurant, error } = await supabase
+      .from('restaurants')
+      .insert(restaurantData)
+      .select()
+      .single()
 
-    // Add restaurant to creator's list
-    const userRestaurants = req.user.restaurants || []
-    userRestaurants.push({ id: docRef.id, name, role: 'manager' })
+    if (error) {
+      console.error('Create restaurant error:', error)
+      return res.status(500).json({ error: 'Erreur lors de la création' })
+    }
 
-    await db.collection('users').doc(req.user.uid).update({
-      restaurants: userRestaurants
-    })
+    // Add user to restaurant as manager
+    const { error: linkError } = await supabase
+      .from('user_restaurants')
+      .insert({
+        user_id: req.user.id,
+        restaurant_id: newRestaurant.id,
+        role: 'manager'
+      })
+
+    if (linkError) {
+      console.error('Link user to restaurant error:', linkError)
+    }
 
     res.status(201).json({
       success: true,
-      restaurant: { id: docRef.id, ...restaurantData }
+      restaurant: {
+        id: newRestaurant.id,
+        name: newRestaurant.name,
+        address: newRestaurant.address,
+        timezone: newRestaurant.timezone,
+        currency: newRestaurant.currency,
+        tipOutRules: newRestaurant.tip_out_rules,
+        createdAt: newRestaurant.created_at
+      }
     })
   } catch (error) {
     console.error('Create restaurant error:', error)
@@ -92,14 +146,21 @@ export const updateRestaurant = async (req, res) => {
     const { restaurantId } = req.params
     const { name, address, timezone, currency, tipOutRules } = req.body
 
-    const updateData = { updatedAt: new Date() }
+    const updateData = {}
     if (name) updateData.name = name
-    if (address) updateData.address = address
+    if (address !== undefined) updateData.address = address
     if (timezone) updateData.timezone = timezone
     if (currency) updateData.currency = currency
-    if (tipOutRules) updateData.tipOutRules = tipOutRules
+    if (tipOutRules) updateData.tip_out_rules = tipOutRules
 
-    await db.collection('restaurants').doc(restaurantId).update(updateData)
+    const { error } = await supabase
+      .from('restaurants')
+      .update(updateData)
+      .eq('id', restaurantId)
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la mise à jour' })
+    }
 
     res.json({
       success: true,
@@ -116,34 +177,36 @@ export const getTeamMembers = async (req, res) => {
   try {
     const { restaurantId } = req.params
 
-    // Find all users who have this restaurant in their list
-    const snapshot = await db.collection('users')
-      .where('restaurants', 'array-contains-any', [
-        { id: restaurantId, role: 'server' },
-        { id: restaurantId, role: 'manager' }
-      ])
-      .get()
+    const { data: members, error } = await supabase
+      .from('user_restaurants')
+      .select(`
+        role,
+        joined_at,
+        users (
+          id,
+          email,
+          first_name,
+          last_name,
+          status
+        )
+      `)
+      .eq('restaurant_id', restaurantId)
 
-    // Alternative: query all users and filter
-    const allUsersSnapshot = await db.collection('users').get()
-    const members = []
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+    }
 
-    allUsersSnapshot.forEach(doc => {
-      const userData = doc.data()
-      const restaurantMembership = userData.restaurants?.find(r => r.id === restaurantId)
-      if (restaurantMembership) {
-        members.push({
-          id: doc.id,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          role: restaurantMembership.role,
-          status: userData.status || 'active'
-        })
-      }
-    })
+    const formattedMembers = members?.map(m => ({
+      id: m.users.id,
+      email: m.users.email,
+      firstName: m.users.first_name,
+      lastName: m.users.last_name,
+      role: m.role,
+      status: m.users.status,
+      joinedAt: m.joined_at
+    })) || []
 
-    res.json({ success: true, members })
+    res.json({ success: true, members: formattedMembers })
   } catch (error) {
     console.error('Get team members error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
@@ -153,16 +216,83 @@ export const getTeamMembers = async (req, res) => {
 // Get all restaurants (Super Admin only)
 export const getAllRestaurants = async (req, res) => {
   try {
-    const snapshot = await db.collection('restaurants').get()
-    const restaurants = []
+    const { data: restaurants, error } = await supabase
+      .from('restaurants')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-    snapshot.forEach(doc => {
-      restaurants.push({ id: doc.id, ...doc.data() })
-    })
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+    }
 
-    res.json({ success: true, restaurants })
+    const formattedRestaurants = restaurants.map(r => ({
+      id: r.id,
+      name: r.name,
+      address: r.address,
+      timezone: r.timezone,
+      currency: r.currency,
+      tipOutRules: r.tip_out_rules,
+      createdAt: r.created_at
+    }))
+
+    res.json({ success: true, restaurants: formattedRestaurants })
   } catch (error) {
     console.error('Get all restaurants error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Remove team member from restaurant
+export const removeTeamMember = async (req, res) => {
+  try {
+    const { restaurantId, userId } = req.params
+
+    const { error } = await supabase
+      .from('user_restaurants')
+      .delete()
+      .eq('restaurant_id', restaurantId)
+      .eq('user_id', userId)
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la suppression' })
+    }
+
+    res.json({
+      success: true,
+      message: 'Membre retiré de l\'équipe'
+    })
+  } catch (error) {
+    console.error('Remove team member error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Update team member role
+export const updateTeamMemberRole = async (req, res) => {
+  try {
+    const { restaurantId, userId } = req.params
+    const { role } = req.body
+
+    if (!['server', 'manager'].includes(role)) {
+      return res.status(400).json({ error: 'Rôle invalide' })
+    }
+
+    const { error } = await supabase
+      .from('user_restaurants')
+      .update({ role })
+      .eq('restaurant_id', restaurantId)
+      .eq('user_id', userId)
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la mise à jour' })
+    }
+
+    res.json({
+      success: true,
+      message: 'Rôle mis à jour'
+    })
+  } catch (error) {
+    console.error('Update team member role error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

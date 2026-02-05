@@ -50,8 +50,8 @@
 
 - **Frontend :** React.js + Tailwind CSS.
 - **Backend :** Node.js + Express.
-- **Base de Données :** Firebase (Firestore pour les données, Auth pour la sécurité).
-- **Emails :** Nodemailer (pour les invitations et rapports).
+- **Base de Données :** Supabase (PostgreSQL).
+- **Emails :** Nodemailer avec Gmail.
 - **Hébergement :** Frontend sur Vercel, Backend sur Render.
 
 ## 4. Structure de Données & Rôles (Priorité actuelle)
@@ -104,8 +104,8 @@ ShiftClose/
 ├── backend/                    # API Node.js/Express
 │   ├── src/
 │   │   ├── config/             # Configuration
-│   │   │   ├── firebase.js     # Firebase Admin SDK
-│   │   │   └── email.js        # Nodemailer + templates
+│   │   │   ├── supabase.js     # Supabase Client
+│   │   │   └── email.js        # Nodemailer + Gmail
 │   │   ├── controllers/        # Logique métier
 │   │   │   ├── authController.js
 │   │   │   ├── restaurantController.js
@@ -269,7 +269,51 @@ ShiftClose/
    - Firestore (base de données)
    - Storage (images/fichiers)
 
+---
+
+### 2026-02-05 - Version 1.4.0 (Migration Supabase)
+
+**Migration complète de Firebase vers Supabase :**
+
+1. **Base de données Supabase**
+   - Remplacement de Firebase/Firestore par Supabase (PostgreSQL)
+   - Création du schéma SQL avec migrations
+   - Tables : `users`, `restaurants`, `user_restaurants`, `reports`, `invitations`
+   - Relations et clés étrangères configurées
+   - Row Level Security (RLS) activée
+
+2. **Backend mis à jour**
+   - Nouveau fichier `config/supabase.js` avec client Supabase
+   - Suppression de `firebase-admin`, ajout de `@supabase/supabase-js`
+   - Tous les contrôleurs migrés vers les requêtes Supabase
+   - Middleware auth.js mis à jour pour Supabase
+
+3. **Configuration email Gmail**
+   - Nodemailer configuré avec service Gmail
+   - Templates email améliorés (responsive, dark theme)
+   - Nouveau template de bienvenue
+
+4. **Nouvelles routes API**
+   - `DELETE /api/restaurants/:id/team/:userId` - Retirer un membre
+   - `PUT /api/restaurants/:id/team/:userId/role` - Modifier rôle membre
+
+5. **Fichiers de migration SQL**
+   - `backend/supabase/migrations/001_initial_schema.sql`
+   - Instructions pour exécuter dans Supabase Dashboard
+
+**Variables d'environnement mises à jour :**
+```
+SUPABASE_URL=...
+SUPABASE_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+JWT_SECRET=...
+NODEMAILER_EMAIL=...
+NODEMAILER_PASSWORD=...
+FRONTEND_URL=...
+```
+
 **Prochaines étapes :**
+- Exécuter la migration SQL dans Supabase
 - Déploiement Vercel (frontend) + Render (backend)
+- Créer le Super Admin initial
 - Tests d'intégration
-- Ajout du Super Admin initial

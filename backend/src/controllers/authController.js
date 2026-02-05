@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { db } from '../config/firebase.js'
+import { supabase } from '../config/supabase.js'
 import { generateToken } from '../middleware/auth.js'
 
 // Register new user
@@ -17,11 +17,13 @@ export const register = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await db.collection('users')
-      .where('email', '==', email.toLowerCase())
-      .get()
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single()
 
-    if (!existingUser.empty) {
+    if (existingUser) {
       return res.status(400).json({ error: 'Cet email est déjà utilisé' })
     }
 
@@ -29,33 +31,39 @@ export const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(password, salt)
 
-    // Create user document
-    const userData = {
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      firstName,
-      lastName,
-      role: 'server', // Default role
-      restaurants: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
+    // Create user
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'server'
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Create user error:', error)
+      return res.status(500).json({ error: 'Erreur lors de la création du compte' })
     }
 
-    const docRef = await db.collection('users').add(userData)
-
     // Generate JWT token
-    const token = generateToken(docRef.id)
+    const token = generateToken(newUser.id)
 
     // Return user data (without password)
-    const { password: _, ...userWithoutPassword } = userData
+    const { password: _, ...userWithoutPassword } = newUser
 
     res.status(201).json({
       success: true,
       message: 'Inscription réussie',
       token,
       user: {
-        id: docRef.id,
-        ...userWithoutPassword
+        ...userWithoutPassword,
+        firstName: newUser.first_name,
+        lastName: newUser.last_name,
+        restaurants: []
       }
     })
   } catch (error) {
@@ -75,37 +83,58 @@ export const login = async (req, res) => {
     }
 
     // Find user by email
-    const usersSnapshot = await db.collection('users')
-      .where('email', '==', email.toLowerCase())
-      .get()
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single()
 
-    if (usersSnapshot.empty) {
+    if (error || !user) {
       return res.status(401).json({ error: 'Identifiants incorrects' })
     }
 
-    const userDoc = usersSnapshot.docs[0]
-    const userData = userDoc.data()
-
     // Compare password
-    const isMatch = await bcrypt.compare(password, userData.password)
+    const isMatch = await bcrypt.compare(password, user.password)
 
     if (!isMatch) {
       return res.status(401).json({ error: 'Identifiants incorrects' })
     }
 
+    // Get user's restaurants
+    const { data: userRestaurants } = await supabase
+      .from('user_restaurants')
+      .select(`
+        restaurant_id,
+        role,
+        restaurants (
+          id,
+          name
+        )
+      `)
+      .eq('user_id', user.id)
+
+    // Format restaurants
+    const restaurants = userRestaurants?.map(ur => ({
+      id: ur.restaurant_id,
+      name: ur.restaurants?.name,
+      role: ur.role
+    })) || []
+
     // Generate JWT token
-    const token = generateToken(userDoc.id)
+    const token = generateToken(user.id)
 
     // Return user data (without password)
-    const { password: _, ...userWithoutPassword } = userData
+    const { password: _, ...userWithoutPassword } = user
 
     res.json({
       success: true,
       message: 'Connexion réussie',
       token,
       user: {
-        id: userDoc.id,
-        ...userWithoutPassword
+        ...userWithoutPassword,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        restaurants
       }
     })
   } catch (error) {
@@ -121,7 +150,11 @@ export const getProfile = async (req, res) => {
 
     res.json({
       success: true,
-      user: userWithoutPassword
+      user: {
+        ...userWithoutPassword,
+        firstName: req.user.first_name,
+        lastName: req.user.last_name
+      }
     })
   } catch (error) {
     console.error('Get profile error:', error)
@@ -134,15 +167,19 @@ export const updateProfile = async (req, res) => {
   try {
     const { firstName, lastName, phone } = req.body
 
-    const updateData = {
-      updatedAt: new Date()
-    }
-
-    if (firstName) updateData.firstName = firstName
-    if (lastName) updateData.lastName = lastName
+    const updateData = {}
+    if (firstName) updateData.first_name = firstName
+    if (lastName) updateData.last_name = lastName
     if (phone) updateData.phone = phone
 
-    await db.collection('users').doc(req.user.id).update(updateData)
+    const { error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', req.user.id)
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la mise à jour' })
+    }
 
     res.json({
       success: true,
@@ -178,10 +215,14 @@ export const changePassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(newPassword, salt)
 
-    await db.collection('users').doc(req.user.id).update({
-      password: hashedPassword,
-      updatedAt: new Date()
-    })
+    const { error } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('id', req.user.id)
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la modification' })
+    }
 
     res.json({
       success: true,
@@ -196,15 +237,27 @@ export const changePassword = async (req, res) => {
 // Get all users (Super Admin only)
 export const getAllUsers = async (req, res) => {
   try {
-    const snapshot = await db.collection('users').get()
-    const users = []
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, email, first_name, last_name, role, status, created_at')
+      .order('created_at', { ascending: false })
 
-    snapshot.forEach(doc => {
-      const { password, ...userData } = doc.data()
-      users.push({ id: doc.id, ...userData })
-    })
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+    }
 
-    res.json({ success: true, users })
+    // Format response
+    const formattedUsers = users.map(u => ({
+      id: u.id,
+      email: u.email,
+      firstName: u.first_name,
+      lastName: u.last_name,
+      role: u.role,
+      status: u.status,
+      createdAt: u.created_at
+    }))
+
+    res.json({ success: true, users: formattedUsers })
   } catch (error) {
     console.error('Get all users error:', error)
     res.status(500).json({ error: 'Erreur serveur' })

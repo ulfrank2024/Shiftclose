@@ -3,20 +3,28 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
+// Gmail transporter configuration
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT) || 587,
-  secure: false,
+  service: 'gmail',
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
+    user: process.env.NODEMAILER_EMAIL,
+    pass: process.env.NODEMAILER_PASSWORD
+  }
+})
+
+// Verify connection
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Email configuration error:', error.message)
+  } else {
+    console.log('✅ Email server ready')
   }
 })
 
 export const sendEmail = async ({ to, subject, html }) => {
   try {
     const info = await transporter.sendMail({
-      from: `"ShiftClose" <${process.env.SMTP_USER}>`,
+      from: `"ShiftClose" <${process.env.NODEMAILER_EMAIL}>`,
       to,
       subject,
       html
@@ -36,29 +44,31 @@ export const emailTemplates = {
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 20px; }
-          .container { max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 12px; padding: 30px; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 20px; margin: 0; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 16px; padding: 40px; }
           .logo { text-align: center; margin-bottom: 30px; }
-          .logo span { background-color: #3b82f6; color: white; font-size: 32px; font-weight: bold; padding: 15px 20px; border-radius: 12px; }
-          h1 { color: #f8fafc; text-align: center; }
-          p { color: #94a3b8; line-height: 1.6; }
-          .button { display: block; width: fit-content; margin: 30px auto; background-color: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; }
-          .button:hover { background-color: #2563eb; }
-          .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 12px; }
+          .logo-text { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; font-size: 28px; font-weight: bold; padding: 16px 24px; border-radius: 16px; display: inline-block; }
+          h1 { color: #f8fafc; text-align: center; margin-bottom: 24px; font-size: 24px; }
+          p { color: #94a3b8; line-height: 1.7; font-size: 16px; margin: 16px 0; }
+          .highlight { color: #f8fafc; font-weight: 600; }
+          .button { display: block; width: fit-content; margin: 32px auto; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; }
+          .footer { text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #334155; color: #64748b; font-size: 14px; }
         </style>
       </head>
       <body>
         <div class="container">
-          <div class="logo"><span>S</span></div>
+          <div class="logo"><span class="logo-text">S</span></div>
           <h1>Vous êtes invité(e) !</h1>
           <p>Bonjour,</p>
-          <p><strong>${inviterName}</strong> vous invite à rejoindre l'équipe de <strong>${restaurantName}</strong> sur ShiftClose.</p>
+          <p><span class="highlight">${inviterName}</span> vous invite à rejoindre l'équipe de <span class="highlight">${restaurantName}</span> sur ShiftClose.</p>
           <p>ShiftClose est une application qui simplifie la gestion de vos Cash Out et pourboires en fin de service.</p>
           <a href="${inviteLink}" class="button">Accepter l'invitation</a>
-          <p>Si vous n'attendiez pas cette invitation, vous pouvez ignorer cet email.</p>
+          <p style="font-size: 14px; text-align: center;">Si vous n'attendiez pas cette invitation, vous pouvez ignorer cet email.</p>
           <div class="footer">
-            <p>© 2024 ShiftClose - Tous droits réservés</p>
+            <p>© 2026 ShiftClose - Tous droits réservés</p>
           </div>
         </div>
       </body>
@@ -72,31 +82,76 @@ export const emailTemplates = {
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 20px; }
-          .container { max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 12px; padding: 30px; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 20px; margin: 0; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 16px; padding: 40px; }
           .logo { text-align: center; margin-bottom: 30px; }
-          .logo span { background-color: #3b82f6; color: white; font-size: 32px; font-weight: bold; padding: 15px 20px; border-radius: 12px; }
-          h1 { color: #10b981; text-align: center; }
-          p { color: #94a3b8; line-height: 1.6; }
-          .highlight { background-color: #0f172a; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
-          .amount { color: #10b981; font-size: 32px; font-weight: bold; }
-          .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 12px; }
+          .logo-text { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; font-size: 28px; font-weight: bold; padding: 16px 24px; border-radius: 16px; display: inline-block; }
+          h1 { color: #10b981; text-align: center; margin-bottom: 24px; font-size: 24px; }
+          p { color: #94a3b8; line-height: 1.7; font-size: 16px; margin: 16px 0; }
+          .highlight-box { background-color: #0f172a; padding: 24px; border-radius: 12px; text-align: center; margin: 24px 0; }
+          .label { color: #64748b; font-size: 14px; margin-bottom: 8px; }
+          .amount { color: #10b981; font-size: 36px; font-weight: bold; }
+          .footer { text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #334155; color: #64748b; font-size: 14px; }
         </style>
       </head>
       <body>
         <div class="container">
-          <div class="logo"><span>S</span></div>
+          <div class="logo"><span class="logo-text">S</span></div>
           <h1>Rapport validé ✓</h1>
           <p>Bonjour ${employeeName},</p>
-          <p>Votre rapport de Cash Out du <strong>${date}</strong> a été validé par votre manager.</p>
-          <div class="highlight">
-            <p style="margin: 0; color: #64748b;">Pourboires nets</p>
+          <p>Votre rapport de Cash Out du <strong style="color: #f8fafc;">${date}</strong> a été validé par votre manager.</p>
+          <div class="highlight-box">
+            <p class="label">Pourboires nets</p>
             <p class="amount">$${netTips}</p>
           </div>
-          <p>Consultez l'application pour plus de détails.</p>
+          <p style="text-align: center;">Consultez l'application pour plus de détails.</p>
           <div class="footer">
-            <p>© 2024 ShiftClose - Tous droits réservés</p>
+            <p>© 2026 ShiftClose - Tous droits réservés</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  }),
+
+  welcomeUser: (firstName) => ({
+    subject: `Bienvenue sur ShiftClose !`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 20px; margin: 0; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 16px; padding: 40px; }
+          .logo { text-align: center; margin-bottom: 30px; }
+          .logo-text { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; font-size: 28px; font-weight: bold; padding: 16px 24px; border-radius: 16px; display: inline-block; }
+          h1 { color: #f8fafc; text-align: center; margin-bottom: 24px; font-size: 24px; }
+          p { color: #94a3b8; line-height: 1.7; font-size: 16px; margin: 16px 0; }
+          .features { background-color: #0f172a; padding: 24px; border-radius: 12px; margin: 24px 0; }
+          .feature { display: flex; align-items: center; margin: 12px 0; color: #f8fafc; }
+          .check { color: #10b981; margin-right: 12px; font-size: 18px; }
+          .button { display: block; width: fit-content; margin: 32px auto; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; }
+          .footer { text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #334155; color: #64748b; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="logo"><span class="logo-text">S</span></div>
+          <h1>Bienvenue ${firstName} !</h1>
+          <p>Merci d'avoir rejoint ShiftClose. Votre compte est maintenant actif et prêt à l'emploi.</p>
+          <div class="features">
+            <div class="feature"><span class="check">✓</span> Calculez vos pourboires en quelques clics</div>
+            <div class="feature"><span class="check">✓</span> Équilibrez votre caisse facilement</div>
+            <div class="feature"><span class="check">✓</span> Suivez votre historique de rapports</div>
+          </div>
+          <a href="${process.env.FRONTEND_URL}/dashboard" class="button">Accéder à l'application</a>
+          <div class="footer">
+            <p>© 2026 ShiftClose - Tous droits réservés</p>
           </div>
         </div>
       </body>

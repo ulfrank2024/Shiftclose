@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { db } from '../config/firebase.js'
+import { supabase } from '../config/supabase.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'shiftclose-secret-key-change-in-production'
 
@@ -22,17 +22,38 @@ export const verifyToken = async (req, res, next) => {
     // Verify JWT
     const decoded = jwt.verify(token, JWT_SECRET)
 
-    // Get user data from Firestore
-    const userDoc = await db.collection('users').doc(decoded.userId).get()
+    // Get user data from Supabase
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decoded.userId)
+      .single()
 
-    if (!userDoc.exists) {
+    if (error || !user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' })
     }
 
-    req.user = {
-      id: userDoc.id,
-      ...userDoc.data()
-    }
+    // Get user's restaurants
+    const { data: userRestaurants } = await supabase
+      .from('user_restaurants')
+      .select(`
+        restaurant_id,
+        role,
+        restaurants (
+          id,
+          name
+        )
+      `)
+      .eq('user_id', user.id)
+
+    // Format restaurants array
+    user.restaurants = userRestaurants?.map(ur => ({
+      id: ur.restaurant_id,
+      name: ur.restaurants?.name,
+      role: ur.role
+    })) || []
+
+    req.user = user
 
     next()
   } catch (error) {

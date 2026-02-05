@@ -1,4 +1,4 @@
-import { db } from '../config/firebase.js'
+import { supabase } from '../config/supabase.js'
 import { sendEmail, emailTemplates } from '../config/email.js'
 import crypto from 'crypto'
 
@@ -17,33 +17,46 @@ export const sendInvitation = async (req, res) => {
     }
 
     // Get restaurant info
-    const restaurantDoc = await db.collection('restaurants').doc(restaurantId).get()
-    if (!restaurantDoc.exists) {
+    const { data: restaurant, error: restaurantError } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('id', restaurantId)
+      .single()
+
+    if (restaurantError || !restaurant) {
       return res.status(404).json({ error: 'Restaurant non trouvé' })
     }
-    const restaurant = restaurantDoc.data()
 
     // Check if user already exists and is already a member
-    const existingUserSnapshot = await db.collection('users')
-      .where('email', '==', email)
-      .get()
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single()
 
-    if (!existingUserSnapshot.empty) {
-      const existingUser = existingUserSnapshot.docs[0].data()
-      const alreadyMember = existingUser.restaurants?.some(r => r.id === restaurantId)
-      if (alreadyMember) {
+    if (existingUser) {
+      const { data: existingMembership } = await supabase
+        .from('user_restaurants')
+        .select('id')
+        .eq('user_id', existingUser.id)
+        .eq('restaurant_id', restaurantId)
+        .single()
+
+      if (existingMembership) {
         return res.status(400).json({ error: 'Cet utilisateur est déjà membre du restaurant' })
       }
     }
 
     // Check if invitation already exists
-    const existingInviteSnapshot = await db.collection('invitations')
-      .where('email', '==', email)
-      .where('restaurantId', '==', restaurantId)
-      .where('status', '==', 'pending')
-      .get()
+    const { data: existingInvite } = await supabase
+      .from('invitations')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'pending')
+      .single()
 
-    if (!existingInviteSnapshot.empty) {
+    if (existingInvite) {
       return res.status(400).json({ error: 'Une invitation est déjà en attente pour cet email' })
     }
 
@@ -53,25 +66,31 @@ export const sendInvitation = async (req, res) => {
     expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
 
     const invitationData = {
-      email,
-      restaurantId,
-      restaurantName: restaurant.name,
+      email: email.toLowerCase(),
+      restaurant_id: restaurantId,
+      restaurant_name: restaurant.name,
       role,
       token,
       status: 'pending',
-      invitedBy: req.user.uid,
-      invitedByName: `${req.user.firstName} ${req.user.lastName}`,
-      expiresAt,
-      createdAt: new Date()
+      invited_by: req.user.id,
+      invited_by_name: `${req.user.first_name} ${req.user.last_name}`,
+      expires_at: expiresAt.toISOString()
     }
 
-    await db.collection('invitations').add(invitationData)
+    const { error } = await supabase
+      .from('invitations')
+      .insert(invitationData)
+
+    if (error) {
+      console.error('Create invitation error:', error)
+      return res.status(500).json({ error: 'Erreur lors de la création de l\'invitation' })
+    }
 
     // Send invitation email
     const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}`
     const template = emailTemplates.invitation(
       restaurant.name,
-      `${req.user.firstName} ${req.user.lastName}`,
+      `${req.user.first_name} ${req.user.last_name}`,
       inviteLink
     )
 
@@ -96,21 +115,23 @@ export const acceptInvitation = async (req, res) => {
     const { token } = req.params
 
     // Find invitation
-    const snapshot = await db.collection('invitations')
-      .where('token', '==', token)
-      .where('status', '==', 'pending')
-      .get()
+    const { data: invitation, error: fetchError } = await supabase
+      .from('invitations')
+      .select('*')
+      .eq('token', token)
+      .eq('status', 'pending')
+      .single()
 
-    if (snapshot.empty) {
+    if (fetchError || !invitation) {
       return res.status(404).json({ error: 'Invitation non trouvée ou expirée' })
     }
 
-    const inviteDoc = snapshot.docs[0]
-    const invitation = inviteDoc.data()
-
     // Check expiry
-    if (invitation.expiresAt.toDate() < new Date()) {
-      await inviteDoc.ref.update({ status: 'expired' })
+    if (new Date(invitation.expires_at) < new Date()) {
+      await supabase
+        .from('invitations')
+        .update({ status: 'expired' })
+        .eq('id', invitation.id)
       return res.status(400).json({ error: 'Invitation expirée' })
     }
 
@@ -119,32 +140,36 @@ export const acceptInvitation = async (req, res) => {
       return res.status(403).json({ error: 'Cette invitation n\'est pas pour cet utilisateur' })
     }
 
-    // Add restaurant to user
-    const userRestaurants = req.user.restaurants || []
-    userRestaurants.push({
-      id: invitation.restaurantId,
-      name: invitation.restaurantName,
-      role: invitation.role
-    })
+    // Add user to restaurant
+    const { error: linkError } = await supabase
+      .from('user_restaurants')
+      .insert({
+        user_id: req.user.id,
+        restaurant_id: invitation.restaurant_id,
+        role: invitation.role
+      })
 
-    await db.collection('users').doc(req.user.uid).update({
-      restaurants: userRestaurants,
-      updatedAt: new Date()
-    })
+    if (linkError) {
+      console.error('Link user error:', linkError)
+      return res.status(500).json({ error: 'Erreur lors de l\'ajout au restaurant' })
+    }
 
     // Update invitation status
-    await inviteDoc.ref.update({
-      status: 'accepted',
-      acceptedAt: new Date(),
-      acceptedBy: req.user.uid
-    })
+    await supabase
+      .from('invitations')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+        accepted_by: req.user.id
+      })
+      .eq('id', invitation.id)
 
     res.json({
       success: true,
       message: 'Invitation acceptée',
       restaurant: {
-        id: invitation.restaurantId,
-        name: invitation.restaurantName,
+        id: invitation.restaurant_id,
+        name: invitation.restaurant_name,
         role: invitation.role
       }
     })
@@ -159,28 +184,28 @@ export const getInvitationInfo = async (req, res) => {
   try {
     const { token } = req.params
 
-    const snapshot = await db.collection('invitations')
-      .where('token', '==', token)
-      .where('status', '==', 'pending')
-      .get()
+    const { data: invitation, error } = await supabase
+      .from('invitations')
+      .select('restaurant_name, role, invited_by_name, email, expires_at')
+      .eq('token', token)
+      .eq('status', 'pending')
+      .single()
 
-    if (snapshot.empty) {
+    if (error || !invitation) {
       return res.status(404).json({ error: 'Invitation non trouvée ou expirée' })
     }
 
-    const invitation = snapshot.docs[0].data()
-
     // Check expiry
-    if (invitation.expiresAt.toDate() < new Date()) {
+    if (new Date(invitation.expires_at) < new Date()) {
       return res.status(400).json({ error: 'Invitation expirée' })
     }
 
     res.json({
       success: true,
       invitation: {
-        restaurantName: invitation.restaurantName,
+        restaurantName: invitation.restaurant_name,
         role: invitation.role,
-        invitedByName: invitation.invitedByName,
+        invitedByName: invitation.invited_by_name,
         email: invitation.email
       }
     })
@@ -195,26 +220,27 @@ export const getPendingInvitations = async (req, res) => {
   try {
     const { restaurantId } = req.params
 
-    const snapshot = await db.collection('invitations')
-      .where('restaurantId', '==', restaurantId)
-      .where('status', '==', 'pending')
-      .orderBy('createdAt', 'desc')
-      .get()
+    const { data: invitations, error } = await supabase
+      .from('invitations')
+      .select('id, email, role, invited_by_name, created_at, expires_at')
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
 
-    const invitations = []
-    snapshot.forEach(doc => {
-      const data = doc.data()
-      invitations.push({
-        id: doc.id,
-        email: data.email,
-        role: data.role,
-        invitedByName: data.invitedByName,
-        createdAt: data.createdAt?.toDate(),
-        expiresAt: data.expiresAt?.toDate()
-      })
-    })
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+    }
 
-    res.json({ success: true, invitations })
+    const formattedInvitations = invitations?.map(inv => ({
+      id: inv.id,
+      email: inv.email,
+      role: inv.role,
+      invitedByName: inv.invited_by_name,
+      createdAt: inv.created_at,
+      expiresAt: inv.expires_at
+    })) || []
+
+    res.json({ success: true, invitations: formattedInvitations })
   } catch (error) {
     console.error('Get pending invitations error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
@@ -226,10 +252,17 @@ export const cancelInvitation = async (req, res) => {
   try {
     const { invitationId } = req.params
 
-    await db.collection('invitations').doc(invitationId).update({
-      status: 'cancelled',
-      cancelledAt: new Date()
-    })
+    const { error } = await supabase
+      .from('invitations')
+      .update({
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString()
+      })
+      .eq('id', invitationId)
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de l\'annulation' })
+    }
 
     res.json({
       success: true,

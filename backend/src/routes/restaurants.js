@@ -6,7 +6,9 @@ import {
   createRestaurant,
   updateRestaurant,
   getTeamMembers,
-  getAllRestaurants
+  getAllRestaurants,
+  removeTeamMember,
+  updateTeamMemberRole
 } from '../controllers/restaurantController.js'
 
 const router = Router()
@@ -31,5 +33,11 @@ router.put('/:restaurantId', requireRestaurantAccess, requireRole('manager'), up
 
 // Get team members (Manager only)
 router.get('/:restaurantId/team', requireRestaurantAccess, requireRole('manager'), getTeamMembers)
+
+// Remove team member (Manager only)
+router.delete('/:restaurantId/team/:userId', requireRestaurantAccess, requireRole('manager'), removeTeamMember)
+
+// Update team member role (Manager only)
+router.put('/:restaurantId/team/:userId/role', requireRestaurantAccess, requireRole('manager'), updateTeamMemberRole)
 
 export default router
