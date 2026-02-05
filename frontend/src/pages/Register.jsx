@@ -3,30 +3,56 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
-import { Eye, EyeOff, Globe, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Globe, Loader2, UserPlus } from 'lucide-react'
 
-export default function Login() {
+export default function Register() {
   const { t } = useTranslation()
-  const { login } = useAuth()
+  const { register } = useAuth()
   const { language, toggleLanguage } = useLanguage()
   const navigate = useNavigate()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    // Validate
+    if (formData.password !== formData.confirmPassword) {
+      setError(t('errors.passwordMismatch'))
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError(t('errors.minLength', { min: 6 }))
+      return
+    }
+
     setLoading(true)
 
     try {
-      await login(email, password)
+      await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password
+      })
       navigate('/dashboard')
     } catch (err) {
-      setError(err.message || t('auth.loginError'))
+      setError(err.message || t('common.error'))
     } finally {
       setLoading(false)
     }
@@ -55,20 +81,54 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
+            <div className="inline-flex p-3 bg-blue-500/10 rounded-xl mb-4">
+              <UserPlus className="text-blue-400" size={32} />
+            </div>
             <h1 className="text-3xl font-bold text-white mb-2">
-              {t('auth.welcomeBack')}
+              {t('auth.register')}
             </h1>
             <p className="text-slate-400">
-              {t('auth.enterCredentials')}
+              Créez votre compte ShiftClose
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm animate-fade-in">
                 {error}
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  {t('profile.firstName')}
+                </label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="Jean"
+                  className="w-full px-4 py-3 rounded-lg text-white placeholder-slate-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  {t('profile.lastName')}
+                </label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder="Dupont"
+                  className="w-full px-4 py-3 rounded-lg text-white placeholder-slate-500"
+                  required
+                />
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -76,8 +136,9 @@ export default function Login() {
               </label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="votre@email.com"
                 className="w-full px-4 py-3 rounded-lg text-white placeholder-slate-500"
                 required
@@ -91,11 +152,13 @@ export default function Login() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="••••••••"
                   className="w-full px-4 py-3 rounded-lg text-white placeholder-slate-500 pr-12"
                   required
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -107,13 +170,19 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-blue-400 hover:text-blue-300"
-              >
-                {t('auth.forgotPassword')}
-              </Link>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                {t('auth.confirmPassword')}
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 rounded-lg text-white placeholder-slate-500"
+                required
+              />
             </div>
 
             <button
@@ -127,18 +196,20 @@ export default function Login() {
                   {t('common.loading')}
                 </>
               ) : (
-                t('auth.login')
+                <>
+                  <UserPlus size={20} />
+                  {t('auth.register')}
+                </>
               )}
             </button>
           </form>
 
           <p className="mt-8 text-center text-slate-400">
-            {t('auth.noAccount')}{' '}
-            <Link to="/register" className="text-blue-400 hover:text-blue-300 font-medium">
-              {t('auth.register')}
+            {t('auth.hasAccount')}{' '}
+            <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+              {t('auth.login')}
             </Link>
           </p>
-
         </div>
       </div>
     </div>

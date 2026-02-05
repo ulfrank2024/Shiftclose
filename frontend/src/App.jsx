@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import CashOut from './pages/CashOut'
 import Reports from './pages/Reports'
@@ -68,6 +69,14 @@ export default function App() {
           element={
             <PublicRoute>
               <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <Register />
             </PublicRoute>
           }
         />

@@ -235,7 +235,41 @@ ShiftClose/
    - README.md backend avec documentation API
    - .env.example pour chaque partie
 
+---
+
+### 2026-02-04 - Version 1.3.0 (Auth JWT + Connexion API)
+
+**Authentification JWT (sans Firebase Auth) :**
+
+1. **Backend - Auth JWT**
+   - Ajout bcryptjs pour hash des mots de passe
+   - Ajout jsonwebtoken pour génération/vérification tokens
+   - Routes `/api/auth/register` et `/api/auth/login`
+   - Route `/api/auth/password` pour changer le mot de passe
+   - Middleware JWT au lieu de Firebase Auth
+
+2. **Frontend - Services API**
+   - Création `services/api.js` avec toutes les fonctions API
+   - `authAPI` - register, login, profile, updateProfile
+   - `restaurantAPI` - CRUD restaurants
+   - `reportAPI` - CRUD rapports
+   - `invitationAPI` - gestion invitations
+
+3. **Frontend - AuthContext mis à jour**
+   - Connexion réelle au backend
+   - Gestion du token JWT dans localStorage
+   - Fonctions register, login, logout, refreshUser
+
+4. **Nouvelle page Register**
+   - Formulaire d'inscription complet
+   - Validation des champs
+   - Gestion des erreurs
+
+5. **Firebase utilisé uniquement pour :**
+   - Firestore (base de données)
+   - Storage (images/fichiers)
+
 **Prochaines étapes :**
-- Intégration Firebase côté frontend
-- Connexion frontend ↔ backend
 - Déploiement Vercel (frontend) + Render (backend)
+- Tests d'intégration
+- Ajout du Super Admin initial

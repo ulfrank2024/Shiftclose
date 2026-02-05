@@ -8,15 +8,22 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
-  "keywords": ["restaurant", "cashout", "tips", "management"],
+  "keywords": [
+    "restaurant",
+    "cashout",
+    "tips",
+    "management"
+  ],
   "author": "ShiftClose",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "firebase-admin": "^12.3.0",
     "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
     "nodemailer": "^6.9.14"
   }

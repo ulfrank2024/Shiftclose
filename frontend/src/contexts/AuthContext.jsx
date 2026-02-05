@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { authAPI } from '../services/api'
 
 const AuthContext = createContext(null)
 
@@ -7,51 +8,73 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [currentRestaurant, setCurrentRestaurant] = useState(null)
 
+  // Check for saved session on mount
   useEffect(() => {
-    // Check for saved session
-    const savedUser = localStorage.getItem('user')
-    const savedRestaurant = localStorage.getItem('currentRestaurant')
+    const initAuth = async () => {
+      const token = localStorage.getItem('token')
+      const savedRestaurant = localStorage.getItem('currentRestaurant')
 
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+      if (token) {
+        try {
+          const { user: userData } = await authAPI.getProfile()
+          setUser(userData)
+
+          // Restore saved restaurant or set first one
+          if (savedRestaurant) {
+            const restaurant = JSON.parse(savedRestaurant)
+            // Verify user still has access to this restaurant
+            if (userData.restaurants?.some(r => r.id === restaurant.id)) {
+              setCurrentRestaurant(restaurant)
+            } else if (userData.restaurants?.length > 0) {
+              setCurrentRestaurant(userData.restaurants[0])
+              localStorage.setItem('currentRestaurant', JSON.stringify(userData.restaurants[0]))
+            }
+          } else if (userData.restaurants?.length > 0) {
+            setCurrentRestaurant(userData.restaurants[0])
+            localStorage.setItem('currentRestaurant', JSON.stringify(userData.restaurants[0]))
+          }
+        } catch (error) {
+          console.error('Auth init error:', error)
+          // Token invalid, clear storage
+          localStorage.removeItem('token')
+          localStorage.removeItem('currentRestaurant')
+        }
+      }
+
+      setLoading(false)
     }
-    if (savedRestaurant) {
-      setCurrentRestaurant(JSON.parse(savedRestaurant))
-    }
-    setLoading(false)
+
+    initAuth()
   }, [])
 
   const login = async (email, password) => {
-    // TODO: Implement Firebase auth
-    // For now, simulate login
-    const mockUser = {
-      id: '1',
-      email,
-      firstName: 'Utilisateur',
-      lastName: 'Test',
-      role: email.includes('admin') ? 'superadmin' : email.includes('manager') ? 'manager' : 'server',
-      restaurants: [
-        { id: 'r1', name: 'Jimmies Pizza', role: 'manager' },
-        { id: 'r2', name: 'Le Bistro', role: 'server' }
-      ]
-    }
+    const { token, user: userData } = await authAPI.login({ email, password })
 
-    setUser(mockUser)
-    localStorage.setItem('user', JSON.stringify(mockUser))
+    localStorage.setItem('token', token)
+    setUser(userData)
 
     // Set default restaurant
-    if (mockUser.restaurants.length > 0) {
-      setCurrentRestaurant(mockUser.restaurants[0])
-      localStorage.setItem('currentRestaurant', JSON.stringify(mockUser.restaurants[0]))
+    if (userData.restaurants?.length > 0) {
+      setCurrentRestaurant(userData.restaurants[0])
+      localStorage.setItem('currentRestaurant', JSON.stringify(userData.restaurants[0]))
     }
 
-    return mockUser
+    return userData
+  }
+
+  const register = async (userData) => {
+    const { token, user: newUser } = await authAPI.register(userData)
+
+    localStorage.setItem('token', token)
+    setUser(newUser)
+
+    return newUser
   }
 
   const logout = () => {
     setUser(null)
     setCurrentRestaurant(null)
-    localStorage.removeItem('user')
+    localStorage.removeItem('token')
     localStorage.removeItem('currentRestaurant')
   }
 
@@ -60,13 +83,32 @@ export function AuthProvider({ children }) {
     localStorage.setItem('currentRestaurant', JSON.stringify(restaurant))
   }
 
+  const refreshUser = async () => {
+    try {
+      const { user: userData } = await authAPI.getProfile()
+      setUser(userData)
+      return userData
+    } catch (error) {
+      console.error('Refresh user error:', error)
+      logout()
+    }
+  }
+
+  const updateProfile = async (data) => {
+    await authAPI.updateProfile(data)
+    await refreshUser()
+  }
+
   const value = {
     user,
     loading,
     currentRestaurant,
     login,
+    register,
     logout,
     switchRestaurant,
+    refreshUser,
+    updateProfile,
     isAuthenticated: !!user,
     isManager: user?.role === 'manager' || user?.role === 'superadmin' || currentRestaurant?.role === 'manager',
     isSuperAdmin: user?.role === 'superadmin'

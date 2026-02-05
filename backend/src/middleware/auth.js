@@ -1,6 +1,14 @@
-import { auth, db } from '../config/firebase.js'
+import jwt from 'jsonwebtoken'
+import { db } from '../config/firebase.js'
 
-// Verify Firebase ID Token
+const JWT_SECRET = process.env.JWT_SECRET || 'shiftclose-secret-key-change-in-production'
+
+// Generate JWT Token
+export const generateToken = (userId) => {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
+}
+
+// Verify JWT Token Middleware
 export const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization
@@ -10,24 +18,28 @@ export const verifyToken = async (req, res, next) => {
     }
 
     const token = authHeader.split('Bearer ')[1]
-    const decodedToken = await auth.verifyIdToken(token)
+
+    // Verify JWT
+    const decoded = jwt.verify(token, JWT_SECRET)
 
     // Get user data from Firestore
-    const userDoc = await db.collection('users').doc(decodedToken.uid).get()
+    const userDoc = await db.collection('users').doc(decoded.userId).get()
 
     if (!userDoc.exists) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' })
     }
 
     req.user = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
+      id: userDoc.id,
       ...userDoc.data()
     }
 
     next()
   } catch (error) {
-    console.error('Auth error:', error)
+    console.error('Auth error:', error.message)
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expiré' })
+    }
     return res.status(401).json({ error: 'Token invalide' })
   }
 }

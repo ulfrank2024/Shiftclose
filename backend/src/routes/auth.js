@@ -1,20 +1,24 @@
 import { Router } from 'express'
 import { verifyToken, requireRole } from '../middleware/auth.js'
 import {
+  register,
+  login,
   getProfile,
   updateProfile,
-  createUser,
+  changePassword,
   getAllUsers
 } from '../controllers/authController.js'
 
 const router = Router()
 
-// Public route - create user after Firebase signup
-router.post('/users', createUser)
+// Public routes
+router.post('/register', register)
+router.post('/login', login)
 
 // Protected routes
 router.get('/profile', verifyToken, getProfile)
 router.put('/profile', verifyToken, updateProfile)
+router.put('/password', verifyToken, changePassword)
 
 // Super Admin routes
 router.get('/users', verifyToken, requireRole('superadmin'), getAllUsers)
