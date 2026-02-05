@@ -76,8 +76,8 @@ export default function AcceptInvite() {
     setSubmitting(true)
 
     try {
-      // Create account
-      await authAPI.register({
+      // Create employee account (no restaurant)
+      await authAPI.registerEmployee({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,

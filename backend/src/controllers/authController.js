@@ -2,8 +2,113 @@ import bcrypt from 'bcryptjs'
 import { supabase } from '../config/supabase.js'
 import { generateToken } from '../middleware/auth.js'
 
-// Register new user
+// Register new manager with restaurant
 export const register = async (req, res) => {
+  try {
+    const { email, password, firstName, lastName, restaurantName, restaurantAddress } = req.body
+
+    // Validate input
+    if (!email || !password || !firstName || !lastName || !restaurantName) {
+      return res.status(400).json({ error: 'Tous les champs obligatoires sont requis' })
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' })
+    }
+
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single()
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé' })
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
+
+    // Create user as manager
+    const { data: newUser, error: userError } = await supabase
+      .from('users')
+      .insert({
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'manager'
+      })
+      .select()
+      .single()
+
+    if (userError) {
+      console.error('Create user error:', userError)
+      return res.status(500).json({ error: 'Erreur lors de la création du compte' })
+    }
+
+    // Create restaurant
+    const { data: newRestaurant, error: restaurantError } = await supabase
+      .from('restaurants')
+      .insert({
+        name: restaurantName,
+        address: restaurantAddress || null,
+        created_by: newUser.id
+      })
+      .select()
+      .single()
+
+    if (restaurantError) {
+      console.error('Create restaurant error:', restaurantError)
+      // Rollback: delete the user
+      await supabase.from('users').delete().eq('id', newUser.id)
+      return res.status(500).json({ error: 'Erreur lors de la création du restaurant' })
+    }
+
+    // Link user to restaurant as manager
+    const { error: linkError } = await supabase
+      .from('user_restaurants')
+      .insert({
+        user_id: newUser.id,
+        restaurant_id: newRestaurant.id,
+        role: 'manager'
+      })
+
+    if (linkError) {
+      console.error('Link user to restaurant error:', linkError)
+    }
+
+    // Generate JWT token
+    const token = generateToken(newUser.id)
+
+    // Return user data (without password)
+    const { password: _, ...userWithoutPassword } = newUser
+
+    res.status(201).json({
+      success: true,
+      message: 'Inscription réussie',
+      token,
+      user: {
+        ...userWithoutPassword,
+        firstName: newUser.first_name,
+        lastName: newUser.last_name,
+        restaurants: [{
+          id: newRestaurant.id,
+          name: newRestaurant.name,
+          role: 'manager'
+        }]
+      }
+    })
+  } catch (error) {
+    console.error('Register error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Register employee (via invitation - no restaurant)
+export const registerEmployee = async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body
 
@@ -31,7 +136,7 @@ export const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(password, salt)
 
-    // Create user
+    // Create user as server (employee)
     const { data: newUser, error } = await supabase
       .from('users')
       .insert({
@@ -67,7 +172,7 @@ export const register = async (req, res) => {
       }
     })
   } catch (error) {
-    console.error('Register error:', error)
+    console.error('Register employee error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { verifyToken, requireRole } from '../middleware/auth.js'
 import {
   register,
+  registerEmployee,
   login,
   getProfile,
   updateProfile,
@@ -13,6 +14,7 @@ const router = Router()
 
 // Public routes
 router.post('/register', register)
+router.post('/register-employee', registerEmployee)
 router.post('/login', login)
 
 // Protected routes

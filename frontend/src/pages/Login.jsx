@@ -132,12 +132,18 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="mt-8 text-center text-slate-400">
-            {t('auth.noAccount')}{' '}
-            <Link to="/register" className="text-blue-400 hover:text-blue-300 font-medium">
-              {t('auth.register')}
-            </Link>
-          </p>
+          {/* Register link - only for managers creating new restaurants */}
+          <div className="mt-8 text-center">
+            <p className="text-slate-400 text-sm mb-2">
+              {t('auth.managerRegister')}{' '}
+              <Link to="/register" className="text-blue-400 hover:text-blue-300 font-medium">
+                {t('auth.createRestaurant')}
+              </Link>
+            </p>
+            <p className="text-slate-500 text-xs">
+              {t('auth.employeeNote')}
+            </p>
+          </div>
 
         </div>
       </div>

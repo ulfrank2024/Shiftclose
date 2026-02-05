@@ -39,7 +39,10 @@
     "loginError": "Invalid credentials",
     "registerSuccess": "Registration successful!",
     "welcomeBack": "Welcome back!",
-    "enterCredentials": "Enter your credentials to continue"
+    "enterCredentials": "Enter your credentials to continue",
+    "managerRegister": "Are you a manager?",
+    "createRestaurant": "Create your restaurant",
+    "employeeNote": "Employees: you must be invited by your manager to join."
   },
   "roles": {
     "server": "Server",
@@ -182,6 +185,13 @@
     "dangerZone": "Danger Zone",
     "deleteAccount": "Delete account",
     "deleteAccountWarning": "This action is irreversible. All your data will be deleted."
+  },
+  "register": {
+    "restaurantStep": "Your restaurant",
+    "restaurantDesc": "Start with your establishment information",
+    "personalStep": "Your information",
+    "personalDesc": "Create your manager account",
+    "createRestaurant": "Create my restaurant"
   },
   "restaurants": {
     "title": "Restaurants",

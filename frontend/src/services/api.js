@@ -34,6 +34,12 @@ export const authAPI = {
       body: JSON.stringify(userData)
     }),
 
+  registerEmployee: (userData) =>
+    fetchWithAuth('/auth/register-employee', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    }),
+
   login: (credentials) =>
     fetchWithAuth('/auth/login', {
       method: 'POST',

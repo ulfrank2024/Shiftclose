@@ -39,7 +39,10 @@
     "loginError": "Identifiants incorrects",
     "registerSuccess": "Inscription réussie !",
     "welcomeBack": "Bon retour !",
-    "enterCredentials": "Entrez vos identifiants pour continuer"
+    "enterCredentials": "Entrez vos identifiants pour continuer",
+    "managerRegister": "Vous êtes manager ?",
+    "createRestaurant": "Créer votre restaurant",
+    "employeeNote": "Employés : vous devez être invité par votre manager pour rejoindre."
   },
   "roles": {
     "server": "Serveur",
@@ -182,6 +185,13 @@
     "dangerZone": "Zone de danger",
     "deleteAccount": "Supprimer le compte",
     "deleteAccountWarning": "Cette action est irréversible. Toutes vos données seront supprimées."
+  },
+  "register": {
+    "restaurantStep": "Votre restaurant",
+    "restaurantDesc": "Commencez par les informations de votre établissement",
+    "personalStep": "Vos informations",
+    "personalDesc": "Créez votre compte manager",
+    "createRestaurant": "Créer mon restaurant"
   },
   "restaurants": {
     "title": "Restaurants",
