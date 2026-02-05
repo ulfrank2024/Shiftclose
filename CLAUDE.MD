@@ -66,9 +66,29 @@
 
 ```
 ShiftClose/
+├── backend/                    # API Node.js/Express
+│   ├── src/
+│   │   ├── config/
+│   │   │   ├── firebase.js     # Firebase Admin SDK
+│   │   │   └── email.js        # Nodemailer config
+│   │   ├── controllers/
+│   │   │   ├── authController.js
+│   │   │   ├── restaurantController.js
+│   │   │   ├── reportController.js
+│   │   │   └── inviteController.js
+│   │   ├── middleware/
+│   │   │   └── auth.js         # JWT verification
+│   │   ├── routes/
+│   │   │   ├── auth.js
+│   │   │   ├── restaurants.js
+│   │   │   ├── reports.js
+│   │   │   └── invitations.js
+│   │   └── index.js            # Entry point
+│   ├── .env.example
+│   └── package.json
 ├── public/
 │   └── favicon.svg
-├── src/
+├── src/                        # Frontend React
 │   ├── components/
 │   │   ├── Layout.jsx
 │   │   ├── Navbar.jsx
@@ -135,9 +155,42 @@ ShiftClose/
 5. **Déploiement**
    - Code poussé sur GitHub : https://github.com/ulfrank2024/Shiftclose
 
+---
+
+### 2026-02-04 - Version 1.1.0 (Backend API)
+
+**Création du backend Node.js/Express :**
+
+1. **Configuration serveur**
+   - Express.js avec middleware (cors, helmet, morgan)
+   - Firebase Admin SDK pour Firestore et Auth
+   - Nodemailer pour les emails
+
+2. **Routes API créées**
+   - `POST /api/auth/users` - Création utilisateur
+   - `GET /api/auth/profile` - Profil utilisateur
+   - `PUT /api/auth/profile` - Mise à jour profil
+   - `GET /api/restaurants/my` - Mes restaurants
+   - `POST /api/restaurants` - Créer restaurant
+   - `GET /api/restaurants/:id` - Détails restaurant
+   - `PUT /api/restaurants/:id` - Modifier restaurant
+   - `GET /api/restaurants/:id/team` - Équipe
+   - `POST /api/reports/:restaurantId` - Créer rapport
+   - `GET /api/reports/:restaurantId` - Liste rapports
+   - `PUT /api/reports/:id/validate` - Valider rapport
+   - `POST /api/invitations/:restaurantId` - Envoyer invitation
+   - `POST /api/invitations/accept/:token` - Accepter invitation
+
+3. **Middleware sécurité**
+   - Vérification token Firebase
+   - Contrôle des rôles (server, manager, superadmin)
+   - Accès multi-restaurant
+
+4. **Templates email**
+   - Invitation à rejoindre un restaurant
+   - Notification de validation de rapport
+
 **Prochaines étapes :**
-- Intégration Firebase Auth
-- Intégration Firestore
-- Backend Node.js/Express
-- Notifications email (Nodemailer)
-- Déploiement Vercel/Render
+- Intégration Firebase côté frontend
+- Connexion frontend ↔ backend
+- Déploiement Vercel (frontend) + Render (backend)
