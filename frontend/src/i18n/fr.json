@@ -42,7 +42,20 @@
     "enterCredentials": "Entrez vos identifiants pour continuer",
     "managerRegister": "Vous êtes manager ?",
     "createRestaurant": "Créer votre restaurant",
-    "employeeNote": "Employés : vous devez être invité par votre manager pour rejoindre."
+    "employeeNote": "Employés : vous devez être invité par votre manager pour rejoindre.",
+    "backToLogin": "Retour à la connexion",
+    "forgotPasswordDesc": "Entrez votre email et nous vous enverrons un lien de réinitialisation",
+    "sendResetLink": "Envoyer le lien",
+    "emailSent": "Email envoyé !",
+    "checkYourEmail": "Vérifiez votre boîte de réception. Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.",
+    "forgotPasswordError": "Une erreur est survenue. Veuillez réessayer.",
+    "newPassword": "Nouveau mot de passe",
+    "enterNewPassword": "Entrez votre nouveau mot de passe",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+    "passwordReset": "Mot de passe réinitialisé !",
+    "redirectingToLogin": "Vous allez être redirigé vers la page de connexion...",
+    "resetPasswordError": "Lien invalide ou expiré. Veuillez recommencer."
   },
   "roles": {
     "server": "Serveur",

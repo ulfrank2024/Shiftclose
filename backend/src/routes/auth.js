@@ -7,7 +7,9 @@ import {
   getProfile,
   updateProfile,
   changePassword,
-  getAllUsers
+  getAllUsers,
+  forgotPassword,
+  resetPassword
 } from '../controllers/authController.js'
 
 const router = Router()
@@ -16,6 +18,8 @@ const router = Router()
 router.post('/register', register)
 router.post('/register-employee', registerEmployee)
 router.post('/login', login)
+router.post('/forgot-password', forgotPassword)
+router.post('/reset-password', resetPassword)
 
 // Protected routes
 router.get('/profile', verifyToken, getProfile)

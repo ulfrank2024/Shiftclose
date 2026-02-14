@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { supabase } from '../config/supabase.js'
 import { generateToken } from '../middleware/auth.js'
+import { sendEmail } from '../services/emailService.js'
 
 // Register new manager with restaurant
 export const register = async (req, res) => {
@@ -387,6 +389,152 @@ export const getAllUsers = async (req, res) => {
     res.json({ success: true, users: formattedUsers })
   } catch (error) {
     console.error('Get all users error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Forgot password - send reset email
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' })
+    }
+
+    // Find user by email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, first_name')
+      .eq('email', email.toLowerCase())
+      .single()
+
+    // Always return success to prevent email enumeration
+    if (error || !user) {
+      return res.json({
+        success: true,
+        message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation'
+      })
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    const resetTokenExpiry = new Date(Date.now() + 3600000) // 1 hour
+
+    // Save reset token to database
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        reset_token: resetToken,
+        reset_token_expiry: resetTokenExpiry.toISOString()
+      })
+      .eq('id', user.id)
+
+    if (updateError) {
+      console.error('Update reset token error:', updateError)
+      return res.status(500).json({ error: 'Erreur serveur' })
+    }
+
+    // Send reset email
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
+
+    await sendEmail({
+      to: user.email,
+      subject: 'ShiftClose - Réinitialisation de mot de passe',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0;">ShiftClose</h1>
+          </div>
+          <div style="padding: 30px; background: #f8fafc;">
+            <h2 style="color: #1e293b;">Bonjour ${user.first_name},</h2>
+            <p style="color: #475569; line-height: 1.6;">
+              Vous avez demandé la réinitialisation de votre mot de passe ShiftClose.
+            </p>
+            <p style="color: #475569; line-height: 1.6;">
+              Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                Réinitialiser mon mot de passe
+              </a>
+            </div>
+            <p style="color: #64748b; font-size: 14px;">
+              Ce lien expire dans 1 heure. Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
+            </p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+            <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+              © ${new Date().getFullYear()} ShiftClose. Tous droits réservés.
+            </p>
+          </div>
+        </div>
+      `
+    })
+
+    res.json({
+      success: true,
+      message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation'
+    })
+  } catch (error) {
+    console.error('Forgot password error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Reset password with token
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body
+
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token et mot de passe requis' })
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' })
+    }
+
+    // Find user with valid reset token
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, reset_token, reset_token_expiry')
+      .eq('reset_token', token)
+      .single()
+
+    if (error || !user) {
+      return res.status(400).json({ error: 'Lien de réinitialisation invalide ou expiré' })
+    }
+
+    // Check if token is expired
+    if (new Date(user.reset_token_expiry) < new Date()) {
+      return res.status(400).json({ error: 'Ce lien de réinitialisation a expiré' })
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
+
+    // Update password and clear reset token
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        password: hashedPassword,
+        reset_token: null,
+        reset_token_expiry: null
+      })
+      .eq('id', user.id)
+
+    if (updateError) {
+      console.error('Reset password error:', updateError)
+      return res.status(500).json({ error: 'Erreur lors de la réinitialisation' })
+    }
+
+    res.json({
+      success: true,
+      message: 'Mot de passe réinitialisé avec succès'
+    })
+  } catch (error) {
+    console.error('Reset password error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }
