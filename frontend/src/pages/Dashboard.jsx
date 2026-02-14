@@ -40,23 +40,53 @@ export default function Dashboard() {
   })
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-6 md:p-8">
+      <div style={{
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: '16px',
+        background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8, #4338ca)',
+        padding: '24px'
+      }}>
         {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '256px',
+          height: '256px',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '50%',
+          transform: 'translate(33%, -50%)'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: '192px',
+          height: '192px',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '50%',
+          transform: 'translate(-25%, 50%)'
+        }} />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px'
+        }} className="md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-blue-200 text-sm mb-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#bfdbfe', fontSize: '14px', marginBottom: '8px' }}>
               <Calendar size={14} />
-              <span className="capitalize">{today}</span>
+              <span style={{ textTransform: 'capitalize' }}>{today}</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
+            <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginBottom: '4px' }}>
               {t('dashboard.welcome')}, {user?.firstName} !
             </h1>
-            <p className="text-blue-200 flex items-center gap-2">
+            <p style={{ color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={16} />
               {currentRestaurant?.name || 'Votre restaurant'}
             </p>
@@ -64,7 +94,19 @@ export default function Dashboard() {
 
           <Link
             to="/cash-out"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 24px',
+              backgroundColor: 'white',
+              color: '#1d4ed8',
+              fontWeight: 600,
+              borderRadius: '12px',
+              textDecoration: 'none',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.2s'
+            }}
           >
             <Calculator size={20} />
             {t('dashboard.startCashOut')}
@@ -73,82 +115,150 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card card-hover stat-card text-green-400">
-          <div className="flex items-start justify-between">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '16px'
+      }} className="lg:grid-cols-4">
+        <div style={{
+          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+          border: '1px solid rgba(71, 85, 105, 0.5)',
+          borderRadius: '16px',
+          padding: '24px',
+          color: '#4ade80'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
-              <p className="text-slate-400 text-sm">{t('dashboard.totalSales')}</p>
-              <p className="text-2xl md:text-3xl font-bold text-white mt-2">
+              <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.totalSales')}</p>
+              <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
                 ${stats.totalSales.toFixed(2)}
               </p>
             </div>
-            <div className="icon-container icon-container-md bg-green-500/10">
-              <DollarSign className="text-green-400" size={22} />
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)'
+            }}>
+              <DollarSign style={{ color: '#4ade80' }} size={22} />
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1 text-green-400 text-sm">
+          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '4px', color: '#4ade80', fontSize: '14px' }}>
             <TrendingUp size={14} />
             <span>+12.5% vs hier</span>
           </div>
         </div>
 
-        <div className="card card-hover stat-card text-blue-400">
-          <div className="flex items-start justify-between">
+        <div style={{
+          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+          border: '1px solid rgba(71, 85, 105, 0.5)',
+          borderRadius: '16px',
+          padding: '24px',
+          color: '#60a5fa'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
-              <p className="text-slate-400 text-sm">{t('dashboard.totalTips')}</p>
-              <p className="text-2xl md:text-3xl font-bold text-white mt-2">
+              <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.totalTips')}</p>
+              <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
                 ${stats.totalTips.toFixed(2)}
               </p>
             </div>
-            <div className="icon-container icon-container-md bg-blue-500/10">
-              <TrendingUp className="text-blue-400" size={22} />
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)'
+            }}>
+              <TrendingUp style={{ color: '#60a5fa' }} size={22} />
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1 text-blue-400 text-sm">
+          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '4px', color: '#60a5fa', fontSize: '14px' }}>
             <TrendingUp size={14} />
             <span>+8.3% vs hier</span>
           </div>
         </div>
 
-        <div className="card card-hover stat-card text-amber-400">
-          <div className="flex items-start justify-between">
+        <div style={{
+          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+          border: '1px solid rgba(71, 85, 105, 0.5)',
+          borderRadius: '16px',
+          padding: '24px',
+          color: '#fbbf24'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
-              <p className="text-slate-400 text-sm">{t('dashboard.pendingReports')}</p>
-              <p className="text-2xl md:text-3xl font-bold text-white mt-2">
+              <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.pendingReports')}</p>
+              <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
                 {stats.pendingReports}
               </p>
             </div>
-            <div className="icon-container icon-container-md bg-amber-500/10">
-              <Clock className="text-amber-400" size={22} />
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)'
+            }}>
+              <Clock style={{ color: '#fbbf24' }} size={22} />
             </div>
           </div>
-          <div className="mt-4">
-            <div className="progress-bar">
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
               <div
-                className="progress-bar-fill bg-amber-500"
-                style={{ width: `${(stats.pendingReports / (stats.pendingReports + stats.validatedReports)) * 100}%` }}
+                style={{
+                  height: '100%',
+                  borderRadius: '9999px',
+                  backgroundColor: '#f59e0b',
+                  width: `${(stats.pendingReports / (stats.pendingReports + stats.validatedReports)) * 100}%`
+                }}
               />
             </div>
           </div>
         </div>
 
-        <div className="card card-hover stat-card text-emerald-400">
-          <div className="flex items-start justify-between">
+        <div style={{
+          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+          border: '1px solid rgba(71, 85, 105, 0.5)',
+          borderRadius: '16px',
+          padding: '24px',
+          color: '#34d399'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
-              <p className="text-slate-400 text-sm">{t('dashboard.validatedReports')}</p>
-              <p className="text-2xl md:text-3xl font-bold text-white mt-2">
+              <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.validatedReports')}</p>
+              <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
                 {stats.validatedReports}
               </p>
             </div>
-            <div className="icon-container icon-container-md bg-emerald-500/10">
-              <CheckCircle className="text-emerald-400" size={22} />
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)'
+            }}>
+              <CheckCircle style={{ color: '#34d399' }} size={22} />
             </div>
           </div>
-          <div className="mt-4">
-            <div className="progress-bar">
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
               <div
-                className="progress-bar-fill bg-emerald-500"
-                style={{ width: `${(stats.validatedReports / (stats.pendingReports + stats.validatedReports)) * 100}%` }}
+                style={{
+                  height: '100%',
+                  borderRadius: '9999px',
+                  backgroundColor: '#10b981',
+                  width: `${(stats.validatedReports / (stats.pendingReports + stats.validatedReports)) * 100}%`
+                }}
               />
             </div>
           </div>
@@ -156,53 +266,117 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Actions & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: '24px'
+      }} className="lg:grid-cols-3">
         {/* Quick Actions */}
         <div className="lg:col-span-1">
-          <div className="card h-full">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Sparkles size={18} className="text-blue-400" />
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71, 85, 105, 0.5)',
+            borderRadius: '16px',
+            padding: '24px',
+            height: '100%'
+          }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'white', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={18} style={{ color: '#60a5fa' }} />
               {t('dashboard.quickActions')}
             </h2>
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <Link
                 to="/cash-out"
-                className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500/10 to-transparent rounded-xl hover:from-blue-500/20 transition-all group border border-transparent hover:border-blue-500/30"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px',
+                  background: 'linear-gradient(to right, rgba(59, 130, 246, 0.1), transparent)',
+                  borderRadius: '12px',
+                  border: '1px solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s'
+                }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="icon-container icon-container-sm bg-blue-500/20">
-                    <Calculator className="text-blue-400" size={18} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                  }}>
+                    <Calculator style={{ color: '#60a5fa' }} size={18} />
                   </div>
-                  <span className="text-white font-medium">{t('dashboard.startCashOut')}</span>
+                  <span style={{ color: 'white', fontWeight: 500 }}>{t('dashboard.startCashOut')}</span>
                 </div>
-                <ArrowRight className="text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" size={18} />
+                <ArrowRight style={{ color: '#64748b' }} size={18} />
               </Link>
 
               <Link
                 to="/reports"
-                className="flex items-center justify-between p-4 bg-gradient-to-r from-green-500/10 to-transparent rounded-xl hover:from-green-500/20 transition-all group border border-transparent hover:border-green-500/30"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px',
+                  background: 'linear-gradient(to right, rgba(16, 185, 129, 0.1), transparent)',
+                  borderRadius: '12px',
+                  border: '1px solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s'
+                }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="icon-container icon-container-sm bg-green-500/20">
-                    <FileText className="text-green-400" size={18} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)'
+                  }}>
+                    <FileText style={{ color: '#34d399' }} size={18} />
                   </div>
-                  <span className="text-white font-medium">{t('dashboard.viewReports')}</span>
+                  <span style={{ color: 'white', fontWeight: 500 }}>{t('dashboard.viewReports')}</span>
                 </div>
-                <ArrowRight className="text-slate-500 group-hover:text-green-400 group-hover:translate-x-1 transition-all" size={18} />
+                <ArrowRight style={{ color: '#64748b' }} size={18} />
               </Link>
 
               {isManager && (
                 <Link
                   to="/team"
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-500/10 to-transparent rounded-xl hover:from-purple-500/20 transition-all group border border-transparent hover:border-purple-500/30"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '16px',
+                    background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), transparent)',
+                    borderRadius: '12px',
+                    border: '1px solid transparent',
+                    textDecoration: 'none',
+                    transition: 'all 0.2s'
+                  }}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="icon-container icon-container-sm bg-purple-500/20">
-                      <Users className="text-purple-400" size={18} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(139, 92, 246, 0.2)'
+                    }}>
+                      <Users style={{ color: '#a78bfa' }} size={18} />
                     </div>
-                    <span className="text-white font-medium">{t('nav.team')}</span>
+                    <span style={{ color: 'white', fontWeight: 500 }}>{t('nav.team')}</span>
                   </div>
-                  <ArrowRight className="text-slate-500 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" size={18} />
+                  <ArrowRight style={{ color: '#64748b' }} size={18} />
                 </Link>
               )}
             </div>
@@ -211,49 +385,78 @@ export default function Dashboard() {
 
         {/* Recent Activity */}
         <div className="lg:col-span-2">
-          <div className="card h-full">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Clock size={18} className="text-slate-400" />
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71, 85, 105, 0.5)',
+            borderRadius: '16px',
+            padding: '24px',
+            height: '100%'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={18} style={{ color: '#94a3b8' }} />
                 {t('dashboard.recentActivity')}
               </h2>
-              <Link to="/reports" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1">
+              <Link to="/reports" style={{ fontSize: '14px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
                 Voir tout
                 <ArrowRight size={14} />
               </Link>
             </div>
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {recentActivity.map((activity) => (
                 <div
                   key={activity.id}
-                  className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition-colors"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '16px',
+                    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                    borderRadius: '12px',
+                    transition: 'background-color 0.2s'
+                  }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
-                      activity.color === 'green' ? 'bg-green-500/20' : 'bg-blue-500/20'
-                    }`}>
-                      <span className={`text-sm font-bold ${
-                        activity.color === 'green' ? 'text-green-400' : 'text-blue-400'
-                      }`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: activity.color === 'green' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)'
+                    }}>
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: activity.color === 'green' ? '#34d399' : '#60a5fa'
+                      }}>
                         {activity.user.charAt(0)}
                       </span>
                     </div>
                     <div>
-                      <p className="text-white font-medium">{activity.user}</p>
-                      <p className="text-sm text-slate-400">{activity.action}</p>
+                      <p style={{ color: 'white', fontWeight: 500 }}>{activity.user}</p>
+                      <p style={{ fontSize: '14px', color: '#94a3b8' }}>{activity.action}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-white font-semibold">${activity.amount.toFixed(2)}</p>
-                    <p className="text-sm text-slate-500">{activity.time}</p>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ color: 'white', fontWeight: 600 }}>${activity.amount.toFixed(2)}</p>
+                    <p style={{ fontSize: '14px', color: '#64748b' }}>{activity.time}</p>
                   </div>
                 </div>
               ))}
 
               {recentActivity.length === 0 && (
-                <div className="empty-state py-8">
-                  <Clock size={40} className="text-slate-600 mb-3" />
-                  <p className="text-slate-400">Aucune activité récente</p>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '32px',
+                  textAlign: 'center'
+                }}>
+                  <Clock size={40} style={{ color: '#475569', marginBottom: '12px' }} />
+                  <p style={{ color: '#94a3b8' }}>Aucune activité récente</p>
                 </div>
               )}
             </div>

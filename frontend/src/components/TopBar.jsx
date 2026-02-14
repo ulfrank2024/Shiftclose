@@ -24,43 +24,83 @@ export default function TopBar() {
   const isSuperAdmin = user?.role === 'superadmin'
 
   return (
-    <header className="md:hidden bg-slate-800 border-b border-slate-700 sticky top-0 z-50 safe-area-top">
-      <div className="flex items-center justify-between h-14 px-4">
+    <header className="md:hidden" style={{
+      backgroundColor: '#1e293b',
+      borderBottom: '1px solid #334155',
+      position: 'sticky',
+      top: 0,
+      zIndex: 50
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: '56px',
+        padding: '0 16px'
+      }}>
         {/* Logo */}
-        <Link to={isSuperAdmin ? '/admin' : '/dashboard'} className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-            isSuperAdmin ? 'bg-amber-500' : 'bg-blue-500'
-          }`}>
+        <Link to={isSuperAdmin ? '/admin' : '/dashboard'} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6'
+          }}>
             {isSuperAdmin ? (
-              <Shield className="text-white" size={18} />
+              <Shield style={{ color: 'white' }} size={18} />
             ) : (
-              <span className="text-white font-bold">S</span>
+              <span style={{ color: 'white', fontWeight: 'bold' }}>S</span>
             )}
           </div>
-          <span className="text-white font-semibold">ShiftClose</span>
+          <span style={{ color: 'white', fontWeight: 600 }}>ShiftClose</span>
         </Link>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {/* Restaurant Selector */}
           {!isSuperAdmin && currentRestaurant && user?.restaurants?.length > 1 && (
-            <div className="relative">
+            <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowRestaurantMenu(!showRestaurantMenu)}
-                className="flex items-center gap-1 px-2 py-1.5 bg-slate-700 rounded-lg text-sm"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '6px 8px',
+                  backgroundColor: '#334155',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
               >
-                <Building2 size={14} className="text-blue-400" />
-                <span className="text-white max-w-[80px] truncate">{currentRestaurant.name}</span>
-                <ChevronDown size={14} className="text-slate-400" />
+                <Building2 size={14} style={{ color: '#60a5fa' }} />
+                <span style={{ color: 'white', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentRestaurant.name}</span>
+                <ChevronDown size={14} style={{ color: '#94a3b8' }} />
               </button>
 
               {showRestaurantMenu && (
                 <>
                   <div
-                    className="fixed inset-0 z-40"
+                    style={{ position: 'fixed', inset: 0, zIndex: 40 }}
                     onClick={() => setShowRestaurantMenu(false)}
                   />
-                  <div className="absolute top-full right-0 mt-2 w-56 bg-slate-700 rounded-xl shadow-xl border border-slate-600 py-2 z-50 animate-fade-in">
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '8px',
+                    width: '224px',
+                    backgroundColor: '#334155',
+                    borderRadius: '12px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    border: '1px solid #475569',
+                    padding: '8px 0',
+                    zIndex: 50
+                  }}>
                     {user?.restaurants?.map((restaurant) => (
                       <button
                         key={restaurant.id}
@@ -68,12 +108,18 @@ export default function TopBar() {
                           switchRestaurant(restaurant)
                           setShowRestaurantMenu(false)
                         }}
-                        className={`w-full text-left px-4 py-2.5 hover:bg-slate-600 transition-colors ${
-                          currentRestaurant.id === restaurant.id ? 'bg-slate-600' : ''
-                        }`}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '10px 16px',
+                          backgroundColor: currentRestaurant.id === restaurant.id ? '#475569' : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s'
+                        }}
                       >
-                        <div className="text-white text-sm">{restaurant.name}</div>
-                        <div className="text-slate-400 text-xs capitalize">{restaurant.role}</div>
+                        <div style={{ color: 'white', fontSize: '14px' }}>{restaurant.name}</div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'capitalize' }}>{restaurant.role}</div>
                       </button>
                     ))}
                   </div>
@@ -85,20 +131,36 @@ export default function TopBar() {
           {/* Language Toggle */}
           <button
             onClick={toggleLanguage}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+            style={{
+              padding: '8px',
+              color: '#94a3b8',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
           >
             <Globe size={18} />
           </button>
 
           {/* User Menu */}
-          <div className="relative">
+          <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                isSuperAdmin ? 'bg-amber-500' : 'bg-blue-500'
-              }`}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6',
+                border: 'none',
+                cursor: 'pointer'
+              }}
             >
-              <span className="text-white text-sm font-medium">
+              <span style={{ color: 'white', fontSize: '14px', fontWeight: 500 }}>
                 {user?.firstName?.charAt(0) || 'U'}
               </span>
             </button>
@@ -106,17 +168,37 @@ export default function TopBar() {
             {showMenu && (
               <>
                 <div
-                  className="fixed inset-0 z-40"
+                  style={{ position: 'fixed', inset: 0, zIndex: 40 }}
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute top-full right-0 mt-2 w-56 bg-slate-700 rounded-xl shadow-xl border border-slate-600 py-2 z-50 animate-fade-in">
-                  <div className="px-4 py-3 border-b border-slate-600">
-                    <div className="text-white font-medium">
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '8px',
+                  width: '224px',
+                  backgroundColor: '#334155',
+                  borderRadius: '12px',
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                  border: '1px solid #475569',
+                  padding: '8px 0',
+                  zIndex: 50
+                }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #475569' }}>
+                    <div style={{ color: 'white', fontWeight: 500 }}>
                       {user?.firstName} {user?.lastName}
                     </div>
-                    <div className="text-slate-400 text-sm truncate">{user?.email}</div>
+                    <div style={{ color: '#94a3b8', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
                     {isSuperAdmin && (
-                      <span className="inline-block mt-1 px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded">
+                      <span style={{
+                        display: 'inline-block',
+                        marginTop: '4px',
+                        padding: '2px 8px',
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        color: '#fbbf24',
+                        fontSize: '12px',
+                        borderRadius: '4px'
+                      }}>
                         Super Admin
                       </span>
                     )}
@@ -125,19 +207,37 @@ export default function TopBar() {
                   <Link
                     to="/profile"
                     onClick={() => setShowMenu(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-600 transition-colors"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '10px 16px',
+                      textDecoration: 'none',
+                      transition: 'background-color 0.2s'
+                    }}
                   >
-                    <User size={18} className="text-slate-400" />
-                    <span className="text-white">{t('nav.profile')}</span>
+                    <User size={18} style={{ color: '#94a3b8' }} />
+                    <span style={{ color: 'white' }}>{t('nav.profile')}</span>
                   </Link>
 
-                  <div className="border-t border-slate-600 mt-2 pt-2">
+                  <div style={{ borderTop: '1px solid #475569', marginTop: '8px', paddingTop: '8px' }}>
                     <button
                       onClick={() => {
                         logout()
                         setShowMenu(false)
                       }}
-                      className="flex items-center gap-3 px-4 py-2.5 w-full hover:bg-slate-600 transition-colors text-red-400"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 16px',
+                        width: '100%',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#f87171',
+                        transition: 'background-color 0.2s'
+                      }}
                     >
                       <LogOut size={18} />
                       <span>{t('auth.logout')}</span>

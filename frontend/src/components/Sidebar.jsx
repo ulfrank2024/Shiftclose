@@ -49,13 +49,24 @@ export default function Sidebar() {
   const navItems = getNavItems()
 
   return (
-    <aside className={`hidden md:flex flex-col bg-slate-800 border-r border-slate-700 transition-all duration-300 ${
-      collapsed ? 'w-24' : 'w-72'
-    }`}>
+    <aside style={{
+      display: 'none',
+      flexDirection: 'column',
+      backgroundColor: '#1e293b',
+      borderRight: '1px solid #334155',
+      transition: 'all 0.3s',
+      width: collapsed ? '96px' : '288px',
+      minHeight: '100vh'
+    }} className="md:flex">
       {/* Logo Header */}
-      <div className={`h-20 flex items-center border-b border-slate-700 ${
-        collapsed ? 'justify-center px-4' : 'justify-between px-6'
-      }`}>
+      <div style={{
+        height: '80px',
+        display: 'flex',
+        alignItems: 'center',
+        borderBottom: '1px solid #334155',
+        justifyContent: collapsed ? 'center' : 'space-between',
+        padding: collapsed ? '16px' : '0 24px'
+      }}>
         <div className={`flex items-center gap-4 ${collapsed ? 'justify-center' : ''}`}>
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
             isSuperAdmin ? 'bg-amber-500' : 'bg-blue-500'
@@ -99,8 +110,15 @@ export default function Sidebar() {
 
       {/* Restaurant Selector (for non-admin) */}
       {!isSuperAdmin && currentRestaurant && !collapsed && (
-        <div className="px-5 py-5 border-b border-slate-700">
-          <div className="flex items-center gap-4 px-4 py-4 bg-slate-700/50 rounded-xl">
+        <div style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            padding: '16px',
+            backgroundColor: 'rgba(51, 65, 85, 0.5)',
+            borderRadius: '12px'
+          }}>
             <Building2 size={20} className="text-blue-400 flex-shrink-0" />
             <div className="overflow-hidden flex-1">
               <p className="text-white text-sm font-medium truncate">{currentRestaurant.name}</p>
@@ -111,54 +129,90 @@ export default function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className={`flex-1 py-6 space-y-2 overflow-y-auto ${collapsed ? 'px-3' : 'px-5'}`}>
+      <nav style={{
+        flex: 1,
+        padding: collapsed ? '24px 12px' : '24px 20px',
+        overflowY: 'auto'
+      }}>
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             end={item.path === '/admin' || item.path === '/dashboard'}
-            className={({ isActive }) =>
-              `flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${
-                isActive
-                  ? isSuperAdmin
-                    ? 'bg-amber-500/20 text-amber-400'
-                    : 'bg-blue-500/20 text-blue-400'
-                  : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'
-              } ${collapsed ? 'justify-center px-3' : ''}`
-            }
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              padding: collapsed ? '14px 12px' : '14px 16px',
+              borderRadius: '12px',
+              transition: 'all 0.2s',
+              marginBottom: '8px',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              backgroundColor: isActive
+                ? (isSuperAdmin ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.2)')
+                : 'transparent',
+              color: isActive
+                ? (isSuperAdmin ? '#fbbf24' : '#60a5fa')
+                : '#94a3b8',
+              textDecoration: 'none'
+            })}
           >
-            <item.icon size={22} className="flex-shrink-0" />
+            <item.icon size={22} style={{ flexShrink: 0 }} />
             {!collapsed && (
-              <span className="font-medium truncate">{item.label}</span>
+              <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
             )}
           </NavLink>
         ))}
       </nav>
 
       {/* User Section */}
-      <div className={`py-5 border-t border-slate-700 ${collapsed ? 'px-3' : 'px-5'}`}>
+      <div style={{
+        padding: collapsed ? '20px 12px' : '20px',
+        borderTop: '1px solid #334155'
+      }}>
         {!collapsed ? (
-          <div className="flex items-center gap-4 px-4 py-3 mb-4 bg-slate-700/30 rounded-xl">
-            <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-              isSuperAdmin ? 'bg-amber-500' : 'bg-blue-500'
-            }`}>
-              <span className="text-white font-medium text-lg">
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            backgroundColor: 'rgba(51, 65, 85, 0.3)',
+            borderRadius: '12px'
+          }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6'
+            }}>
+              <span style={{ color: 'white', fontWeight: 500, fontSize: '18px' }}>
                 {user?.firstName?.charAt(0) || 'U'}
               </span>
             </div>
-            <div className="overflow-hidden flex-1">
-              <p className="text-white font-medium truncate">
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <p style={{ color: 'white', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-slate-400 text-xs truncate">{user?.email}</p>
+              <p style={{ color: '#94a3b8', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
             </div>
           </div>
         ) : (
-          <div className="flex justify-center mb-4">
-            <div className={`w-11 h-11 rounded-full flex items-center justify-center ${
-              isSuperAdmin ? 'bg-amber-500' : 'bg-blue-500'
-            }`}>
-              <span className="text-white font-medium text-lg">
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6'
+            }}>
+              <span style={{ color: 'white', fontWeight: 500, fontSize: '18px' }}>
                 {user?.firstName?.charAt(0) || 'U'}
               </span>
             </div>
@@ -167,12 +221,23 @@ export default function Sidebar() {
 
         <button
           onClick={logout}
-          className={`flex items-center gap-4 w-full px-4 py-3.5 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors ${
-            collapsed ? 'justify-center px-3' : ''
-          }`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            width: '100%',
+            padding: collapsed ? '14px 12px' : '14px 16px',
+            borderRadius: '12px',
+            color: '#f87171',
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            transition: 'background-color 0.2s'
+          }}
         >
           <LogOut size={22} />
-          {!collapsed && <span className="font-medium">{t('auth.logout')}</span>}
+          {!collapsed && <span style={{ fontWeight: 500 }}>{t('auth.logout')}</span>}
         </button>
       </div>
     </aside>

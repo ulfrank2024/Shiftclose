@@ -28,22 +28,43 @@ export default function BottomNav() {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 md:hidden safe-area-bottom z-50">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav className="md:hidden" style={{
+      position: 'fixed',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: '#1e293b',
+      borderTop: '1px solid #334155',
+      zIndex: 50,
+      paddingBottom: 'env(safe-area-inset-bottom, 0)'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        height: '64px',
+        padding: '0 8px'
+      }}>
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center flex-1 py-2 rounded-lg transition-colors ${
-                isActive
-                  ? 'text-blue-400 bg-blue-500/10'
-                  : 'text-slate-400 hover:text-white'
-              }`
-            }
+            style={({ isActive }) => ({
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 1,
+              padding: '8px',
+              borderRadius: '8px',
+              transition: 'all 0.2s',
+              textDecoration: 'none',
+              color: isActive ? '#60a5fa' : '#94a3b8',
+              backgroundColor: isActive ? 'rgba(59, 130, 246, 0.1)' : 'transparent'
+            })}
           >
             <item.icon size={22} />
-            <span className="text-xs mt-1 truncate max-w-[60px]">{item.label}</span>
+            <span style={{ fontSize: '12px', marginTop: '4px', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
           </NavLink>
         ))}
       </div>
