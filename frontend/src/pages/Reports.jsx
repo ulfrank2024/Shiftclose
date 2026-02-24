@@ -1,78 +1,49 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
+import { reportAPI } from '../services/api'
 import {
   FileText,
   Check,
   X,
   Clock,
   ChevronDown,
-  Filter,
   Download,
-  Eye
+  Eye,
+  Loader,
+  AlertCircle
 } from 'lucide-react'
 
 export default function Reports() {
   const { t } = useTranslation()
-  const { isManager } = useAuth()
+  const { isManager, currentRestaurant } = useAuth()
   const [filterStatus, setFilterStatus] = useState('all')
   const [selectedReport, setSelectedReport] = useState(null)
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(null)
+  const [error, setError] = useState('')
 
-  // Mock data
-  const reports = [
-    {
-      id: 1,
-      employee: 'Marie Lambert',
-      date: '2024-01-15',
-      time: '22:30',
-      totalSales: 1245.50,
-      totalTips: 187.25,
-      tipOut: 5.62,
-      netTips: 181.63,
-      difference: 0,
-      status: 'pending'
-    },
-    {
-      id: 2,
-      employee: 'Jean Dupont',
-      date: '2024-01-15',
-      time: '22:15',
-      totalSales: 987.00,
-      totalTips: 142.50,
-      tipOut: 4.28,
-      netTips: 138.22,
-      difference: -2.50,
-      status: 'validated'
-    },
-    {
-      id: 3,
-      employee: 'Sophie Martin',
-      date: '2024-01-14',
-      time: '23:00',
-      totalSales: 1560.75,
-      totalTips: 234.00,
-      tipOut: 7.02,
-      netTips: 226.98,
-      difference: 1.25,
-      status: 'validated'
-    },
-    {
-      id: 4,
-      employee: 'Pierre Tremblay',
-      date: '2024-01-14',
-      time: '22:45',
-      totalSales: 876.25,
-      totalTips: 112.00,
-      tipOut: 3.36,
-      netTips: 108.64,
-      difference: -5.00,
-      status: 'rejected'
+  useEffect(() => {
+    if (!currentRestaurant?.id) return
+    fetchReports()
+  }, [currentRestaurant?.id, filterStatus])
+
+  const fetchReports = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const filters = filterStatus !== 'all' ? { status: filterStatus } : {}
+      const res = await reportAPI.getAll(currentRestaurant.id, filters)
+      if (res.success) setReports(res.reports)
+    } catch (err) {
+      setError(err.message || 'Erreur lors du chargement.')
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
 
-  const filteredReports = filterStatus === 'all'
-    ? reports
-    : reports.filter(r => r.status === filterStatus)
+  const filteredReports = reports
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -93,14 +64,30 @@ export default function Reports() {
     )
   }
 
-  const handleValidate = (reportId) => {
-    console.log('Validating report:', reportId)
-    // TODO: Update in Firebase
+  const handleValidate = async (reportId) => {
+    setActionLoading(reportId)
+    try {
+      await reportAPI.validate(reportId, 'validated')
+      setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'validated' } : r))
+      if (selectedReport?.id === reportId) setSelectedReport(null)
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la validation.')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
-  const handleReject = (reportId) => {
-    console.log('Rejecting report:', reportId)
-    // TODO: Update in Firebase
+  const handleReject = async (reportId) => {
+    setActionLoading(reportId)
+    try {
+      await reportAPI.validate(reportId, 'rejected')
+      setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'rejected' } : r))
+      if (selectedReport?.id === reportId) setSelectedReport(null)
+    } catch (err) {
+      setError(err.message || 'Erreur lors du rejet.')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   return (
@@ -133,92 +120,106 @@ export default function Reports() {
         </div>
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          <AlertCircle size={16} /> {error}
+        </div>
+      )}
+
       {/* Reports List */}
-      {filteredReports.length === 0 ? (
+      {loading ? (
+        <div className="card text-center py-12">
+          <Loader size={36} className="mx-auto text-slate-500 mb-3 animate-spin" />
+          <p className="text-slate-400">Chargement des rapports...</p>
+        </div>
+      ) : filteredReports.length === 0 ? (
         <div className="card text-center py-12">
           <FileText size={48} className="mx-auto text-slate-500 mb-4" />
           <p className="text-slate-400">{t('reports.noReports')}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredReports.map((report) => (
-            <div
-              key={report.id}
-              className="card hover:border-slate-500 transition-colors"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                {/* Left: Employee & Date */}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-white font-medium">
-                      {report.employee.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">{report.employee}</p>
-                    <p className="text-sm text-slate-400">
-                      {report.date} à {report.time}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Center: Stats */}
-                <div className="flex flex-wrap gap-4 sm:gap-6">
-                  <div>
-                    <p className="text-xs text-slate-400">{t('cashOut.totalSales')}</p>
-                    <p className="text-white font-medium">${report.totalSales.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">{t('cashOut.netTips')}</p>
-                    <p className="text-green-400 font-medium">${report.netTips.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">{t('cashOut.difference')}</p>
-                    <p className={`font-medium ${
-                      report.difference === 0 ? 'text-green-400' :
-                      report.difference > 0 ? 'text-blue-400' : 'text-red-400'
-                    }`}>
-                      {report.difference === 0 ? '✓' :
-                       report.difference > 0 ? `+$${report.difference.toFixed(2)}` :
-                       `-$${Math.abs(report.difference).toFixed(2)}`}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right: Status & Actions */}
-                <div className="flex items-center gap-3">
-                  {getStatusBadge(report.status)}
-
-                  {isManager && report.status === 'pending' && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleValidate(report.id)}
-                        className="p-2 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors"
-                        title={t('reports.validate')}
-                      >
-                        <Check size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleReject(report.id)}
-                        className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
-                        title={t('reports.reject')}
-                      >
-                        <X size={18} />
-                      </button>
+          {filteredReports.map((report) => {
+            const empName = report.employeeName || '?'
+            const initials = empName.split(' ').map(n => n[0]).join('').slice(0, 2)
+            const date = new Date(report.createdAt).toLocaleDateString('fr-CA')
+            const time = new Date(report.createdAt).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })
+            const isActing = actionLoading === report.id
+            return (
+              <div key={report.id} className="card hover:border-slate-500 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  {/* Left: Employee & Date */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center shrink-0">
+                      <span className="text-white font-medium">{initials}</span>
                     </div>
-                  )}
+                    <div>
+                      <p className="text-white font-medium">{empName}</p>
+                      <p className="text-sm text-slate-400">{date} à {time}</p>
+                    </div>
+                  </div>
 
-                  <button
-                    onClick={() => setSelectedReport(report)}
-                    className="p-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
-                    title={t('reports.details')}
-                  >
-                    <Eye size={18} />
-                  </button>
+                  {/* Center: Stats */}
+                  <div className="flex flex-wrap gap-4 sm:gap-6">
+                    <div>
+                      <p className="text-xs text-slate-400">{t('cashOut.totalSales')}</p>
+                      <p className="text-white font-medium">${report.totalSales.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">{t('cashOut.netTips')}</p>
+                      <p className="text-green-400 font-medium">${report.netTips.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">{t('cashOut.difference')}</p>
+                      <p className={`font-medium ${
+                        report.difference === 0 ? 'text-green-400' :
+                        report.difference > 0 ? 'text-blue-400' : 'text-red-400'
+                      }`}>
+                        {report.difference === 0 ? '✓' :
+                         report.difference > 0 ? `+$${report.difference.toFixed(2)}` :
+                         `-$${Math.abs(report.difference).toFixed(2)}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right: Status & Actions */}
+                  <div className="flex items-center gap-3">
+                    {getStatusBadge(report.status)}
+
+                    {isManager && report.status === 'pending' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleValidate(report.id)}
+                          disabled={isActing}
+                          className="p-2 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors"
+                          title={t('reports.validate')}
+                        >
+                          {isActing ? <Loader size={18} className="animate-spin" /> : <Check size={18} />}
+                        </button>
+                        <button
+                          onClick={() => handleReject(report.id)}
+                          disabled={isActing}
+                          className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                          title={t('reports.reject')}
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => setSelectedReport(report)}
+                      className="p-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
+                      title={t('reports.details')}
+                    >
+                      <Eye size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -242,12 +243,14 @@ export default function Reports() {
               <div className="flex items-center gap-4 pb-4 border-b border-slate-700">
                 <div className="w-14 h-14 bg-slate-600 rounded-full flex items-center justify-center">
                   <span className="text-white font-medium text-lg">
-                    {selectedReport.employee.split(' ').map(n => n[0]).join('')}
+                    {(selectedReport.employeeName || '?').split(' ').map(n => n[0]).join('').slice(0, 2)}
                   </span>
                 </div>
                 <div>
-                  <p className="text-white font-medium text-lg">{selectedReport.employee}</p>
-                  <p className="text-slate-400">{selectedReport.date} à {selectedReport.time}</p>
+                  <p className="text-white font-medium text-lg">{selectedReport.employeeName}</p>
+                  <p className="text-slate-400">
+                    {new Date(selectedReport.createdAt).toLocaleDateString('fr-CA')} à {new Date(selectedReport.createdAt).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
                 </div>
               </div>
 
@@ -262,7 +265,7 @@ export default function Reports() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">{t('cashOut.tipOutAmount')}</span>
-                  <span className="text-amber-400">-${selectedReport.tipOut.toFixed(2)}</span>
+                  <span className="text-amber-400">-${selectedReport.tipOutAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-slate-700">
                   <span className="text-white font-medium">{t('cashOut.netTips')}</span>
@@ -279,6 +282,12 @@ export default function Reports() {
                      `-$${Math.abs(selectedReport.difference).toFixed(2)}`}
                   </span>
                 </div>
+                {selectedReport.validatedByName && (
+                  <div className="flex justify-between pt-3 border-t border-slate-700">
+                    <span className="text-slate-400">Validé par</span>
+                    <span className="text-slate-300">{selectedReport.validatedByName}</span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4">
@@ -289,23 +298,21 @@ export default function Reports() {
             {isManager && selectedReport.status === 'pending' && (
               <div className="p-6 border-t border-slate-700 flex gap-3">
                 <button
-                  onClick={() => {
-                    handleReject(selectedReport.id)
-                    setSelectedReport(null)
-                  }}
+                  onClick={() => handleReject(selectedReport.id)}
+                  disabled={actionLoading === selectedReport.id}
                   className="btn btn-secondary flex-1 text-red-400 border-red-500/30 hover:bg-red-500/10"
                 >
                   <X size={18} />
                   {t('reports.reject')}
                 </button>
                 <button
-                  onClick={() => {
-                    handleValidate(selectedReport.id)
-                    setSelectedReport(null)
-                  }}
+                  onClick={() => handleValidate(selectedReport.id)}
+                  disabled={actionLoading === selectedReport.id}
                   className="btn btn-success flex-1"
                 >
-                  <Check size={18} />
+                  {actionLoading === selectedReport.id
+                    ? <Loader size={18} className="animate-spin" />
+                    : <Check size={18} />}
                   {t('reports.validate')}
                 </button>
               </div>

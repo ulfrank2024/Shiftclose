@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { reportAPI } from '../services/api'
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,13 +10,17 @@ import {
   CreditCard,
   Wallet,
   Check,
-  AlertCircle
+  AlertCircle,
+  Loader
 } from 'lucide-react'
 
 export default function CashOut() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { currentRestaurant } = useAuth()
   const [step, setStep] = useState(1)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
   const totalSteps = 4
 
   // Form state
@@ -53,18 +59,29 @@ export default function CashOut() {
   const cashInHand = parseFloat(formData.cashInHand) || 0
   const difference = cashInHand - expectedCash
 
-  const handleSubmit = () => {
-    // TODO: Submit to Firebase
-    console.log('Submitting report:', {
-      ...formData,
-      totalSales,
-      totalTips,
-      tipOutAmount,
-      netTips,
-      expectedCash,
-      difference
-    })
-    navigate('/reports')
+  const handleSubmit = async () => {
+    if (!currentRestaurant?.id) {
+      setError('Aucun restaurant sélectionné.')
+      return
+    }
+    setSubmitting(true)
+    setError('')
+    try {
+      await reportAPI.create(currentRestaurant.id, {
+        cashSales: parseFloat(formData.cashSales) || 0,
+        cardSales: parseFloat(formData.cardSales) || 0,
+        otherSales: parseFloat(formData.otherSales) || 0,
+        cashTips: parseFloat(formData.cashTips) || 0,
+        cardTips: parseFloat(formData.cardTips) || 0,
+        tipOutPercent: formData.tipOutPercent,
+        cashInHand: parseFloat(formData.cashInHand) || 0
+      })
+      navigate('/reports')
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la soumission.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const renderStep = () => {
@@ -358,11 +375,20 @@ export default function CashOut() {
         {renderStep()}
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-2 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
       {/* Navigation */}
       <div className="flex gap-3 mt-6">
         {step > 1 && (
           <button
             onClick={() => setStep(step - 1)}
+            disabled={submitting}
             className="btn btn-secondary flex-1"
           >
             <ChevronLeft size={20} />
@@ -381,10 +407,11 @@ export default function CashOut() {
         ) : (
           <button
             onClick={handleSubmit}
+            disabled={submitting}
             className="btn btn-success flex-1"
           >
-            <Check size={20} />
-            {t('cashOut.submitReport')}
+            {submitting ? <Loader size={20} className="animate-spin" /> : <Check size={20} />}
+            {submitting ? 'Envoi...' : t('cashOut.submitReport')}
           </button>
         )}
       </div>

@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
+import { reportAPI } from '../services/api'
 import {
   DollarSign,
   TrendingUp,
@@ -11,26 +13,57 @@ import {
   ArrowRight,
   Users,
   Sparkles,
-  Calendar
+  Calendar,
+  RefreshCw
 } from 'lucide-react'
 
 export default function Dashboard() {
   const { t } = useTranslation()
   const { user, currentRestaurant, isManager } = useAuth()
 
-  // Mock data - will be replaced by API
-  const stats = {
-    totalSales: 2450.75,
-    totalTips: 387.50,
-    pendingReports: 3,
-    validatedReports: 12
-  }
+  const [stats, setStats] = useState({
+    totalSales: 0,
+    totalTips: 0,
+    pendingReports: 0,
+    validatedReports: 0,
+    totalReports: 0
+  })
+  const [recentActivity, setRecentActivity] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const recentActivity = [
-    { id: 1, user: 'Marie L.', action: 'Cash Out soumis', amount: 324.50, time: '14:30', color: 'blue' },
-    { id: 2, user: 'Jean P.', action: 'Rapport validé', amount: 512.00, time: '13:45', color: 'green' },
-    { id: 3, user: 'Sophie M.', action: 'Cash Out soumis', amount: 287.25, time: '12:20', color: 'blue' }
-  ]
+  useEffect(() => {
+    if (!currentRestaurant?.id) return
+
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const [statsRes, reportsRes] = await Promise.all([
+          reportAPI.getStats(currentRestaurant.id),
+          reportAPI.getAll(currentRestaurant.id)
+        ])
+
+        if (statsRes.success) setStats(statsRes.stats)
+
+        if (reportsRes.success) {
+          const activity = reportsRes.reports.slice(0, 5).map(r => ({
+            id: r.id,
+            user: r.employeeName,
+            action: r.status === 'validated' ? 'Rapport validé' : 'Cash Out soumis',
+            amount: r.totalSales,
+            time: new Date(r.createdAt).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' }),
+            color: r.status === 'validated' ? 'green' : 'blue'
+          }))
+          setRecentActivity(activity)
+        }
+      } catch (err) {
+        console.error('Dashboard fetch error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [currentRestaurant?.id])
 
   const today = new Date().toLocaleDateString('fr-CA', {
     weekday: 'long',
@@ -131,7 +164,7 @@ export default function Dashboard() {
             <div>
               <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.totalSales')}</p>
               <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
-                ${stats.totalSales.toFixed(2)}
+                {loading ? '...' : `$${stats.totalSales.toFixed(2)}`}
               </p>
             </div>
             <div style={{
@@ -148,7 +181,7 @@ export default function Dashboard() {
           </div>
           <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '4px', color: '#4ade80', fontSize: '14px' }}>
             <TrendingUp size={14} />
-            <span>+12.5% vs hier</span>
+            <span>{t('dashboard.today')}</span>
           </div>
         </div>
 
@@ -163,7 +196,7 @@ export default function Dashboard() {
             <div>
               <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.totalTips')}</p>
               <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
-                ${stats.totalTips.toFixed(2)}
+                {loading ? '...' : `$${stats.totalTips.toFixed(2)}`}
               </p>
             </div>
             <div style={{
@@ -180,7 +213,7 @@ export default function Dashboard() {
           </div>
           <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '4px', color: '#60a5fa', fontSize: '14px' }}>
             <TrendingUp size={14} />
-            <span>+8.3% vs hier</span>
+            <span>{t('dashboard.today')}</span>
           </div>
         </div>
 
@@ -195,7 +228,7 @@ export default function Dashboard() {
             <div>
               <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.pendingReports')}</p>
               <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
-                {stats.pendingReports}
+                {loading ? '...' : stats.pendingReports}
               </p>
             </div>
             <div style={{
@@ -217,7 +250,7 @@ export default function Dashboard() {
                   height: '100%',
                   borderRadius: '9999px',
                   backgroundColor: '#f59e0b',
-                  width: `${(stats.pendingReports / (stats.pendingReports + stats.validatedReports)) * 100}%`
+                  width: `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`
                 }}
               />
             </div>
@@ -235,7 +268,7 @@ export default function Dashboard() {
             <div>
               <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.validatedReports')}</p>
               <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
-                {stats.validatedReports}
+                {loading ? '...' : stats.validatedReports}
               </p>
             </div>
             <div style={{
@@ -257,7 +290,7 @@ export default function Dashboard() {
                   height: '100%',
                   borderRadius: '9999px',
                   backgroundColor: '#10b981',
-                  width: `${(stats.validatedReports / (stats.pendingReports + stats.validatedReports)) * 100}%`
+                  width: `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`
                 }}
               />
             </div>
@@ -403,7 +436,13 @@ export default function Dashboard() {
               </Link>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {recentActivity.map((activity) => (
+              {loading && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', gap: '10px', color: '#94a3b8' }}>
+                  <RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  Chargement...
+                </div>
+              )}
+              {!loading && recentActivity.map((activity) => (
                 <div
                   key={activity.id}
                   style={{
@@ -446,7 +485,7 @@ export default function Dashboard() {
                 </div>
               ))}
 
-              {recentActivity.length === 0 && (
+              {!loading && recentActivity.length === 0 && (
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
