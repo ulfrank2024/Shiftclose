@@ -88,71 +88,71 @@ export default function CashOut() {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-6 animate-fade-in">
-            <div className="text-center mb-6">
-              <div className="inline-flex p-3 bg-green-500/10 rounded-xl mb-3">
-                <DollarSign className="text-green-400" size={32} />
+          <div className="space-y-8 animate-fade-in">
+            <div className="text-center">
+              <div className="inline-flex p-4 bg-green-500/10 rounded-2xl mb-4">
+                <DollarSign className="text-green-400" size={36} />
               </div>
-              <h2 className="text-xl font-semibold text-white">{t('cashOut.sales')}</h2>
-              <p className="text-slate-400 text-sm mt-1">Entrez vos ventes du shift</p>
+              <h2 className="text-xl font-semibold text-white mb-2">{t('cashOut.sales')}</h2>
+              <p className="text-slate-400 text-sm">Entrez vos ventes du shift</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.cashSales')}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                   <input
                     type="number"
                     value={formData.cashSales}
                     onChange={(e) => handleChange('cashSales', e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 rounded-lg text-white text-lg"
+                    className="w-full pl-9 pr-4 py-3.5 rounded-xl text-white text-lg"
                     step="0.01"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.cardSales')}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                   <input
                     type="number"
                     value={formData.cardSales}
                     onChange={(e) => handleChange('cardSales', e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 rounded-lg text-white text-lg"
+                    className="w-full pl-9 pr-4 py-3.5 rounded-xl text-white text-lg"
                     step="0.01"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.otherSales')}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                   <input
                     type="number"
                     value={formData.otherSales}
                     onChange={(e) => handleChange('otherSales', e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 rounded-lg text-white text-lg"
+                    className="w-full pl-9 pr-4 py-3.5 rounded-xl text-white text-lg"
                     step="0.01"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-700">
+              <div className="pt-5 border-t border-slate-700/60">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-300 font-medium">{t('cashOut.totalSales')}</span>
-                  <span className="text-2xl font-bold text-green-400">${totalSales.toFixed(2)}</span>
+                  <span className="text-slate-300 font-medium text-base">{t('cashOut.totalSales')}</span>
+                  <span className="text-3xl font-bold text-green-400">${totalSales.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -161,54 +161,54 @@ export default function CashOut() {
 
       case 2:
         return (
-          <div className="space-y-6 animate-fade-in">
-            <div className="text-center mb-6">
-              <div className="inline-flex p-3 bg-blue-500/10 rounded-xl mb-3">
-                <CreditCard className="text-blue-400" size={32} />
+          <div className="space-y-8 animate-fade-in">
+            <div className="text-center">
+              <div className="inline-flex p-4 bg-blue-500/10 rounded-2xl mb-4">
+                <CreditCard className="text-blue-400" size={36} />
               </div>
-              <h2 className="text-xl font-semibold text-white">{t('cashOut.tips')}</h2>
-              <p className="text-slate-400 text-sm mt-1">Entrez vos pourboires reçus</p>
+              <h2 className="text-xl font-semibold text-white mb-2">{t('cashOut.tips')}</h2>
+              <p className="text-slate-400 text-sm">Entrez vos pourboires reçus</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.cashTips')}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                   <input
                     type="number"
                     value={formData.cashTips}
                     onChange={(e) => handleChange('cashTips', e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 rounded-lg text-white text-lg"
+                    className="w-full pl-9 pr-4 py-3.5 rounded-xl text-white text-lg"
                     step="0.01"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.cardTips')}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                   <input
                     type="number"
                     value={formData.cardTips}
                     onChange={(e) => handleChange('cardTips', e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 rounded-lg text-white text-lg"
+                    className="w-full pl-9 pr-4 py-3.5 rounded-xl text-white text-lg"
                     step="0.01"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-700">
+              <div className="pt-5 border-t border-slate-700/60">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-300 font-medium">{t('cashOut.totalTips')}</span>
-                  <span className="text-2xl font-bold text-blue-400">${totalTips.toFixed(2)}</span>
+                  <span className="text-slate-300 font-medium text-base">{t('cashOut.totalTips')}</span>
+                  <span className="text-3xl font-bold text-blue-400">${totalTips.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -217,48 +217,46 @@ export default function CashOut() {
 
       case 3:
         return (
-          <div className="space-y-6 animate-fade-in">
-            <div className="text-center mb-6">
-              <div className="inline-flex p-3 bg-amber-500/10 rounded-xl mb-3">
-                <Wallet className="text-amber-400" size={32} />
+          <div className="space-y-8 animate-fade-in">
+            <div className="text-center">
+              <div className="inline-flex p-4 bg-amber-500/10 rounded-2xl mb-4">
+                <Wallet className="text-amber-400" size={36} />
               </div>
-              <h2 className="text-xl font-semibold text-white">{t('cashOut.tipOut')}</h2>
-              <p className="text-slate-400 text-sm mt-1">Pourcentage à redistribuer</p>
+              <h2 className="text-xl font-semibold text-white mb-2">{t('cashOut.tipOut')}</h2>
+              <p className="text-slate-400 text-sm">Pourcentage à redistribuer</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-4">
                   {t('cashOut.tipOutPercent')}
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-5">
                   <input
                     type="range"
-                    min="0"
-                    max="10"
-                    step="0.5"
+                    min="0" max="10" step="0.5"
                     value={formData.tipOutPercent}
                     onChange={(e) => handleChange('tipOutPercent', parseFloat(e.target.value))}
                     className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
                   />
-                  <span className="text-2xl font-bold text-amber-400 w-16 text-right">
+                  <span className="text-3xl font-bold text-amber-400 w-20 text-right">
                     {formData.tipOutPercent}%
                   </span>
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-700/50 rounded-lg space-y-3">
-                <div className="flex justify-between">
+              <div className="p-5 bg-slate-700/40 rounded-xl border border-slate-600/40 space-y-4">
+                <div className="flex justify-between items-center">
                   <span className="text-slate-400">{t('cashOut.totalTips')}</span>
-                  <span className="text-white">${totalTips.toFixed(2)}</span>
+                  <span className="text-white font-medium">${totalTips.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-slate-400">{t('cashOut.tipOutAmount')} ({formData.tipOutPercent}%)</span>
-                  <span className="text-amber-400">-${tipOutAmount.toFixed(2)}</span>
+                  <span className="text-amber-400 font-medium">-${tipOutAmount.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between pt-3 border-t border-slate-600">
-                  <span className="text-slate-300 font-medium">{t('cashOut.netTips')}</span>
-                  <span className="text-2xl font-bold text-green-400">${netTips.toFixed(2)}</span>
+                <div className="flex justify-between items-center pt-4 border-t border-slate-600/60">
+                  <span className="text-slate-200 font-semibold">{t('cashOut.netTips')}</span>
+                  <span className="text-3xl font-bold text-green-400">${netTips.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -267,49 +265,49 @@ export default function CashOut() {
 
       case 4:
         return (
-          <div className="space-y-6 animate-fade-in">
-            <div className="text-center mb-6">
-              <div className="inline-flex p-3 bg-purple-500/10 rounded-xl mb-3">
-                <Wallet className="text-purple-400" size={32} />
+          <div className="space-y-8 animate-fade-in">
+            <div className="text-center">
+              <div className="inline-flex p-4 bg-purple-500/10 rounded-2xl mb-4">
+                <Wallet className="text-purple-400" size={36} />
               </div>
-              <h2 className="text-xl font-semibold text-white">{t('cashOut.cashInHand')}</h2>
-              <p className="text-slate-400 text-sm mt-1">Comptez vos espèces</p>
+              <h2 className="text-xl font-semibold text-white mb-2">{t('cashOut.cashInHand')}</h2>
+              <p className="text-slate-400 text-sm">Comptez vos espèces</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.cashInHand')}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                   <input
                     type="number"
                     value={formData.cashInHand}
                     onChange={(e) => handleChange('cashInHand', e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 rounded-lg text-white text-lg"
+                    className="w-full pl-9 pr-4 py-3.5 rounded-xl text-white text-lg"
                     step="0.01"
                   />
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-700/50 rounded-lg space-y-3">
-                <div className="flex justify-between">
+              <div className="p-5 bg-slate-700/40 rounded-xl border border-slate-600/40 space-y-4">
+                <div className="flex justify-between items-center">
                   <span className="text-slate-400">{t('cashOut.expectedCash')}</span>
-                  <span className="text-white">${expectedCash.toFixed(2)}</span>
+                  <span className="text-white font-medium">${expectedCash.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-slate-400">{t('cashOut.cashInHand')}</span>
-                  <span className="text-white">${cashInHand.toFixed(2)}</span>
+                  <span className="text-white font-medium">${cashInHand.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between pt-3 border-t border-slate-600">
-                  <span className="text-slate-300 font-medium">{t('cashOut.difference')}</span>
+                <div className="flex justify-between items-center pt-4 border-t border-slate-600/60">
+                  <span className="text-slate-200 font-semibold">{t('cashOut.difference')}</span>
                   <span className={`text-2xl font-bold flex items-center gap-2 ${
                     difference === 0 ? 'text-green-400' : difference > 0 ? 'text-blue-400' : 'text-red-400'
                   }`}>
                     {difference === 0 ? (
-                      <><Check size={24} /> {t('cashOut.balanced')}</>
+                      <><Check size={22} /> {t('cashOut.balanced')}</>
                     ) : difference > 0 ? (
                       <>+${difference.toFixed(2)} {t('cashOut.over')}</>
                     ) : (
@@ -320,24 +318,24 @@ export default function CashOut() {
               </div>
 
               {/* Summary */}
-              <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
-                <h3 className="text-lg font-semibold text-white mb-4">{t('cashOut.summary')}</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
+              <div className="p-5 bg-slate-800/80 rounded-xl border border-slate-700/60">
+                <h3 className="text-base font-semibold text-white mb-5">{t('cashOut.summary')}</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-400">{t('cashOut.totalSales')}</span>
-                    <span className="text-white">${totalSales.toFixed(2)}</span>
+                    <span className="text-white font-medium">${totalSales.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-400">{t('cashOut.totalTips')}</span>
-                    <span className="text-white">${totalTips.toFixed(2)}</span>
+                    <span className="text-white font-medium">${totalTips.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-400">{t('cashOut.tipOutAmount')}</span>
-                    <span className="text-amber-400">-${tipOutAmount.toFixed(2)}</span>
+                    <span className="text-amber-400 font-medium">-${tipOutAmount.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-slate-700">
-                    <span className="text-white font-medium">{t('cashOut.netTips')}</span>
-                    <span className="text-green-400 font-bold">${netTips.toFixed(2)}</span>
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-700/60">
+                    <span className="text-white font-semibold">{t('cashOut.netTips')}</span>
+                    <span className="text-green-400 font-bold text-lg">${netTips.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -353,32 +351,40 @@ export default function CashOut() {
   return (
     <div className="max-w-lg mx-auto">
       {/* Progress */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-slate-400">
             {t('cashOut.step')} {step} {t('cashOut.of')} {totalSteps}
           </span>
-          <span className="text-sm text-slate-400">
+          <span className="text-sm font-medium text-slate-300">
             {Math.round((step / totalSteps) * 100)}%
           </span>
         </div>
-        <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+        <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-500 rounded-full transition-all duration-300"
             style={{ width: `${(step / totalSteps) * 100}%` }}
           />
         </div>
+        {/* Step dots */}
+        <div className="flex justify-between mt-3 px-1">
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <div key={i} className={`w-2 h-2 rounded-full transition-colors ${
+              i < step ? 'bg-blue-500' : 'bg-slate-600'
+            }`} />
+          ))}
+        </div>
       </div>
 
       {/* Step Content */}
-      <div className="card min-h-[400px]">
+      <div className="card" style={{ minHeight: '420px', padding: '2rem' }}>
         {renderStep()}
       </div>
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-          <AlertCircle size={16} />
+        <div className="flex items-center gap-2 mt-5 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+          <AlertCircle size={16} className="shrink-0" />
           {error}
         </div>
       )}

@@ -52,60 +52,73 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
+    <div className="space-y-8 animate-fade-in max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-slate-700 rounded-lg">
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-slate-700 rounded-xl">
           <SettingsIcon size={24} className="text-blue-400" />
         </div>
-        <h1 className="text-2xl font-bold text-white">{t('settings.title')}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-white">{t('settings.title')}</h1>
+          <p className="text-slate-400 text-sm mt-0.5">Gérez vos préférences et paramètres</p>
+        </div>
       </div>
 
       {/* Language */}
       <div className="card">
-        <div className="flex items-center gap-3 mb-4">
-          <Globe size={20} className="text-blue-400" />
-          <h2 className="text-lg font-semibold text-white">{t('settings.language')}</h2>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 bg-blue-500/10 rounded-xl">
+            <Globe size={20} className="text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">{t('settings.language')}</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Choisissez votre langue préférée</p>
+          </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <button
             onClick={() => changeLanguage('fr')}
-            className={`flex-1 p-4 rounded-lg border transition-colors ${
+            className={`flex-1 p-5 rounded-xl border-2 transition-colors text-center ${
               language === 'fr'
                 ? 'bg-blue-500/10 border-blue-500 text-blue-400'
-                : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'
+                : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500'
             }`}
           >
-            <span className="text-2xl mb-2 block">🇫🇷</span>
-            <span className="font-medium">{t('settings.french')}</span>
+            <span className="text-3xl mb-3 block">🇫🇷</span>
+            <span className="font-semibold text-sm">{t('settings.french')}</span>
           </button>
           <button
             onClick={() => changeLanguage('en')}
-            className={`flex-1 p-4 rounded-lg border transition-colors ${
+            className={`flex-1 p-5 rounded-xl border-2 transition-colors text-center ${
               language === 'en'
                 ? 'bg-blue-500/10 border-blue-500 text-blue-400'
-                : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'
+                : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500'
             }`}
           >
-            <span className="text-2xl mb-2 block">🇬🇧</span>
-            <span className="font-medium">{t('settings.english')}</span>
+            <span className="text-3xl mb-3 block">🇬🇧</span>
+            <span className="font-semibold text-sm">{t('settings.english')}</span>
           </button>
         </div>
       </div>
 
       {/* Notifications */}
       <div className="card">
-        <div className="flex items-center gap-3 mb-4">
-          <Bell size={20} className="text-amber-400" />
-          <h2 className="text-lg font-semibold text-white">{t('settings.notifications')}</h2>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 bg-amber-500/10 rounded-xl">
+            <Bell size={20} className="text-amber-400" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">{t('settings.notifications')}</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Recevez des alertes en temps réel</p>
+          </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {Object.entries(notifications).map(([key, value]) => (
             <label
               key={key}
-              className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700 transition-colors"
+              className="flex items-center justify-between p-4 bg-slate-700/40 rounded-xl cursor-pointer hover:bg-slate-700/60 transition-colors border border-slate-600/30"
             >
               <span className="text-white">
                 {key === 'reportSubmitted' && 'Rapport soumis'}
@@ -135,20 +148,25 @@ export default function Settings() {
       {/* Tip Out Configuration (Manager only) */}
       {isManager && (
         <div className="card">
-          <div className="flex items-center gap-3 mb-4">
-            <Percent size={20} className="text-green-400" />
-            <h2 className="text-lg font-semibold text-white">{t('settings.tipOutConfig')}</h2>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-green-500/10 rounded-xl">
+              <Percent size={20} className="text-green-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-white">{t('settings.tipOutConfig')}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Règles de redistribution des pourboires</p>
+            </div>
           </div>
 
-          <div className="space-y-3 mb-4">
+          <div className="space-y-3 mb-6">
             {tipOutRules.map((rule) => (
               <div
                 key={rule.id}
-                className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg"
+                className="flex items-center justify-between p-4 bg-slate-700/40 rounded-xl border border-slate-600/30"
               >
                 <div>
-                  <p className="text-white font-medium">{rule.position}</p>
-                  <p className="text-sm text-slate-400">{t('settings.percentage')}</p>
+                  <p className="text-white font-semibold">{rule.position}</p>
+                  <p className="text-sm text-slate-400 mt-0.5">{t('settings.percentage')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-green-400 font-bold">{rule.percentage}%</span>
@@ -164,34 +182,33 @@ export default function Settings() {
           </div>
 
           {/* Add new rule */}
-          <div className="p-4 bg-slate-700/30 rounded-lg border border-dashed border-slate-600">
-            <p className="text-sm text-slate-400 mb-3">{t('settings.addRule')}</p>
+          <div className="p-5 bg-slate-700/20 rounded-xl border border-dashed border-slate-600/60">
+            <p className="text-sm font-medium text-slate-300 mb-4">{t('settings.addRule')}</p>
             <div className="flex gap-3">
               <input
                 type="text"
                 value={newRule.position}
                 onChange={(e) => setNewRule({ ...newRule, position: e.target.value })}
                 placeholder={t('settings.position')}
-                className="flex-1 px-3 py-2 rounded-lg text-white text-sm"
+                className="flex-1 px-4 py-2.5 rounded-xl text-white text-sm"
               />
-              <div className="relative w-24">
+              <div className="relative w-28">
                 <input
                   type="number"
                   value={newRule.percentage}
                   onChange={(e) => setNewRule({ ...newRule, percentage: e.target.value })}
-                  placeholder="%"
-                  step="0.5"
-                  min="0"
-                  max="100"
-                  className="w-full px-3 py-2 rounded-lg text-white text-sm pr-6"
+                  placeholder="0"
+                  step="0.5" min="0" max="100"
+                  className="w-full px-4 py-2.5 rounded-xl text-white text-sm pr-7"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">%</span>
               </div>
               <button
                 onClick={addTipOutRule}
-                className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                className="px-4 py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors flex items-center gap-1.5 text-sm font-medium"
               >
-                <Plus size={20} />
+                <Plus size={18} />
+                Ajouter
               </button>
             </div>
           </div>
@@ -201,50 +218,55 @@ export default function Settings() {
       {/* Restaurant Info (Manager only) */}
       {isManager && currentRestaurant && (
         <div className="card">
-          <div className="flex items-center gap-3 mb-4">
-            <Building2 size={20} className="text-purple-400" />
-            <h2 className="text-lg font-semibold text-white">{t('settings.restaurant')}</h2>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-purple-500/10 rounded-xl">
+              <Building2 size={20} className="text-purple-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-white">{t('settings.restaurant')}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Informations de votre établissement</p>
+            </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-3">
                 {t('settings.restaurantName')}
               </label>
               <input
                 type="text"
                 defaultValue={currentRestaurant.name}
-                className="w-full px-4 py-3 rounded-lg text-white"
+                className="w-full px-4 py-3 rounded-xl text-white"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-3">
                 {t('settings.address')}
               </label>
               <input
                 type="text"
                 placeholder="123 Rue Exemple, Montréal"
-                className="w-full px-4 py-3 rounded-lg text-white"
+                className="w-full px-4 py-3 rounded-xl text-white"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('settings.timezone')}
                 </label>
-                <select className="w-full px-4 py-3 rounded-lg text-white">
+                <select className="w-full px-4 py-3 rounded-xl text-white">
                   <option>America/Montreal</option>
                   <option>America/Toronto</option>
                   <option>America/Vancouver</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('settings.currency')}
                 </label>
-                <select className="w-full px-4 py-3 rounded-lg text-white">
+                <select className="w-full px-4 py-3 rounded-xl text-white">
                   <option>CAD ($)</option>
                   <option>USD ($)</option>
                   <option>EUR (€)</option>
@@ -258,7 +280,7 @@ export default function Settings() {
       {/* Save Button */}
       <button
         onClick={handleSave}
-        className="btn btn-primary w-full"
+        className="btn btn-primary w-full py-4 text-base"
       >
         <Save size={20} />
         {t('common.save')}

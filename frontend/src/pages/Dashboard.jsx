@@ -73,53 +73,48 @@ export default function Dashboard() {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Welcome Header */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+
+      {/* ── Welcome Header ── */}
       <div style={{
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: '16px',
+        borderRadius: '20px',
         background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8, #4338ca)',
-        padding: '24px'
+        padding: '36px 32px'
       }}>
         {/* Background decoration */}
         <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '256px',
-          height: '256px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '50%',
-          transform: 'translate(33%, -50%)'
+          position: 'absolute', top: 0, right: 0,
+          width: '260px', height: '260px',
+          backgroundColor: 'rgba(255,255,255,0.05)',
+          borderRadius: '50%', transform: 'translate(33%, -50%)'
         }} />
         <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: '192px',
-          height: '192px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '50%',
-          transform: 'translate(-25%, 50%)'
+          position: 'absolute', bottom: 0, left: 0,
+          width: '200px', height: '200px',
+          backgroundColor: 'rgba(255,255,255,0.05)',
+          borderRadius: '50%', transform: 'translate(-25%, 50%)'
         }} />
 
         <div style={{
-          position: 'relative',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '24px'
+          position: 'relative', zIndex: 10,
+          display: 'flex', flexDirection: 'column', gap: '24px'
         }} className="md:flex-row md:items-center md:justify-between">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#bfdbfe', fontSize: '14px', marginBottom: '8px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              color: '#bfdbfe', fontSize: '14px', marginBottom: '12px'
+            }}>
               <Calendar size={14} />
               <span style={{ textTransform: 'capitalize' }}>{today}</span>
             </div>
-            <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginBottom: '4px' }}>
+            <h1 style={{
+              fontSize: '30px', fontWeight: 'bold', color: 'white', marginBottom: '8px', lineHeight: '1.2'
+            }}>
               {t('dashboard.welcome')}, {user?.firstName} !
             </h1>
-            <p style={{ color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <p style={{ color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
               <Sparkles size={16} />
               {currentRestaurant?.name || 'Votre restaurant'}
             </p>
@@ -128,17 +123,13 @@ export default function Dashboard() {
           <Link
             to="/cash-out"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              backgroundColor: 'white',
-              color: '#1d4ed8',
-              fontWeight: 600,
-              borderRadius: '12px',
+              display: 'inline-flex', alignItems: 'center', gap: '10px',
+              padding: '14px 28px',
+              backgroundColor: 'white', color: '#1d4ed8',
+              fontWeight: 600, borderRadius: '14px',
               textDecoration: 'none',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.2s'
+              boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+              transition: 'all 0.2s', fontSize: '15px'
             }}
           >
             <Calculator size={20} />
@@ -147,267 +138,221 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* ── Stats Grid ── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '16px'
+        gap: '20px'
       }} className="lg:grid-cols-4">
+
+        {/* Total Sales */}
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-          border: '1px solid rgba(71, 85, 105, 0.5)',
-          borderRadius: '16px',
-          padding: '24px',
-          color: '#4ade80'
+          border: '1px solid rgba(71,85,105,0.5)',
+          borderRadius: '18px',
+          padding: '28px 24px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div>
-              <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.totalSales')}</p>
-              <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
-                {loading ? '...' : `$${stats.totalSales.toFixed(2)}`}
+              <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500, letterSpacing: '0.03em', marginBottom: '10px' }}>
+                {t('dashboard.totalSales')}
+              </p>
+              <p style={{ fontSize: '30px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
+                {loading ? '—' : `$${stats.totalSales.toFixed(2)}`}
               </p>
             </div>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)'
+              width: '52px', height: '52px', borderRadius: '14px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(16,185,129,0.12)', flexShrink: 0
             }}>
-              <DollarSign style={{ color: '#4ade80' }} size={22} />
+              <DollarSign style={{ color: '#4ade80' }} size={24} />
             </div>
           </div>
-          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '4px', color: '#4ade80', fontSize: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4ade80', fontSize: '13px' }}>
             <TrendingUp size={14} />
             <span>{t('dashboard.today')}</span>
           </div>
         </div>
 
+        {/* Total Tips */}
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-          border: '1px solid rgba(71, 85, 105, 0.5)',
-          borderRadius: '16px',
-          padding: '24px',
-          color: '#60a5fa'
+          border: '1px solid rgba(71,85,105,0.5)',
+          borderRadius: '18px',
+          padding: '28px 24px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div>
-              <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.totalTips')}</p>
-              <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
-                {loading ? '...' : `$${stats.totalTips.toFixed(2)}`}
+              <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500, letterSpacing: '0.03em', marginBottom: '10px' }}>
+                {t('dashboard.totalTips')}
+              </p>
+              <p style={{ fontSize: '30px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
+                {loading ? '—' : `$${stats.totalTips.toFixed(2)}`}
               </p>
             </div>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)'
+              width: '52px', height: '52px', borderRadius: '14px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(59,130,246,0.12)', flexShrink: 0
             }}>
-              <TrendingUp style={{ color: '#60a5fa' }} size={22} />
+              <TrendingUp style={{ color: '#60a5fa' }} size={24} />
             </div>
           </div>
-          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '4px', color: '#60a5fa', fontSize: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#60a5fa', fontSize: '13px' }}>
             <TrendingUp size={14} />
             <span>{t('dashboard.today')}</span>
           </div>
         </div>
 
+        {/* Pending Reports */}
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-          border: '1px solid rgba(71, 85, 105, 0.5)',
-          borderRadius: '16px',
-          padding: '24px',
-          color: '#fbbf24'
+          border: '1px solid rgba(71,85,105,0.5)',
+          borderRadius: '18px',
+          padding: '28px 24px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div>
-              <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.pendingReports')}</p>
-              <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
-                {loading ? '...' : stats.pendingReports}
+              <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500, letterSpacing: '0.03em', marginBottom: '10px' }}>
+                {t('dashboard.pendingReports')}
+              </p>
+              <p style={{ fontSize: '30px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
+                {loading ? '—' : stats.pendingReports}
               </p>
             </div>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(245, 158, 11, 0.1)'
+              width: '52px', height: '52px', borderRadius: '14px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(245,158,11,0.12)', flexShrink: 0
             }}>
-              <Clock style={{ color: '#fbbf24' }} size={22} />
+              <Clock style={{ color: '#fbbf24' }} size={24} />
             </div>
           </div>
-          <div style={{ marginTop: '16px' }}>
-            <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
-              <div
-                style={{
-                  height: '100%',
-                  borderRadius: '9999px',
-                  backgroundColor: '#f59e0b',
-                  width: `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`
-                }}
-              />
-            </div>
+          <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: '9999px', backgroundColor: '#f59e0b',
+              width: `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`,
+              transition: 'width 0.5s ease'
+            }} />
           </div>
         </div>
 
+        {/* Validated Reports */}
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-          border: '1px solid rgba(71, 85, 105, 0.5)',
-          borderRadius: '16px',
-          padding: '24px',
-          color: '#34d399'
+          border: '1px solid rgba(71,85,105,0.5)',
+          borderRadius: '18px',
+          padding: '28px 24px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div>
-              <p style={{ color: '#94a3b8', fontSize: '14px' }}>{t('dashboard.validatedReports')}</p>
-              <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '8px' }}>
-                {loading ? '...' : stats.validatedReports}
+              <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500, letterSpacing: '0.03em', marginBottom: '10px' }}>
+                {t('dashboard.validatedReports')}
+              </p>
+              <p style={{ fontSize: '30px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
+                {loading ? '—' : stats.validatedReports}
               </p>
             </div>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)'
+              width: '52px', height: '52px', borderRadius: '14px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(16,185,129,0.12)', flexShrink: 0
             }}>
-              <CheckCircle style={{ color: '#34d399' }} size={22} />
+              <CheckCircle style={{ color: '#34d399' }} size={24} />
             </div>
           </div>
-          <div style={{ marginTop: '16px' }}>
-            <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
-              <div
-                style={{
-                  height: '100%',
-                  borderRadius: '9999px',
-                  backgroundColor: '#10b981',
-                  width: `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`
-                }}
-              />
-            </div>
+          <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: '9999px', backgroundColor: '#10b981',
+              width: `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`,
+              transition: 'width 0.5s ease'
+            }} />
           </div>
         </div>
       </div>
 
-      {/* Quick Actions & Recent Activity */}
+      {/* ── Quick Actions + Recent Activity ── */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr',
-        gap: '24px'
+        display: 'grid', gridTemplateColumns: '1fr', gap: '24px'
       }} className="lg:grid-cols-3">
+
         {/* Quick Actions */}
         <div className="lg:col-span-1">
           <div style={{
             background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-            border: '1px solid rgba(71, 85, 105, 0.5)',
-            borderRadius: '16px',
-            padding: '24px',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px',
+            padding: '28px 24px',
             height: '100%'
           }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'white', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{
+              fontSize: '17px', fontWeight: 600, color: 'white',
+              marginBottom: '24px',
+              display: 'flex', alignItems: 'center', gap: '10px'
+            }}>
               <Sparkles size={18} style={{ color: '#60a5fa' }} />
               {t('dashboard.quickActions')}
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <Link
-                to="/cash-out"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px',
-                  background: 'linear-gradient(to right, rgba(59, 130, 246, 0.1), transparent)',
-                  borderRadius: '12px',
-                  border: '1px solid transparent',
-                  textDecoration: 'none',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+              <Link to="/cash-out" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 18px',
+                background: 'linear-gradient(to right, rgba(59,130,246,0.1), transparent)',
+                borderRadius: '14px', border: '1px solid rgba(59,130,246,0.15)',
+                textDecoration: 'none', transition: 'all 0.2s'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                    width: '42px', height: '42px', borderRadius: '12px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: 'rgba(59,130,246,0.2)'
                   }}>
-                    <Calculator style={{ color: '#60a5fa' }} size={18} />
+                    <Calculator style={{ color: '#60a5fa' }} size={20} />
                   </div>
-                  <span style={{ color: 'white', fontWeight: 500 }}>{t('dashboard.startCashOut')}</span>
+                  <span style={{ color: 'white', fontWeight: 500, fontSize: '15px' }}>{t('dashboard.startCashOut')}</span>
                 </div>
                 <ArrowRight style={{ color: '#64748b' }} size={18} />
               </Link>
 
-              <Link
-                to="/reports"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px',
-                  background: 'linear-gradient(to right, rgba(16, 185, 129, 0.1), transparent)',
-                  borderRadius: '12px',
-                  border: '1px solid transparent',
-                  textDecoration: 'none',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Link to="/reports" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 18px',
+                background: 'linear-gradient(to right, rgba(16,185,129,0.1), transparent)',
+                borderRadius: '14px', border: '1px solid rgba(16,185,129,0.15)',
+                textDecoration: 'none', transition: 'all 0.2s'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(16, 185, 129, 0.2)'
+                    width: '42px', height: '42px', borderRadius: '12px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: 'rgba(16,185,129,0.2)'
                   }}>
-                    <FileText style={{ color: '#34d399' }} size={18} />
+                    <FileText style={{ color: '#34d399' }} size={20} />
                   </div>
-                  <span style={{ color: 'white', fontWeight: 500 }}>{t('dashboard.viewReports')}</span>
+                  <span style={{ color: 'white', fontWeight: 500, fontSize: '15px' }}>{t('dashboard.viewReports')}</span>
                 </div>
                 <ArrowRight style={{ color: '#64748b' }} size={18} />
               </Link>
 
               {isManager && (
-                <Link
-                  to="/team"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '16px',
-                    background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), transparent)',
-                    borderRadius: '12px',
-                    border: '1px solid transparent',
-                    textDecoration: 'none',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Link to="/team" style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '16px 18px',
+                  background: 'linear-gradient(to right, rgba(139,92,246,0.1), transparent)',
+                  borderRadius: '14px', border: '1px solid rgba(139,92,246,0.15)',
+                  textDecoration: 'none', transition: 'all 0.2s'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'rgba(139, 92, 246, 0.2)'
+                      width: '42px', height: '42px', borderRadius: '12px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: 'rgba(139,92,246,0.2)'
                     }}>
-                      <Users style={{ color: '#a78bfa' }} size={18} />
+                      <Users style={{ color: '#a78bfa' }} size={20} />
                     </div>
-                    <span style={{ color: 'white', fontWeight: 500 }}>{t('nav.team')}</span>
+                    <span style={{ color: 'white', fontWeight: 500, fontSize: '15px' }}>{t('nav.team')}</span>
                   </div>
                   <ArrowRight style={{ color: '#64748b' }} size={18} />
                 </Link>
@@ -420,82 +365,85 @@ export default function Dashboard() {
         <div className="lg:col-span-2">
           <div style={{
             background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-            border: '1px solid rgba(71, 85, 105, 0.5)',
-            borderRadius: '16px',
-            padding: '24px',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px',
+            padding: '28px 24px',
             height: '100%'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: '24px'
+            }}>
+              <h2 style={{
+                fontSize: '17px', fontWeight: 600, color: 'white',
+                display: 'flex', alignItems: 'center', gap: '10px'
+              }}>
                 <Clock size={18} style={{ color: '#94a3b8' }} />
                 {t('dashboard.recentActivity')}
               </h2>
-              <Link to="/reports" style={{ fontSize: '14px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
-                Voir tout
-                <ArrowRight size={14} />
+              <Link to="/reports" style={{
+                fontSize: '14px', color: '#60a5fa',
+                display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none'
+              }}>
+                Voir tout <ArrowRight size={14} />
               </Link>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {loading && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px', gap: '10px', color: '#94a3b8' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '40px', gap: '10px', color: '#94a3b8'
+                }}>
                   <RefreshCw size={18} style={{ animation: 'spin 1s linear infinite' }} />
                   Chargement...
                 </div>
               )}
+
               {!loading && recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '16px',
-                    backgroundColor: 'rgba(30, 41, 59, 0.5)',
-                    borderRadius: '12px',
-                    transition: 'background-color 0.2s'
-                  }}
-                >
+                <div key={activity.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '18px 20px',
+                  backgroundColor: 'rgba(30,41,59,0.6)',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(51,65,85,0.4)',
+                  transition: 'background-color 0.2s'
+                }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: activity.color === 'green' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)'
+                      width: '46px', height: '46px', borderRadius: '13px', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: activity.color === 'green' ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.2)'
                     }}>
                       <span style={{
-                        fontSize: '14px',
-                        fontWeight: 'bold',
+                        fontSize: '15px', fontWeight: 'bold',
                         color: activity.color === 'green' ? '#34d399' : '#60a5fa'
                       }}>
                         {activity.user.charAt(0)}
                       </span>
                     </div>
                     <div>
-                      <p style={{ color: 'white', fontWeight: 500 }}>{activity.user}</p>
-                      <p style={{ fontSize: '14px', color: '#94a3b8' }}>{activity.action}</p>
+                      <p style={{ color: 'white', fontWeight: 500, marginBottom: '3px' }}>{activity.user}</p>
+                      <p style={{ fontSize: '13px', color: '#94a3b8' }}>{activity.action}</p>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ color: 'white', fontWeight: 600 }}>${activity.amount.toFixed(2)}</p>
-                    <p style={{ fontSize: '14px', color: '#64748b' }}>{activity.time}</p>
+                    <p style={{ color: 'white', fontWeight: 600, marginBottom: '3px' }}>${activity.amount.toFixed(2)}</p>
+                    <p style={{ fontSize: '13px', color: '#64748b' }}>{activity.time}</p>
                   </div>
                 </div>
               ))}
 
               {!loading && recentActivity.length === 0 && (
                 <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '32px',
-                  textAlign: 'center'
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', padding: '48px 32px', textAlign: 'center'
                 }}>
-                  <Clock size={40} style={{ color: '#475569', marginBottom: '12px' }} />
-                  <p style={{ color: '#94a3b8' }}>Aucune activité récente</p>
+                  <Clock size={44} style={{ color: '#475569', marginBottom: '16px' }} />
+                  <p style={{ color: '#94a3b8', fontSize: '15px' }}>Aucune activité récente</p>
+                  <p style={{ color: '#64748b', fontSize: '13px', marginTop: '6px' }}>
+                    Soumettez votre premier Cash Out pour commencer
+                  </p>
                 </div>
               )}
             </div>

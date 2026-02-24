@@ -198,7 +198,7 @@ export default function Team() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -219,7 +219,7 @@ export default function Team() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg flex items-center gap-2">
+        <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-4 rounded-xl flex items-center gap-2">
           <AlertCircle size={18} />
           {error}
           <button onClick={() => setError('')} className="ml-auto">
@@ -238,7 +238,7 @@ export default function Team() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-t-lg transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? 'bg-slate-800 text-white border-b-2 border-blue-500'
                 : 'text-slate-400 hover:text-white'
@@ -257,7 +257,7 @@ export default function Team() {
 
       {/* Tab Content */}
       {activeTab === 'members' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {members.length === 0 ? (
             <div className="text-center py-12 text-slate-400">
               <Users size={48} className="mx-auto mb-4 opacity-50" />
@@ -265,7 +265,7 @@ export default function Team() {
             </div>
           ) : (
             members.map((member) => (
-              <div key={member.id} className="card hover:border-slate-600 transition-colors">
+              <div key={member.id} className="card-sm hover:border-slate-600 transition-colors">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4 min-w-0">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shrink-0">
@@ -325,7 +325,7 @@ export default function Team() {
                   </div>
                 </div>
 
-                <div className="sm:hidden mt-3 pt-3 border-t border-slate-700">
+                <div className="sm:hidden mt-4 pt-4 border-t border-slate-700">
                   {getRoleBadge(member.role)}
                 </div>
               </div>
@@ -335,7 +335,7 @@ export default function Team() {
       )}
 
       {activeTab === 'pending' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {pendingInvites.length === 0 ? (
             <div className="text-center py-12 text-slate-400">
               <Mail size={48} className="mx-auto mb-4 opacity-50" />
@@ -343,7 +343,7 @@ export default function Team() {
             </div>
           ) : (
             pendingInvites.map((invite) => (
-              <div key={invite.id} className="card">
+              <div key={invite.id} className="card-sm">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center">
@@ -388,11 +388,11 @@ export default function Team() {
           </div>
 
           {/* Tip Out Rules */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             {tipOutRules.map((rule, index) => {
               const IconComponent = POSITION_ICONS[rule.position.toLowerCase()] || POSITION_ICONS.default
               return (
-                <div key={index} className="card">
+                <div key={index} className="card-sm">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center">
@@ -501,22 +501,22 @@ export default function Team() {
       {/* Invite Modal */}
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl max-w-md w-full animate-fade-in">
-            <div className="p-6 border-b border-slate-700">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full animate-fade-in">
+            <div className="px-7 py-5 border-b border-slate-700">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-white">{t('team.inviteMember')}</h2>
                 <button
                   onClick={() => setShowInviteModal(false)}
-                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                  className="p-2 hover:bg-slate-700 rounded-xl transition-colors"
                 >
                   <X size={20} className="text-slate-400" />
                 </button>
               </div>
             </div>
 
-            <form onSubmit={handleInvite} className="p-6 space-y-4">
+            <form onSubmit={handleInvite} className="px-7 py-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('auth.email')}
                 </label>
                 <input
@@ -524,46 +524,46 @@ export default function Team() {
                   value={inviteForm.email}
                   onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                   placeholder="employee@example.com"
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500"
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('team.role')}
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     type="button"
                     onClick={() => setInviteForm({ ...inviteForm, role: 'server' })}
-                    className={`p-4 rounded-lg border transition-colors ${
+                    className={`p-5 rounded-xl border-2 transition-colors ${
                       inviteForm.role === 'server'
                         ? 'bg-blue-500/10 border-blue-500 text-blue-400'
                         : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'
                     }`}
                   >
-                    <User size={24} className="mx-auto mb-2" />
+                    <User size={24} className="mx-auto mb-2.5" />
                     <span className="text-sm font-medium">{t('roles.server')}</span>
-                    <p className="text-xs text-slate-500 mt-1">{t('team.serverDesc')}</p>
+                    <p className="text-xs text-slate-500 mt-1.5">{t('team.serverDesc')}</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => setInviteForm({ ...inviteForm, role: 'manager' })}
-                    className={`p-4 rounded-lg border transition-colors ${
+                    className={`p-5 rounded-xl border-2 transition-colors ${
                       inviteForm.role === 'manager'
                         ? 'bg-purple-500/10 border-purple-500 text-purple-400'
                         : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'
                     }`}
                   >
-                    <Shield size={24} className="mx-auto mb-2" />
+                    <Shield size={24} className="mx-auto mb-2.5" />
                     <span className="text-sm font-medium">{t('roles.manager')}</span>
-                    <p className="text-xs text-slate-500 mt-1">{t('team.managerDesc')}</p>
+                    <p className="text-xs text-slate-500 mt-1.5">{t('team.managerDesc')}</p>
                   </button>
                 </div>
               </div>
 
-              <div className="pt-4 flex gap-3">
+              <div className="pt-5 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setShowInviteModal(false)}
@@ -592,45 +592,45 @@ export default function Team() {
       {/* Change Role Modal */}
       {showRoleModal && selectedMember && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl max-w-sm w-full animate-fade-in">
-            <div className="p-6 border-b border-slate-700">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full animate-fade-in">
+            <div className="px-7 py-5 border-b border-slate-700">
               <h2 className="text-xl font-semibold text-white">{t('team.changeRole')}</h2>
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-slate-400 text-sm mt-1.5">
                 {selectedMember.firstName} {selectedMember.lastName}
               </p>
             </div>
 
-            <div className="p-6 space-y-3">
+            <div className="px-7 py-6 space-y-4">
               <button
                 onClick={() => handleUpdateRole(selectedMember.id, 'server')}
-                className={`w-full p-4 rounded-lg border text-left transition-colors ${
+                className={`w-full p-5 rounded-xl border-2 text-left transition-colors ${
                   selectedMember.role === 'server'
                     ? 'bg-blue-500/10 border-blue-500'
                     : 'bg-slate-700 border-slate-600 hover:border-slate-500'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <User className="text-blue-400" size={20} />
                   <div>
                     <p className="text-white font-medium">{t('roles.server')}</p>
-                    <p className="text-slate-400 text-sm">{t('team.serverDesc')}</p>
+                    <p className="text-slate-400 text-sm mt-0.5">{t('team.serverDesc')}</p>
                   </div>
                 </div>
               </button>
 
               <button
                 onClick={() => handleUpdateRole(selectedMember.id, 'manager')}
-                className={`w-full p-4 rounded-lg border text-left transition-colors ${
+                className={`w-full p-5 rounded-xl border-2 text-left transition-colors ${
                   selectedMember.role === 'manager'
                     ? 'bg-purple-500/10 border-purple-500'
                     : 'bg-slate-700 border-slate-600 hover:border-slate-500'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <Shield className="text-purple-400" size={20} />
                   <div>
                     <p className="text-white font-medium">{t('roles.manager')}</p>
-                    <p className="text-slate-400 text-sm">{t('team.managerDesc')}</p>
+                    <p className="text-slate-400 text-sm mt-0.5">{t('team.managerDesc')}</p>
                   </div>
                 </div>
               </button>
@@ -640,7 +640,7 @@ export default function Team() {
                   setShowRoleModal(false)
                   setSelectedMember(null)
                 }}
-                className="btn btn-secondary w-full mt-4"
+                className="btn btn-secondary w-full mt-2"
               >
                 {t('common.cancel')}
               </button>

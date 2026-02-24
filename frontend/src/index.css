@@ -25,6 +25,7 @@ body {
   background-color: var(--color-dark-bg);
   color: #f8fafc;
   min-height: 100vh;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -112,6 +113,7 @@ input, select, textarea {
   border: 1px solid #334155;
   color: #f8fafc;
   border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
   transition: all 0.2s ease;
 }
 
@@ -123,6 +125,28 @@ input:focus, select:focus, textarea:focus {
 
 input::placeholder {
   color: #64748b;
+}
+
+/* Form field label */
+label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  margin-bottom: 0.5rem;
+}
+
+/* Form field group */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Form grid */
+.form-grid {
+  display: grid;
+  gap: 1.25rem;
 }
 
 /* Button base styles */
@@ -194,7 +218,7 @@ input::placeholder {
   background: linear-gradient(145deg, #1e293b 0%, #1a2332 100%);
   border: 1px solid rgba(71, 85, 105, 0.5);
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1.75rem;
   transition: all 0.3s ease;
 }
 
@@ -205,6 +229,43 @@ input::placeholder {
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Smaller card variant for list items */
+.card-sm {
+  background: linear-gradient(145deg, #1e293b 0%, #1a2332 100%);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 0.875rem;
+  padding: 1.25rem 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.card-sm:hover {
+  border-color: rgba(71, 85, 105, 0.8);
+}
+
+/* Card inner section separator */
+.card-section {
+  padding-top: 1.25rem;
+  margin-top: 1.25rem;
+  border-top: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+/* Page section header */
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 0.25rem;
+}
+
+.page-header p {
+  color: #94a3b8;
+  font-size: 0.95rem;
 }
 
 /* Glass effect */
@@ -303,7 +364,12 @@ input::placeholder {
   }
 
   .card {
-    padding: 1rem;
+    padding: 1.25rem;
+    border-radius: 0.875rem;
+  }
+
+  .card-sm {
+    padding: 1rem 1.25rem;
     border-radius: 0.75rem;
   }
 

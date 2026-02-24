@@ -207,7 +207,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -225,7 +225,7 @@ export default function Admin() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+        <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
           <AlertCircle size={16} /> {error}
         </div>
       )}
@@ -236,7 +236,7 @@ export default function Admin() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === tab.id
                 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
@@ -252,7 +252,7 @@ export default function Admin() {
       {activeTab === 'overview' && stats && (
         <div className="space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { label: 'Restaurants', value: stats.totalRestaurants, icon: Building2, color: 'blue' },
               { label: 'Abonnés actifs', value: stats.activeSubscriptions, icon: CheckCircle, color: 'green' },
@@ -262,12 +262,12 @@ export default function Admin() {
               { label: 'Rapports ce mois', value: stats.reportsThisMonth, icon: TrendingUp, color: 'pink' }
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="card">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 bg-${color}-500/20 rounded-xl shrink-0`}>
+                <div className="flex items-center gap-4">
+                  <div className={`p-3.5 bg-${color}-500/20 rounded-xl shrink-0`}>
                     <Icon className={`text-${color}-400`} size={22} />
                   </div>
                   <div>
-                    <p className="text-slate-400 text-sm">{label}</p>
+                    <p className="text-slate-400 text-sm mb-1">{label}</p>
                     <p className="text-2xl font-bold text-white">{value}</p>
                   </div>
                 </div>
@@ -277,19 +277,19 @@ export default function Admin() {
 
           {/* Recent Restaurants */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
               <Activity size={18} className="text-blue-400" />
               Derniers restaurants enregistrés
             </h3>
             {restaurants.length === 0 ? (
               <p className="text-slate-500 text-sm">Aucun restaurant.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {restaurants.slice(0, 6).map(r => (
-                  <div key={r.id} className="flex items-center justify-between py-2 border-b border-slate-700/40 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-slate-700 rounded-lg flex items-center justify-center shrink-0">
-                        <Building2 size={15} className="text-slate-400" />
+                  <div key={r.id} className="flex items-center justify-between py-3 border-b border-slate-700/40 last:border-0">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center shrink-0">
+                        <Building2 size={16} className="text-slate-400" />
                       </div>
                       <div>
                         <p className="text-white font-medium text-sm">{r.name}</p>
@@ -312,35 +312,35 @@ export default function Admin() {
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-slate-700">
+            <div className="flex items-center justify-between px-7 py-5 border-b border-slate-700">
               <div className="flex items-center gap-2">
                 <Send size={18} className="text-amber-400" />
                 <h2 className="text-white font-semibold">Inviter un restaurant</h2>
               </div>
               <button onClick={() => { setShowInviteModal(false); setInviteError(''); setInviteSuccess('') }}
-                className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors">
+                className="p-2 hover:bg-slate-700 rounded-xl transition-colors">
                 <X size={18} className="text-slate-400" />
               </button>
             </div>
 
-            <form onSubmit={handleInviteRestaurant} className="p-5 space-y-4">
-              <p className="text-slate-400 text-sm">
+            <form onSubmit={handleInviteRestaurant} className="px-7 py-6 space-y-5">
+              <p className="text-slate-400 text-sm leading-relaxed">
                 L'invité recevra un email avec un lien pour créer son compte Manager et configurer son restaurant.
               </p>
 
               {inviteError && (
-                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                <div className="flex items-center gap-2 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
                   <AlertCircle size={14} /> {inviteError}
                 </div>
               )}
               {inviteSuccess && (
-                <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+                <div className="flex items-center gap-2 p-3.5 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm">
                   <CheckCircle size={14} /> {inviteSuccess}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label className="block text-sm font-medium text-slate-300 mb-2.5">
                   Email du gestionnaire
                 </label>
                 <input
@@ -349,12 +349,12 @@ export default function Admin() {
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="manager@restaurant.com"
                   required
-                  className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                <label className="block text-sm font-medium text-slate-300 mb-2.5">
                   Nom du restaurant
                 </label>
                 <input
@@ -363,22 +363,22 @@ export default function Admin() {
                   onChange={(e) => setInviteRestName(e.target.value)}
                   placeholder="Ex: Jimmies Pizza"
                   required
-                  className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none text-sm"
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowInviteModal(false)}
-                  className="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
+                  className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors text-sm"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={inviteSending}
-                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                  className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
                 >
                   {inviteSending
                     ? <><Loader size={15} className="animate-spin" /> Envoi...</>
@@ -436,13 +436,13 @@ export default function Admin() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-800/60">
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Restaurant</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Plan</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Statut</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Employés</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Rapports/mois</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">Créé le</th>
-                    <th className="text-right py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Actions</th>
+                    <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider">Restaurant</th>
+                    <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider">Plan</th>
+                    <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider">Statut</th>
+                    <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Employés</th>
+                    <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Rapports/mois</th>
+                    <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">Créé le</th>
+                    <th className="text-right py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -457,17 +457,17 @@ export default function Admin() {
                     const acting = actionLoading === r.id
                     return (
                       <tr key={r.id} className="border-b border-slate-700/40 hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3 px-4">
+                        <td className="py-4 px-5">
                           <p className="text-white font-medium text-sm">{r.name}</p>
-                          <p className="text-slate-500 text-xs">{r.email}</p>
+                          <p className="text-slate-500 text-xs mt-0.5">{r.email}</p>
                           <p className="text-slate-600 text-xs">{r.owner}</p>
                         </td>
-                        <td className="py-3 px-4"><PlanBadge plan={r.plan} /></td>
-                        <td className="py-3 px-4"><StatusBadge status={r.status} /></td>
-                        <td className="py-3 px-4 text-slate-300 text-sm hidden md:table-cell">{r.employees}</td>
-                        <td className="py-3 px-4 text-slate-300 text-sm hidden md:table-cell">{r.monthlyReports}</td>
-                        <td className="py-3 px-4 text-slate-500 text-xs hidden lg:table-cell">{fmt(r.createdAt)}</td>
-                        <td className="py-3 px-4">
+                        <td className="py-4 px-5"><PlanBadge plan={r.plan} /></td>
+                        <td className="py-4 px-5"><StatusBadge status={r.status} /></td>
+                        <td className="py-4 px-5 text-slate-300 text-sm hidden md:table-cell">{r.employees}</td>
+                        <td className="py-4 px-5 text-slate-300 text-sm hidden md:table-cell">{r.monthlyReports}</td>
+                        <td className="py-4 px-5 text-slate-500 text-xs hidden lg:table-cell">{fmt(r.createdAt)}</td>
+                        <td className="py-4 px-5">
                           <div className="flex items-center justify-end gap-1">
                             <a href={`mailto:${r.email}`} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors" title="Email">
                               <Mail size={15} className="text-slate-400" />
@@ -530,7 +530,7 @@ export default function Admin() {
           {!plansLoaded ? (
             <div className="flex justify-center py-8"><Loader className="animate-spin text-blue-500" size={28} /></div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {plans.map((plan, i) => {
                 const colors = ['slate', 'blue', 'purple']
                 const c = colors[i] || 'slate'
@@ -570,8 +570,8 @@ export default function Admin() {
 
           {/* Restaurants par statut */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-white mb-4">Répartition des restaurants</h3>
-            <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-white mb-6">Répartition des restaurants</h3>
+            <div className="space-y-4">
               {['active', 'trial', 'suspended', 'cancelled'].map(status => {
                 const count = restaurants.filter(r => r.status === status).length
                 const pct = restaurants.length ? Math.round((count / restaurants.length) * 100) : 0
@@ -619,11 +619,11 @@ export default function Admin() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-slate-700 bg-slate-800/60">
-                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Utilisateur</th>
-                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Rôle</th>
-                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Restaurants</th>
-                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">Inscrit le</th>
-                        <th className="text-right py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Actions</th>
+                        <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider">Utilisateur</th>
+                        <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider">Rôle</th>
+                        <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Restaurants</th>
+                        <th className="text-left py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">Inscrit le</th>
+                        <th className="text-right py-4 px-5 text-slate-400 font-medium text-xs uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -643,25 +643,25 @@ export default function Admin() {
                         const rc = roleColors[u.role] || roleColors.server
                         return (
                           <tr key={u.id} className="border-b border-slate-700/40 hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3 px-4">
+                            <td className="py-4 px-5">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white">
+                                <div className="w-9 h-9 bg-slate-700 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white">
                                   {(u.firstName?.[0] || u.email?.[0] || '?').toUpperCase()}
                                 </div>
                                 <div>
                                   <p className="text-white font-medium text-sm">
                                     {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email}
                                   </p>
-                                  <p className="text-slate-500 text-xs">{u.email}</p>
+                                  <p className="text-slate-500 text-xs mt-0.5">{u.email}</p>
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-4 px-5">
                               <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${rc}`}>
                                 {u.role}
                               </span>
                             </td>
-                            <td className="py-3 px-4 hidden md:table-cell">
+                            <td className="py-4 px-5 hidden md:table-cell">
                               {u.restaurants?.length === 0 ? (
                                 <span className="text-slate-600 text-xs">Aucun</span>
                               ) : (
@@ -677,8 +677,8 @@ export default function Admin() {
                                 </div>
                               )}
                             </td>
-                            <td className="py-3 px-4 text-slate-500 text-xs hidden lg:table-cell">{fmt(u.createdAt)}</td>
-                            <td className="py-3 px-4 text-right">
+                            <td className="py-4 px-5 text-slate-500 text-xs hidden lg:table-cell">{fmt(u.createdAt)}</td>
+                            <td className="py-4 px-5 text-right">
                               <a
                                 href={`mailto:${u.email}`}
                                 className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors inline-flex"

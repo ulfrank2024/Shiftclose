@@ -131,7 +131,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav style={{
         flex: 1,
-        padding: collapsed ? '24px 12px' : '24px 20px',
+        padding: collapsed ? '24px 12px' : '28px 20px',
         overflowY: 'auto'
       }}>
         {navItems.map((item) => (
@@ -142,11 +142,11 @@ export default function Sidebar() {
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
-              gap: '16px',
-              padding: collapsed ? '14px 12px' : '14px 16px',
-              borderRadius: '12px',
+              gap: '14px',
+              padding: collapsed ? '13px 12px' : '13px 18px',
+              borderRadius: '14px',
               transition: 'all 0.2s',
-              marginBottom: '8px',
+              marginBottom: '6px',
               justifyContent: collapsed ? 'center' : 'flex-start',
               backgroundColor: isActive
                 ? (isSuperAdmin ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.2)')
@@ -154,7 +154,8 @@ export default function Sidebar() {
               color: isActive
                 ? (isSuperAdmin ? '#fbbf24' : '#60a5fa')
                 : '#94a3b8',
-              textDecoration: 'none'
+              textDecoration: 'none',
+              fontWeight: isActive ? 600 : 400
             })}
           >
             <item.icon size={22} style={{ flexShrink: 0 }} />

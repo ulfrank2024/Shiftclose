@@ -16,7 +16,10 @@ export default function Layout() {
 
         {/* Page Content with generous padding */}
         <main style={{ flex: 1, overflow: 'auto' }}>
-          <div style={{ padding: '40px', paddingBottom: '100px' }}>
+          <div
+            style={{ padding: '40px', paddingBottom: '120px' }}
+            className="sm:px-10 px-5"
+          >
             <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
               <Outlet />
             </div>
