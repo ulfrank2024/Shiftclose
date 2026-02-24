@@ -5,102 +5,173 @@ import { adminAPI } from '../services/api'
 import { Navigate } from 'react-router-dom'
 import {
   Building2, Users, CreditCard, BarChart3, Activity,
-  Search, Filter, MoreVertical, CheckCircle, XCircle,
-  Clock, TrendingUp, DollarSign, Loader2, RefreshCw,
-  Eye, Ban, Mail, Calendar, CheckSquare
+  Search, CheckCircle, XCircle, Clock, TrendingUp,
+  DollarSign, Loader, RefreshCw, Eye, Ban, Mail,
+  CheckSquare, Shield, ChevronDown, AlertCircle, Star
 } from 'lucide-react'
+
+const fmt = (isoDate) =>
+  isoDate ? new Date(isoDate).toLocaleDateString('fr-CA') : '—'
+
+const fmtMoney = (n) =>
+  Number(n || 0).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })
 
 export default function Admin() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
-  const [restaurants, setRestaurants] = useState([])
-  const [stats, setStats] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
+
+  // Data states
+  const [stats, setStats]               = useState(null)
+  const [restaurants, setRestaurants]   = useState([])
+  const [users, setUsers]               = useState([])
+  const [plans, setPlans]               = useState([])
+
+  // UI states
+  const [loading, setLoading]           = useState(true)
+  const [usersLoaded, setUsersLoaded]   = useState(false)
+  const [plansLoaded, setPlansLoaded]   = useState(false)
+  const [actionLoading, setActionLoading] = useState(null)
+  const [error, setError]               = useState('')
+  const [searchTerm, setSearchTerm]     = useState('')
+  const [userSearch, setUserSearch]     = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
 
-  // Check if user is superadmin
+  // Guard: Super Admin only
   if (user?.role !== 'superadmin') {
     return <Navigate to="/dashboard" replace />
   }
 
+  // Initial load: stats + restaurants
   useEffect(() => {
     loadData()
   }, [])
 
+  // Lazy load users when tab switches
+  useEffect(() => {
+    if (activeTab === 'users' && !usersLoaded) loadUsers()
+    if (activeTab === 'subscriptions' && !plansLoaded) loadPlans()
+  }, [activeTab])
+
   const loadData = async () => {
     setLoading(true)
+    setError('')
     try {
       const [statsRes, restaurantsRes] = await Promise.all([
         adminAPI.getStats(),
         adminAPI.getRestaurants()
       ])
       setStats(statsRes.stats)
-      setRestaurants(restaurantsRes.restaurants)
-    } catch (error) {
-      console.error('Error loading admin data:', error)
+      setRestaurants(restaurantsRes.restaurants || [])
+    } catch (err) {
+      setError('Impossible de charger les données.')
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
+  const loadUsers = async () => {
+    try {
+      const res = await adminAPI.getUsers()
+      setUsers(res.users || [])
+      setUsersLoaded(true)
+    } catch (err) {
+      console.error('Load users error:', err)
+    }
+  }
+
+  const loadPlans = async () => {
+    try {
+      const res = await adminAPI.getPlans()
+      setPlans(res.plans || [])
+      setPlansLoaded(true)
+    } catch (err) {
+      console.error('Load plans error:', err)
+    }
+  }
+
   const handleSuspend = async (restaurantId) => {
+    setActionLoading(restaurantId)
     try {
       await adminAPI.suspendRestaurant(restaurantId)
-      loadData()
-    } catch (error) {
-      console.error('Suspend error:', error)
+      setRestaurants(prev => prev.map(r =>
+        r.id === restaurantId ? { ...r, status: 'suspended' } : r
+      ))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setActionLoading(null)
     }
   }
 
   const handleActivate = async (restaurantId) => {
+    setActionLoading(restaurantId)
     try {
       await adminAPI.activateRestaurant(restaurantId)
-      loadData()
-    } catch (error) {
-      console.error('Activate error:', error)
+      setRestaurants(prev => prev.map(r =>
+        r.id === restaurantId ? { ...r, status: 'active' } : r
+      ))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setActionLoading(null)
     }
   }
 
   const filteredRestaurants = restaurants.filter(r => {
-    const matchesSearch = r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         r.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         r.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesFilter = filterStatus === 'all' || r.status === filterStatus
-    return matchesSearch && matchesFilter
+    const q = searchTerm.toLowerCase()
+    const matchSearch = (r.name || '').toLowerCase().includes(q) ||
+                        (r.owner || '').toLowerCase().includes(q) ||
+                        (r.email || '').toLowerCase().includes(q)
+    const matchStatus = filterStatus === 'all' || r.status === filterStatus
+    return matchSearch && matchStatus
   })
 
-  const getPlanBadge = (plan) => {
-    const styles = {
-      starter: 'bg-slate-500/20 text-slate-400',
-      pro: 'bg-blue-500/20 text-blue-400',
-      enterprise: 'bg-purple-500/20 text-purple-400'
-    }
-    return styles[plan] || styles.starter
+  const filteredUsers = users.filter(u => {
+    const q = userSearch.toLowerCase()
+    return (u.email || '').toLowerCase().includes(q) ||
+           (u.firstName || '').toLowerCase().includes(q) ||
+           (u.lastName || '').toLowerCase().includes(q)
+  })
+
+  const planColor = { starter: 'slate', pro: 'blue', enterprise: 'purple' }
+  const statusColor = {
+    active: { bg: 'bg-green-500/15', text: 'text-green-400', icon: <CheckCircle size={12} /> },
+    trial:  { bg: 'bg-amber-500/15', text: 'text-amber-400', icon: <Clock size={12} /> },
+    suspended: { bg: 'bg-red-500/15', text: 'text-red-400', icon: <XCircle size={12} /> },
+    cancelled: { bg: 'bg-slate-500/15', text: 'text-slate-400', icon: <XCircle size={12} /> }
   }
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      active: 'bg-green-500/20 text-green-400',
-      trial: 'bg-amber-500/20 text-amber-400',
-      suspended: 'bg-red-500/20 text-red-400',
-      cancelled: 'bg-slate-500/20 text-slate-400'
-    }
-    return styles[status] || styles.active
+  const StatusBadge = ({ status }) => {
+    const s = statusColor[status] || statusColor.trial
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${s.bg} ${s.text}`}>
+        {s.icon} {status}
+      </span>
+    )
+  }
+
+  const PlanBadge = ({ plan }) => {
+    const c = planColor[plan] || 'slate'
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium bg-${c}-500/15 text-${c}-400 capitalize`}>
+        {plan || 'starter'}
+      </span>
+    )
   }
 
   const tabs = [
-    { id: 'overview', label: t('admin.overview') || 'Vue d\'ensemble', icon: BarChart3 },
-    { id: 'restaurants', label: t('admin.allRestaurants'), icon: Building2 },
-    { id: 'subscriptions', label: t('admin.subscriptions'), icon: CreditCard },
-    { id: 'users', label: t('admin.users'), icon: Users }
+    { id: 'overview',       label: 'Vue d\'ensemble', icon: BarChart3 },
+    { id: 'restaurants',    label: 'Restaurants',     icon: Building2 },
+    { id: 'subscriptions',  label: 'Abonnements',     icon: CreditCard },
+    { id: 'users',          label: 'Utilisateurs',    icon: Users }
   ]
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <Loader className="w-8 h-8 text-blue-500 animate-spin" />
       </div>
     )
   }
@@ -110,241 +181,202 @@ export default function Admin() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">{t('admin.title')}</h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Panneau de contrôle Super Admin
-          </p>
+          <div className="flex items-center gap-2 mb-1">
+            <Shield size={20} className="text-purple-400" />
+            <h1 className="text-2xl font-bold text-white">Super Admin</h1>
+          </div>
+          <p className="text-slate-400 text-sm">Panneau de contrôle global — {restaurants.length} restaurant(s)</p>
         </div>
-        <button
-          onClick={loadData}
-          className="btn bg-slate-700 hover:bg-slate-600 text-white self-start sm:self-auto"
-        >
+        <button onClick={loadData} className="btn bg-slate-700 hover:bg-slate-600 text-white self-start sm:self-auto">
           <RefreshCw size={18} />
           Actualiser
         </button>
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          <AlertCircle size={16} /> {error}
+        </div>
+      )}
+
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === tab.id
-                ? 'bg-blue-500 text-white'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
             }`}
           >
-            <tab.icon size={18} />
+            <tab.icon size={16} />
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
+      {/* ══════════════ OVERVIEW ══════════════ */}
+      {activeTab === 'overview' && stats && (
         <div className="space-y-6">
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-500/20 rounded-xl">
-                  <Building2 className="text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Restaurants</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalRestaurants}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-green-500/20 rounded-xl">
-                  <CheckCircle className="text-green-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Abonnés actifs</p>
-                  <p className="text-2xl font-bold text-white">{stats.activeSubscriptions}</p>
+            {[
+              { label: 'Restaurants', value: stats.totalRestaurants, icon: Building2, color: 'blue' },
+              { label: 'Abonnés actifs', value: stats.activeSubscriptions, icon: CheckCircle, color: 'green' },
+              { label: 'En essai', value: stats.trialUsers, icon: Clock, color: 'amber' },
+              { label: 'Revenus mensuels', value: fmtMoney(stats.monthlyRevenue), icon: DollarSign, color: 'purple' },
+              { label: 'Utilisateurs', value: stats.totalUsers, icon: Users, color: 'cyan' },
+              { label: 'Rapports ce mois', value: stats.reportsThisMonth, icon: TrendingUp, color: 'pink' }
+            ].map(({ label, value, icon: Icon, color }) => (
+              <div key={label} className="card">
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 bg-${color}-500/20 rounded-xl shrink-0`}>
+                    <Icon className={`text-${color}-400`} size={22} />
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-sm">{label}</p>
+                    <p className="text-2xl font-bold text-white">{value}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-amber-500/20 rounded-xl">
-                  <Clock className="text-amber-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">En essai</p>
-                  <p className="text-2xl font-bold text-white">{stats.trialUsers}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-500/20 rounded-xl">
-                  <DollarSign className="text-purple-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Revenus mensuels</p>
-                  <p className="text-2xl font-bold text-white">${stats.monthlyRevenue}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-cyan-500/20 rounded-xl">
-                  <Users className="text-cyan-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Utilisateurs totaux</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-pink-500/20 rounded-xl">
-                  <TrendingUp className="text-pink-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Rapports ce mois</p>
-                  <p className="text-2xl font-bold text-white">{stats.reportsThisMonth}</p>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Recent Activity */}
+          {/* Recent Restaurants */}
           <div className="card">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Activity size={20} className="text-blue-400" />
-              Activité récente
+              <Activity size={18} className="text-blue-400" />
+              Derniers restaurants enregistrés
             </h3>
-            <div className="space-y-3">
-              {restaurants.slice(0, 5).map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 border-b border-slate-700/50 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center">
-                      <Building2 size={18} className="text-slate-400" />
+            {restaurants.length === 0 ? (
+              <p className="text-slate-500 text-sm">Aucun restaurant.</p>
+            ) : (
+              <div className="space-y-2">
+                {restaurants.slice(0, 6).map(r => (
+                  <div key={r.id} className="flex items-center justify-between py-2 border-b border-slate-700/40 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-slate-700 rounded-lg flex items-center justify-center shrink-0">
+                        <Building2 size={15} className="text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium text-sm">{r.name}</p>
+                        <p className="text-slate-500 text-xs">{r.owner} · {r.employees} employé(s)</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-white font-medium">{r.name}</p>
-                      <p className="text-slate-400 text-sm">{r.owner}</p>
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={r.status} />
+                      <span className="text-slate-600 text-xs hidden sm:block">{fmt(r.createdAt)}</span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadge(r.status)}`}>
-                      {r.status}
-                    </span>
-                    <p className="text-slate-500 text-xs mt-1">{r.lastActivity}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Restaurants Tab */}
+      {/* ══════════════ RESTAURANTS ══════════════ */}
       {activeTab === 'restaurants' && (
         <div className="space-y-4">
           {/* Search & Filter */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Rechercher un restaurant..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500"
+                placeholder="Rechercher (nom, propriétaire, email)..."
+                className="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-            >
-              <option value="all">Tous les statuts</option>
-              <option value="active">Actif</option>
-              <option value="trial">Essai</option>
-              <option value="suspended">Suspendu</option>
-              <option value="cancelled">Annulé</option>
-            </select>
+            <div className="relative">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+              >
+                <option value="all">Tous les statuts</option>
+                <option value="active">Actif</option>
+                <option value="trial">Essai</option>
+                <option value="suspended">Suspendu</option>
+                <option value="cancelled">Annulé</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
           </div>
 
-          {/* Restaurants List */}
-          <div className="card overflow-hidden">
+          <p className="text-slate-500 text-xs">{filteredRestaurants.length} résultat(s)</p>
+
+          {/* Table */}
+          <div className="card overflow-hidden p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">Restaurant</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">Plan</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">Statut</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">Employés</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">Rapports/mois</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-sm">Créé le</th>
-                    <th className="text-right py-3 px-4 text-slate-400 font-medium text-sm">Actions</th>
+                  <tr className="border-b border-slate-700 bg-slate-800/60">
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Restaurant</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Plan</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Statut</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Employés</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Rapports/mois</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">Créé le</th>
+                    <th className="text-right py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRestaurants.map(r => (
-                    <tr key={r.id} className="border-b border-slate-700/50 hover:bg-slate-800/50">
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="text-white font-medium">{r.name}</p>
-                          <p className="text-slate-400 text-sm">{r.email}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs capitalize ${getPlanBadge(r.plan)}`}>
-                          {r.plan}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs capitalize ${getStatusBadge(r.status)}`}>
-                          {r.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-300">{r.employees}</td>
-                      <td className="py-3 px-4 text-slate-300">{r.monthlyReports}</td>
-                      <td className="py-3 px-4 text-slate-400 text-sm">{r.createdAt}</td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="p-2 hover:bg-slate-700 rounded-lg transition-colors" title="Voir">
-                            <Eye size={16} className="text-slate-400" />
-                          </button>
-                          <a href={`mailto:${r.email}`} className="p-2 hover:bg-slate-700 rounded-lg transition-colors" title="Email">
-                            <Mail size={16} className="text-slate-400" />
-                          </a>
-                          {r.status === 'suspended' ? (
-                            <button
-                              onClick={() => handleActivate(r.id)}
-                              className="p-2 hover:bg-green-500/20 rounded-lg transition-colors"
-                              title="Activer"
-                            >
-                              <CheckSquare size={16} className="text-green-400" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleSuspend(r.id)}
-                              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
-                              title="Suspendre"
-                            >
-                              <Ban size={16} className="text-red-400" />
-                            </button>
-                          )}
-                        </div>
+                  {filteredRestaurants.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-500">
+                        <Building2 size={32} className="mx-auto mb-2 opacity-30" />
+                        Aucun restaurant trouvé
                       </td>
                     </tr>
-                  ))}
+                  ) : filteredRestaurants.map(r => {
+                    const acting = actionLoading === r.id
+                    return (
+                      <tr key={r.id} className="border-b border-slate-700/40 hover:bg-slate-800/40 transition-colors">
+                        <td className="py-3 px-4">
+                          <p className="text-white font-medium text-sm">{r.name}</p>
+                          <p className="text-slate-500 text-xs">{r.email}</p>
+                          <p className="text-slate-600 text-xs">{r.owner}</p>
+                        </td>
+                        <td className="py-3 px-4"><PlanBadge plan={r.plan} /></td>
+                        <td className="py-3 px-4"><StatusBadge status={r.status} /></td>
+                        <td className="py-3 px-4 text-slate-300 text-sm hidden md:table-cell">{r.employees}</td>
+                        <td className="py-3 px-4 text-slate-300 text-sm hidden md:table-cell">{r.monthlyReports}</td>
+                        <td className="py-3 px-4 text-slate-500 text-xs hidden lg:table-cell">{fmt(r.createdAt)}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-end gap-1">
+                            <a href={`mailto:${r.email}`} className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors" title="Email">
+                              <Mail size={15} className="text-slate-400" />
+                            </a>
+                            {r.status === 'suspended' ? (
+                              <button
+                                onClick={() => handleActivate(r.id)}
+                                disabled={acting}
+                                className="p-1.5 hover:bg-green-500/20 rounded-lg transition-colors"
+                                title="Réactiver"
+                              >
+                                {acting ? <Loader size={15} className="animate-spin text-green-400" /> : <CheckSquare size={15} className="text-green-400" />}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleSuspend(r.id)}
+                                disabled={acting}
+                                className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
+                                title="Suspendre"
+                              >
+                                {acting ? <Loader size={15} className="animate-spin text-red-400" /> : <Ban size={15} className="text-red-400" />}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -352,60 +384,199 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Subscriptions Tab */}
+      {/* ══════════════ SUBSCRIPTIONS ══════════════ */}
       {activeTab === 'subscriptions' && (
         <div className="space-y-6">
-          {/* Plans Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card border-slate-600">
-              <h4 className="text-lg font-semibold text-white mb-2">Starter</h4>
-              <p className="text-3xl font-bold text-white mb-1">$49<span className="text-lg text-slate-400">/mois</span></p>
-              <p className="text-slate-400 text-sm mb-4">Jusqu'à 5 employés</p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Abonnés</span>
-                <span className="text-white font-medium">8</span>
+          {/* Revenue Summary */}
+          <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(34,211,238,0.1))', borderColor: 'rgba(99,102,241,0.3)' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-slate-400 text-sm">Revenus mensuels récurrents (MRR)</p>
+                <p className="text-4xl font-bold text-white mt-1">{stats ? fmtMoney(stats.monthlyRevenue) : '...'}</p>
               </div>
-            </div>
-
-            <div className="card border-blue-500/50">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-lg font-semibold text-white">Pro</h4>
-                <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">Populaire</span>
-              </div>
-              <p className="text-3xl font-bold text-white mb-1">$99<span className="text-lg text-slate-400">/mois</span></p>
-              <p className="text-slate-400 text-sm mb-4">Jusqu'à 20 employés</p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Abonnés</span>
-                <span className="text-white font-medium">14</span>
-              </div>
-            </div>
-
-            <div className="card border-purple-500/50">
-              <h4 className="text-lg font-semibold text-white mb-2">Enterprise</h4>
-              <p className="text-3xl font-bold text-white mb-1">$199<span className="text-lg text-slate-400">/mois</span></p>
-              <p className="text-slate-400 text-sm mb-4">Employés illimités</p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Abonnés</span>
-                <span className="text-white font-medium">2</span>
+              <div className="flex gap-6">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-400">{stats?.activeSubscriptions || 0}</p>
+                  <p className="text-xs text-slate-400">Actifs</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-amber-400">{stats?.trialUsers || 0}</p>
+                  <p className="text-xs text-slate-400">Essai</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Revenue Chart Placeholder */}
+          {/* Plans */}
+          {!plansLoaded ? (
+            <div className="flex justify-center py-8"><Loader className="animate-spin text-blue-500" size={28} /></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {plans.map((plan, i) => {
+                const colors = ['slate', 'blue', 'purple']
+                const c = colors[i] || 'slate'
+                const isPopular = plan.name === 'pro'
+                return (
+                  <div key={plan.id} className={`card relative ${isPopular ? 'border-blue-500/50' : ''}`}>
+                    {isPopular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <span className="flex items-center gap-1 px-3 py-0.5 bg-blue-500 text-white text-xs rounded-full font-semibold">
+                          <Star size={10} fill="white" /> Populaire
+                        </span>
+                      </div>
+                    )}
+                    <h4 className={`text-lg font-bold text-${c}-300 mb-2`}>{plan.displayName}</h4>
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className="text-3xl font-bold text-white">{fmtMoney(plan.price)}</span>
+                      <span className="text-slate-400 text-sm">/mois</span>
+                    </div>
+                    <p className="text-slate-400 text-sm mb-4">
+                      {plan.maxEmployees === -1 ? 'Employés illimités' : `Jusqu'à ${plan.maxEmployees} employés`}
+                    </p>
+                    {plan.features && Array.isArray(plan.features) && plan.features.length > 0 && (
+                      <div className="space-y-1 border-t border-slate-700 pt-3">
+                        {plan.features.map(f => (
+                          <div key={f} className="flex items-center gap-2 text-xs text-slate-400">
+                            <CheckCircle size={12} className="text-green-400 shrink-0" />
+                            {f.replace(/_/g, ' ')}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Restaurants par statut */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-white mb-4">Revenus mensuels</h3>
-            <div className="h-48 bg-slate-800/50 rounded-lg flex items-center justify-center">
-              <p className="text-slate-500">Graphique des revenus (à implémenter)</p>
+            <h3 className="text-lg font-semibold text-white mb-4">Répartition des restaurants</h3>
+            <div className="space-y-3">
+              {['active', 'trial', 'suspended', 'cancelled'].map(status => {
+                const count = restaurants.filter(r => r.status === status).length
+                const pct = restaurants.length ? Math.round((count / restaurants.length) * 100) : 0
+                const s = statusColor[status]
+                return (
+                  <div key={status} className="flex items-center gap-3">
+                    <div className="w-20 text-xs capitalize text-slate-400">{status}</div>
+                    <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${s.bg.replace('/15', '')}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="w-8 text-right text-sm font-medium text-white">{count}</div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
       )}
 
-      {/* Users Tab */}
+      {/* ══════════════ USERS ══════════════ */}
       {activeTab === 'users' && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-white mb-4">Tous les utilisateurs</h3>
-          <p className="text-slate-400">Liste de tous les utilisateurs de la plateforme (à implémenter)</p>
+        <div className="space-y-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              placeholder="Rechercher un utilisateur..."
+              className="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          {!usersLoaded ? (
+            <div className="flex justify-center py-12"><Loader className="animate-spin text-blue-500" size={28} /></div>
+          ) : (
+            <>
+              <p className="text-slate-500 text-xs">{filteredUsers.length} utilisateur(s)</p>
+              <div className="card overflow-hidden p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-700 bg-slate-800/60">
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Utilisateur</th>
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Rôle</th>
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Restaurants</th>
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">Inscrit le</th>
+                        <th className="text-right py-3 px-4 text-slate-400 font-medium text-xs uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-slate-500">
+                            <Users size={32} className="mx-auto mb-2 opacity-30" />
+                            Aucun utilisateur trouvé
+                          </td>
+                        </tr>
+                      ) : filteredUsers.map(u => {
+                        const roleColors = {
+                          superadmin: 'text-purple-400 bg-purple-500/15',
+                          manager: 'text-blue-400 bg-blue-500/15',
+                          server: 'text-slate-400 bg-slate-500/15'
+                        }
+                        const rc = roleColors[u.role] || roleColors.server
+                        return (
+                          <tr key={u.id} className="border-b border-slate-700/40 hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white">
+                                  {(u.firstName?.[0] || u.email?.[0] || '?').toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="text-white font-medium text-sm">
+                                    {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email}
+                                  </p>
+                                  <p className="text-slate-500 text-xs">{u.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${rc}`}>
+                                {u.role}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 hidden md:table-cell">
+                              {u.restaurants?.length === 0 ? (
+                                <span className="text-slate-600 text-xs">Aucun</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-1">
+                                  {u.restaurants?.slice(0, 2).map(r => (
+                                    <span key={r.id} className="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs rounded">
+                                      {r.name}
+                                    </span>
+                                  ))}
+                                  {u.restaurants?.length > 2 && (
+                                    <span className="text-slate-500 text-xs">+{u.restaurants.length - 2}</span>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-slate-500 text-xs hidden lg:table-cell">{fmt(u.createdAt)}</td>
+                            <td className="py-3 px-4 text-right">
+                              <a
+                                href={`mailto:${u.email}`}
+                                className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors inline-flex"
+                                title="Envoyer un email"
+                              >
+                                <Mail size={15} className="text-slate-400" />
+                              </a>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
