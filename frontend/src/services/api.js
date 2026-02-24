@@ -28,6 +28,12 @@ const fetchWithAuth = async (endpoint, options = {}) => {
 
 // Auth API
 export const authAPI = {
+  setupSuperAdmin: (data) =>
+    fetchWithAuth('/auth/setup', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
   register: (userData) =>
     fetchWithAuth('/auth/register', {
       method: 'POST',
@@ -224,7 +230,36 @@ export const adminAPI = {
 
   getUsers: () => fetchWithAuth('/admin/users'),
 
-  getPlans: () => fetchWithAuth('/admin/plans')
+  getPlans: () => fetchWithAuth('/admin/plans'),
+
+  inviteRestaurant: (email, restaurantName) =>
+    fetchWithAuth('/admin/invite-restaurant', {
+      method: 'POST',
+      body: JSON.stringify({ email, restaurantName })
+    }),
+
+  getSetupInvitations: () => fetchWithAuth('/admin/setup-invitations')
+}
+
+// Restaurant Setup API (public)
+export const setupAPI = {
+  getInfo: async (token) => {
+    const response = await fetch(`${API_URL}/invitations/setup/${token}`)
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Invitation invalide')
+    return data
+  },
+
+  complete: async (token, formData) => {
+    const response = await fetch(`${API_URL}/invitations/setup/${token}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Erreur lors de la configuration')
+    return data
+  }
 }
 
 export default {

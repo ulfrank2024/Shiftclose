@@ -7,7 +7,8 @@ import {
   Building2, Users, CreditCard, BarChart3, Activity,
   Search, CheckCircle, XCircle, Clock, TrendingUp,
   DollarSign, Loader, RefreshCw, Eye, Ban, Mail,
-  CheckSquare, Shield, ChevronDown, AlertCircle, Star
+  CheckSquare, Shield, ChevronDown, AlertCircle, Star,
+  Plus, Send, X
 } from 'lucide-react'
 
 const fmt = (isoDate) =>
@@ -36,6 +37,14 @@ export default function Admin() {
   const [searchTerm, setSearchTerm]     = useState('')
   const [userSearch, setUserSearch]     = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
+
+  // Invite modal state
+  const [showInviteModal, setShowInviteModal]   = useState(false)
+  const [inviteEmail, setInviteEmail]           = useState('')
+  const [inviteRestName, setInviteRestName]     = useState('')
+  const [inviteSending, setInviteSending]       = useState(false)
+  const [inviteSuccess, setInviteSuccess]       = useState('')
+  const [inviteError, setInviteError]           = useState('')
 
   // Guard: Super Admin only
   if (user?.role !== 'superadmin') {
@@ -116,6 +125,27 @@ export default function Admin() {
       setError(err.message)
     } finally {
       setActionLoading(null)
+    }
+  }
+
+  const handleInviteRestaurant = async (e) => {
+    e.preventDefault()
+    setInviteError('')
+    setInviteSuccess('')
+    setInviteSending(true)
+    try {
+      await adminAPI.inviteRestaurant(inviteEmail, inviteRestName)
+      setInviteSuccess(`Invitation envoyée à ${inviteEmail} !`)
+      setInviteEmail('')
+      setInviteRestName('')
+      setTimeout(() => {
+        setShowInviteModal(false)
+        setInviteSuccess('')
+      }, 2500)
+    } catch (err) {
+      setInviteError(err.message || 'Erreur lors de l\'envoi')
+    } finally {
+      setInviteSending(false)
     }
   }
 
@@ -278,11 +308,100 @@ export default function Admin() {
         </div>
       )}
 
+      {/* ══════════════ INVITE MODAL ══════════════ */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-slate-700">
+              <div className="flex items-center gap-2">
+                <Send size={18} className="text-amber-400" />
+                <h2 className="text-white font-semibold">Inviter un restaurant</h2>
+              </div>
+              <button onClick={() => { setShowInviteModal(false); setInviteError(''); setInviteSuccess('') }}
+                className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors">
+                <X size={18} className="text-slate-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleInviteRestaurant} className="p-5 space-y-4">
+              <p className="text-slate-400 text-sm">
+                L'invité recevra un email avec un lien pour créer son compte Manager et configurer son restaurant.
+              </p>
+
+              {inviteError && (
+                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                  <AlertCircle size={14} /> {inviteError}
+                </div>
+              )}
+              {inviteSuccess && (
+                <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+                  <CheckCircle size={14} /> {inviteSuccess}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Email du gestionnaire
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="manager@restaurant.com"
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Nom du restaurant
+                </label>
+                <input
+                  type="text"
+                  value={inviteRestName}
+                  onChange={(e) => setInviteRestName(e.target.value)}
+                  placeholder="Ex: Jimmies Pizza"
+                  required
+                  className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none text-sm"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowInviteModal(false)}
+                  className="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={inviteSending}
+                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                >
+                  {inviteSending
+                    ? <><Loader size={15} className="animate-spin" /> Envoi...</>
+                    : <><Send size={15} /> Envoyer l'invitation</>
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ══════════════ RESTAURANTS ══════════════ */}
       {activeTab === 'restaurants' && (
         <div className="space-y-4">
           {/* Search & Filter */}
           <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors text-sm shrink-0"
+            >
+              <Plus size={16} /> Inviter un restaurant
+            </button>
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input

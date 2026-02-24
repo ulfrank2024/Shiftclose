@@ -393,6 +393,87 @@ export const getAllUsers = async (req, res) => {
   }
 }
 
+// Create initial Super Admin (only if none exists)
+export const setupSuperAdmin = async (req, res) => {
+  try {
+    const { email, password, firstName, lastName, setupKey } = req.body
+
+    // Validate setup key
+    if (!process.env.SETUP_KEY || setupKey !== process.env.SETUP_KEY) {
+      return res.status(403).json({ error: 'Clé de configuration invalide' })
+    }
+
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'Tous les champs sont requis' })
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères' })
+    }
+
+    // Check if superadmin already exists
+    const { data: existing } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'superadmin')
+      .maybeSingle()
+
+    if (existing) {
+      return res.status(409).json({ error: 'Un Super Admin existe déjà. Utilisez la page de connexion.' })
+    }
+
+    // Check if email is taken
+    const { data: emailTaken } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .maybeSingle()
+
+    if (emailTaken) {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé' })
+    }
+
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
+
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'superadmin'
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Create superadmin error:', error)
+      return res.status(500).json({ error: 'Erreur lors de la création du compte' })
+    }
+
+    const token = generateToken(newUser.id)
+
+    res.status(201).json({
+      success: true,
+      message: 'Super Admin créé avec succès',
+      token,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.first_name,
+        lastName: newUser.last_name,
+        role: 'superadmin',
+        restaurants: []
+      }
+    })
+  } catch (error) {
+    console.error('Setup superadmin error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
 // Forgot password - send reset email
 export const forgotPassword = async (req, res) => {
   try {

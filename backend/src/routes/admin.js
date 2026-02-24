@@ -6,7 +6,9 @@ import {
   getAllUsers,
   suspendRestaurant,
   activateRestaurant,
-  getPlans
+  getPlans,
+  inviteRestaurant,
+  getSetupInvitations
 } from '../controllers/adminController.js'
 
 const router = Router()
@@ -22,6 +24,10 @@ router.get('/stats', getStats)
 router.get('/restaurants', getAllRestaurants)
 router.put('/restaurants/:restaurantId/suspend', suspendRestaurant)
 router.put('/restaurants/:restaurantId/activate', activateRestaurant)
+
+// Restaurant setup invitations
+router.post('/invite-restaurant', inviteRestaurant)
+router.get('/setup-invitations', getSetupInvitations)
 
 // Users management
 router.get('/users', getAllUsers)

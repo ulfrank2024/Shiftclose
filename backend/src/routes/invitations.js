@@ -5,13 +5,17 @@ import {
   acceptInvitation,
   getInvitationInfo,
   getPendingInvitations,
-  cancelInvitation
+  cancelInvitation,
+  getSetupInvitationInfo,
+  completeRestaurantSetup
 } from '../controllers/inviteController.js'
 
 const router = Router()
 
-// Public route - get invitation info for preview
+// Public routes - no auth required
 router.get('/info/:token', getInvitationInfo)
+router.get('/setup/:token', getSetupInvitationInfo)
+router.post('/setup/:token', completeRestaurantSetup)
 
 // Protected routes
 router.use(verifyToken)

@@ -1,4 +1,6 @@
+import crypto from 'crypto'
 import { supabase } from '../config/supabase.js'
+import { sendEmail, emailTemplates } from '../config/email.js'
 
 // Get dashboard stats (Super Admin only)
 export const getStats = async (req, res) => {
@@ -240,6 +242,93 @@ export const activateRestaurant = async (req, res) => {
     })
   } catch (error) {
     console.error('Activate restaurant error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Invite a manager to create a new restaurant
+export const inviteRestaurant = async (req, res) => {
+  try {
+    const { email, restaurantName } = req.body
+
+    if (!email || !restaurantName) {
+      return res.status(400).json({ error: 'Email et nom du restaurant requis' })
+    }
+
+    // Check if pending invitation already exists for this email
+    const { data: existing } = await supabase
+      .from('restaurant_setup_invitations')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .eq('status', 'pending')
+      .maybeSingle()
+
+    if (existing) {
+      return res.status(400).json({ error: 'Une invitation est déjà en attente pour cet email' })
+    }
+
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 7)
+
+    const { error } = await supabase
+      .from('restaurant_setup_invitations')
+      .insert({
+        email: email.toLowerCase(),
+        restaurant_name: restaurantName,
+        token,
+        status: 'pending',
+        invited_by: req.user.id,
+        invited_by_name: `${req.user.first_name} ${req.user.last_name}`,
+        expires_at: expiresAt.toISOString()
+      })
+
+    if (error) {
+      console.error('Create setup invitation error:', error)
+      return res.status(500).json({ error: 'Erreur lors de la création de l\'invitation' })
+    }
+
+    const setupLink = `${process.env.FRONTEND_URL}/setup-restaurant/${token}`
+    const template = emailTemplates.restaurantSetup(restaurantName, setupLink)
+
+    await sendEmail({ to: email, ...template })
+
+    res.status(201).json({
+      success: true,
+      message: `Invitation envoyée à ${email}`
+    })
+  } catch (error) {
+    console.error('Invite restaurant error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Get all pending restaurant setup invitations
+export const getSetupInvitations = async (req, res) => {
+  try {
+    const { data: invitations, error } = await supabase
+      .from('restaurant_setup_invitations')
+      .select('id, email, restaurant_name, status, invited_by_name, created_at, expires_at')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+    }
+
+    res.json({
+      success: true,
+      invitations: invitations.map(i => ({
+        id: i.id,
+        email: i.email,
+        restaurantName: i.restaurant_name,
+        status: i.status,
+        invitedByName: i.invited_by_name,
+        createdAt: i.created_at,
+        expiresAt: i.expires_at
+      }))
+    })
+  } catch (error) {
+    console.error('Get setup invitations error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

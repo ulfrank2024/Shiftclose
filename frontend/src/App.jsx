@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import AcceptInvite from './pages/AcceptInvite'
+import SetupRestaurant from './pages/SetupRestaurant'
 import Dashboard from './pages/Dashboard'
 import CashOut from './pages/CashOut'
 import Reports from './pages/Reports'
@@ -12,6 +13,7 @@ import Settings from './pages/Settings'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import AdminLogin from './pages/AdminLogin'
+import SuperAdminSetup from './pages/SuperAdminSetup'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 
@@ -144,8 +146,12 @@ export default function App() {
           }
         />
 
-        {/* Invitation Route */}
+        {/* Super Admin first-time setup */}
+        <Route path="/admin/setup" element={<SuperAdminSetup />} />
+
+        {/* Invitation Routes */}
         <Route path="/invite/:token" element={<AcceptInvite />} />
+        <Route path="/setup-restaurant/:token" element={<SetupRestaurant />} />
 
         {/* Protected Routes */}
         <Route

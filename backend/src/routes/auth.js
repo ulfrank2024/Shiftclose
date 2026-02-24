@@ -9,7 +9,8 @@ import {
   changePassword,
   getAllUsers,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  setupSuperAdmin
 } from '../controllers/authController.js'
 
 const router = Router()
@@ -20,6 +21,7 @@ router.post('/register-employee', registerEmployee)
 router.post('/login', login)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)
+router.post('/setup', setupSuperAdmin)  // One-time Super Admin creation
 
 // Protected routes
 router.get('/profile', verifyToken, getProfile)

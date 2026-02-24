@@ -1,5 +1,7 @@
+import bcrypt from 'bcryptjs'
 import { supabase } from '../config/supabase.js'
 import { sendEmail, emailTemplates } from '../config/email.js'
+import { generateToken } from '../middleware/auth.js'
 import crypto from 'crypto'
 
 // Send invitation to join restaurant
@@ -243,6 +245,181 @@ export const getPendingInvitations = async (req, res) => {
     res.json({ success: true, invitations: formattedInvitations })
   } catch (error) {
     console.error('Get pending invitations error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// ─── Restaurant Setup Invitation (Super Admin flow) ────────────────────────
+
+// Get setup invitation info (public)
+export const getSetupInvitationInfo = async (req, res) => {
+  try {
+    const { token } = req.params
+
+    const { data: invitation, error } = await supabase
+      .from('restaurant_setup_invitations')
+      .select('email, restaurant_name, invited_by_name, expires_at, status')
+      .eq('token', token)
+      .single()
+
+    if (error || !invitation) {
+      return res.status(404).json({ error: 'Invitation non trouvée ou expirée' })
+    }
+
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ error: 'Cette invitation a déjà été utilisée ou annulée' })
+    }
+
+    if (new Date(invitation.expires_at) < new Date()) {
+      await supabase
+        .from('restaurant_setup_invitations')
+        .update({ status: 'expired' })
+        .eq('token', token)
+      return res.status(400).json({ error: 'Cette invitation a expiré' })
+    }
+
+    res.json({
+      success: true,
+      invitation: {
+        email: invitation.email,
+        restaurantName: invitation.restaurant_name,
+        invitedByName: invitation.invited_by_name
+      }
+    })
+  } catch (error) {
+    console.error('Get setup invitation info error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Complete restaurant setup (public — creates user + restaurant)
+export const completeRestaurantSetup = async (req, res) => {
+  try {
+    const { token } = req.params
+    const { firstName, lastName, password } = req.body
+
+    if (!firstName || !lastName || !password) {
+      return res.status(400).json({ error: 'Prénom, nom et mot de passe requis' })
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' })
+    }
+
+    // Fetch invitation
+    const { data: invitation, error: fetchError } = await supabase
+      .from('restaurant_setup_invitations')
+      .select('*')
+      .eq('token', token)
+      .eq('status', 'pending')
+      .single()
+
+    if (fetchError || !invitation) {
+      return res.status(404).json({ error: 'Invitation non trouvée ou déjà utilisée' })
+    }
+
+    if (new Date(invitation.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'Cette invitation a expiré' })
+    }
+
+    // Check if email already has an account
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', invitation.email)
+      .maybeSingle()
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Un compte existe déjà avec cet email. Connectez-vous.' })
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
+
+    // Create manager user
+    const { data: newUser, error: userError } = await supabase
+      .from('users')
+      .insert({
+        email: invitation.email,
+        password: hashedPassword,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'manager'
+      })
+      .select()
+      .single()
+
+    if (userError) {
+      console.error('Create user error:', userError)
+      return res.status(500).json({ error: 'Erreur lors de la création du compte' })
+    }
+
+    // Create restaurant
+    const { data: newRestaurant, error: restaurantError } = await supabase
+      .from('restaurants')
+      .insert({
+        name: invitation.restaurant_name,
+        created_by: newUser.id
+      })
+      .select()
+      .single()
+
+    if (restaurantError) {
+      console.error('Create restaurant error:', restaurantError)
+      await supabase.from('users').delete().eq('id', newUser.id)
+      return res.status(500).json({ error: 'Erreur lors de la création du restaurant' })
+    }
+
+    // Link user to restaurant as manager
+    await supabase
+      .from('user_restaurants')
+      .insert({
+        user_id: newUser.id,
+        restaurant_id: newRestaurant.id,
+        role: 'manager'
+      })
+
+    // Mark invitation as accepted
+    await supabase
+      .from('restaurant_setup_invitations')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+        accepted_by: newUser.id,
+        created_restaurant_id: newRestaurant.id
+      })
+      .eq('id', invitation.id)
+
+    // Send welcome email
+    try {
+      const welcome = emailTemplates.welcomeUser(firstName)
+      await sendEmail({ to: invitation.email, ...welcome })
+    } catch (e) {
+      // Non-blocking
+    }
+
+    const jwtToken = generateToken(newUser.id)
+
+    res.status(201).json({
+      success: true,
+      message: 'Restaurant configuré avec succès !',
+      token: jwtToken,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.first_name,
+        lastName: newUser.last_name,
+        role: 'manager',
+        restaurants: [{
+          id: newRestaurant.id,
+          name: newRestaurant.name,
+          role: 'manager'
+        }]
+      }
+    })
+  } catch (error) {
+    console.error('Complete restaurant setup error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }
