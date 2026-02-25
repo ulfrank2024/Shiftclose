@@ -33,9 +33,12 @@ export default function Profile() {
 
   const [profileLoading, setProfileLoading]   = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
+  const [photoLoading, setPhotoLoading]       = useState(false)
   const [profileSuccess, setProfileSuccess]   = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [photoSuccess, setPhotoSuccess]       = useState(false)
   const [error, setError] = useState('')
+  const [localPhoto, setLocalPhoto] = useState(null)
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault()
@@ -86,11 +89,40 @@ export default function Profile() {
     }
   }
 
-  const handlePhotoClick  = () => fileInputRef.current?.click()
+  const handlePhotoClick = () => fileInputRef.current?.click()
+
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    console.log('Photo selected:', file.name)
+
+    // Validate: image only, max 5 MB
+    if (!file.type.startsWith('image/')) {
+      setError('Seules les images sont acceptées (JPG, PNG, WebP).')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La photo ne doit pas dépasser 5 Mo.')
+      return
+    }
+
+    // Immediate local preview
+    setLocalPhoto(URL.createObjectURL(file))
+    setPhotoLoading(true)
+    setError('')
+
+    try {
+      await authAPI.uploadPhoto(file)
+      await refreshUser()
+      setPhotoSuccess(true)
+      setTimeout(() => setPhotoSuccess(false), 3000)
+    } catch (err) {
+      setError(err.message)
+      setLocalPhoto(null)
+    } finally {
+      setPhotoLoading(false)
+      // Reset file input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   const userInitials = `${(user?.firstName || user?.first_name || '?')[0]}${(user?.lastName || user?.last_name || '?')[0]}`
@@ -118,23 +150,53 @@ export default function Profile() {
             <div
               onClick={handlePhotoClick}
               className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center cursor-pointer group overflow-hidden"
+              title="Changer la photo"
             >
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt={userName} className="w-full h-full object-cover" />
+              {(localPhoto || user?.photoURL) ? (
+                <img
+                  src={localPhoto || user.photoURL}
+                  alt={userName}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <span className="text-white text-3xl font-bold">{userInitials}</span>
               )}
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                <Camera className="text-white" size={24} />
-              </div>
+              {/* Overlay: spinner during upload, camera icon on hover */}
+              {photoLoading ? (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
+                  <Loader2 className="text-white animate-spin" size={28} />
+                </div>
+              ) : (
+                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                  <Camera className="text-white" size={22} />
+                  <span className="text-white text-xs font-medium">Modifier</span>
+                </div>
+              )}
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+
+            {/* Success badge */}
+            {photoSuccess && (
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center border-2 border-slate-800">
+                <CheckCircle size={14} className="text-white" />
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
           </div>
 
           {/* Info */}
           <div className="text-center sm:text-left">
             <h1 className="text-2xl font-bold text-white">{userName}</h1>
             <p className="text-slate-400 mt-1">{user?.email}</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {photoLoading ? 'Téléversement en cours...' : 'Cliquez sur la photo pour la modifier'}
+            </p>
             <div className="mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
               <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 text-sm rounded-full capitalize font-medium">
                 {user?.role || 'server'}

@@ -64,7 +64,21 @@ export const authAPI = {
     fetchWithAuth('/auth/password', {
       method: 'PUT',
       body: JSON.stringify(data)
+    }),
+
+  uploadPhoto: async (file) => {
+    const token = getToken()
+    const formData = new FormData()
+    formData.append('photo', file)
+    const response = await fetch(`${API_URL}/auth/photo`, {
+      method: 'POST',
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+      body: formData
     })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Erreur upload')
+    return data
+  }
 }
 
 // Restaurant API

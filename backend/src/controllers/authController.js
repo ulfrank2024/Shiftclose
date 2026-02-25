@@ -241,6 +241,7 @@ export const login = async (req, res) => {
         ...userWithoutPassword,
         firstName: user.first_name,
         lastName: user.last_name,
+        photoURL: user.photo_url || null,
         restaurants
       }
     })
@@ -281,7 +282,8 @@ export const getProfile = async (req, res) => {
         ...userWithoutPassword,
         firstName: req.user.first_name,
         lastName: req.user.last_name,
-        role: req.user.role, // Explicitly include role
+        role: req.user.role,
+        photoURL: req.user.photo_url || null,
         restaurants
       }
     })
@@ -359,6 +361,60 @@ export const changePassword = async (req, res) => {
     })
   } catch (error) {
     console.error('Change password error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Upload profile photo
+export const uploadPhoto = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier fourni' })
+    }
+
+    const userId = req.user.id
+    const file = req.file
+    const ext = file.mimetype.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg'
+    const filename = `${userId}/avatar.${ext}`
+
+    // Create bucket if it doesn't exist (ignore error if already exists)
+    await supabase.storage.createBucket('avatars', {
+      public: true,
+      fileSizeLimit: 5242880,
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    })
+
+    // Upload to Supabase Storage (upsert = overwrite existing)
+    const { error: uploadError } = await supabase
+      .storage
+      .from('avatars')
+      .upload(filename, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true
+      })
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError)
+      return res.status(500).json({ error: 'Erreur lors du téléversement' })
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase
+      .storage
+      .from('avatars')
+      .getPublicUrl(filename)
+
+    const photoUrl = urlData.publicUrl
+
+    // Save URL in users table
+    await supabase
+      .from('users')
+      .update({ photo_url: photoUrl })
+      .eq('id', userId)
+
+    res.json({ success: true, photoURL: photoUrl })
+  } catch (error) {
+    console.error('Upload photo error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

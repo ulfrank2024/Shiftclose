@@ -378,11 +378,16 @@ export default function Sidebar() {
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6'
+              backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6',
+              overflow: 'hidden'
             }}>
-              <span style={{ color: 'white', fontWeight: 500, fontSize: '18px' }}>
-                {user?.firstName?.charAt(0) || 'U'}
-              </span>
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ color: 'white', fontWeight: 500, fontSize: '18px' }}>
+                  {user?.firstName?.charAt(0) || 'U'}
+                </span>
+              )}
             </div>
             <div style={{ overflow: 'hidden', flex: 1 }}>
               <p style={{ color: 'white', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -400,11 +405,16 @@ export default function Sidebar() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6'
+              backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6',
+              overflow: 'hidden'
             }}>
-              <span style={{ color: 'white', fontWeight: 500, fontSize: '18px' }}>
-                {user?.firstName?.charAt(0) || 'U'}
-              </span>
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ color: 'white', fontWeight: 500, fontSize: '18px' }}>
+                  {user?.firstName?.charAt(0) || 'U'}
+                </span>
+              )}
             </div>
           </div>
         )}

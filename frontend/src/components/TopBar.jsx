@@ -149,20 +149,26 @@ export default function TopBar() {
             <button
               onClick={() => setShowMenu(!showMenu)}
               style={{
-                width: '32px',
-                height: '32px',
+                width: '36px',
+                height: '36px',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: isSuperAdmin ? '#f59e0b' : '#3b82f6',
-                border: 'none',
-                cursor: 'pointer'
+                border: '2px solid rgba(255,255,255,0.2)',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                padding: 0
               }}
             >
-              <span style={{ color: 'white', fontSize: '14px', fontWeight: 500 }}>
-                {user?.firstName?.charAt(0) || 'U'}
-              </span>
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ color: 'white', fontSize: '14px', fontWeight: 500 }}>
+                  {user?.firstName?.charAt(0) || 'U'}
+                </span>
+              )}
             </button>
 
             {showMenu && (
