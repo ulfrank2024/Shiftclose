@@ -81,8 +81,8 @@ export default function Dashboard() {
         overflow: 'hidden',
         borderRadius: '20px',
         background: 'linear-gradient(to bottom right, #2563eb, #1d4ed8, #4338ca)',
-        padding: '36px 32px'
-      }}>
+        padding: '24px 20px'
+      }} className="sm-welcome-pad">
         {/* Background decoration */}
         <div style={{
           position: 'absolute', top: 0, right: 0,
@@ -110,8 +110,8 @@ export default function Dashboard() {
               <span style={{ textTransform: 'capitalize' }}>{today}</span>
             </div>
             <h1 style={{
-              fontSize: '30px', fontWeight: 'bold', color: 'white', marginBottom: '8px', lineHeight: '1.2'
-            }}>
+              fontSize: '22px', fontWeight: 'bold', color: 'white', marginBottom: '8px', lineHeight: '1.2'
+            }} className="welcome-title">
               {t('dashboard.welcome')}, {user?.firstName} !
             </h1>
             <p style={{ color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
@@ -139,39 +139,28 @@ export default function Dashboard() {
       </div>
 
       {/* ── Stats Grid ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '20px'
-      }} className="lg:grid-cols-4">
+      <div className="stats-grid">
 
         {/* Total Sales */}
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
           border: '1px solid rgba(71,85,105,0.5)',
-          borderRadius: '18px',
-          padding: '28px 24px'
+          borderRadius: '18px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div>
-              <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500, letterSpacing: '0.03em', marginBottom: '10px' }}>
-                {t('dashboard.totalSales')}
-              </p>
-              <p style={{ fontSize: '30px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
-                {loading ? '—' : `$${stats.totalSales.toFixed(2)}`}
-              </p>
+          <div className="stat-card-inner">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                <p className="stat-label">{t('dashboard.totalSales')}</p>
+                <p className="stat-value">{loading ? '—' : `$${stats.totalSales.toFixed(2)}`}</p>
+              </div>
+              <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
+                <DollarSign style={{ color: '#4ade80' }} size={20} />
+              </div>
             </div>
-            <div style={{
-              width: '52px', height: '52px', borderRadius: '14px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backgroundColor: 'rgba(16,185,129,0.12)', flexShrink: 0
-            }}>
-              <DollarSign style={{ color: '#4ade80' }} size={24} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#4ade80', fontSize: '12px' }}>
+              <TrendingUp size={13} />
+              <span>{t('dashboard.today')}</span>
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4ade80', fontSize: '13px' }}>
-            <TrendingUp size={14} />
-            <span>{t('dashboard.today')}</span>
           </div>
         </div>
 
@@ -179,29 +168,22 @@ export default function Dashboard() {
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
           border: '1px solid rgba(71,85,105,0.5)',
-          borderRadius: '18px',
-          padding: '28px 24px'
+          borderRadius: '18px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div>
-              <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500, letterSpacing: '0.03em', marginBottom: '10px' }}>
-                {t('dashboard.totalTips')}
-              </p>
-              <p style={{ fontSize: '30px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
-                {loading ? '—' : `$${stats.totalTips.toFixed(2)}`}
-              </p>
+          <div className="stat-card-inner">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                <p className="stat-label">{t('dashboard.totalTips')}</p>
+                <p className="stat-value">{loading ? '—' : `$${stats.totalTips.toFixed(2)}`}</p>
+              </div>
+              <div className="stat-icon" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
+                <TrendingUp style={{ color: '#60a5fa' }} size={20} />
+              </div>
             </div>
-            <div style={{
-              width: '52px', height: '52px', borderRadius: '14px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backgroundColor: 'rgba(59,130,246,0.12)', flexShrink: 0
-            }}>
-              <TrendingUp style={{ color: '#60a5fa' }} size={24} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#60a5fa', fontSize: '12px' }}>
+              <TrendingUp size={13} />
+              <span>{t('dashboard.today')}</span>
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#60a5fa', fontSize: '13px' }}>
-            <TrendingUp size={14} />
-            <span>{t('dashboard.today')}</span>
           </div>
         </div>
 
@@ -209,32 +191,25 @@ export default function Dashboard() {
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
           border: '1px solid rgba(71,85,105,0.5)',
-          borderRadius: '18px',
-          padding: '28px 24px'
+          borderRadius: '18px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div>
-              <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500, letterSpacing: '0.03em', marginBottom: '10px' }}>
-                {t('dashboard.pendingReports')}
-              </p>
-              <p style={{ fontSize: '30px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
-                {loading ? '—' : stats.pendingReports}
-              </p>
+          <div className="stat-card-inner">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                <p className="stat-label">{t('dashboard.pendingReports')}</p>
+                <p className="stat-value">{loading ? '—' : stats.pendingReports}</p>
+              </div>
+              <div className="stat-icon" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
+                <Clock style={{ color: '#fbbf24' }} size={20} />
+              </div>
             </div>
-            <div style={{
-              width: '52px', height: '52px', borderRadius: '14px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backgroundColor: 'rgba(245,158,11,0.12)', flexShrink: 0
-            }}>
-              <Clock style={{ color: '#fbbf24' }} size={24} />
+            <div style={{ height: '6px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: '9999px', backgroundColor: '#f59e0b',
+                width: `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`,
+                transition: 'width 0.5s ease'
+              }} />
             </div>
-          </div>
-          <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: '9999px', backgroundColor: '#f59e0b',
-              width: `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`,
-              transition: 'width 0.5s ease'
-            }} />
           </div>
         </div>
 
@@ -242,32 +217,25 @@ export default function Dashboard() {
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
           border: '1px solid rgba(71,85,105,0.5)',
-          borderRadius: '18px',
-          padding: '28px 24px'
+          borderRadius: '18px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div>
-              <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500, letterSpacing: '0.03em', marginBottom: '10px' }}>
-                {t('dashboard.validatedReports')}
-              </p>
-              <p style={{ fontSize: '30px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
-                {loading ? '—' : stats.validatedReports}
-              </p>
+          <div className="stat-card-inner">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                <p className="stat-label">{t('dashboard.validatedReports')}</p>
+                <p className="stat-value">{loading ? '—' : stats.validatedReports}</p>
+              </div>
+              <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
+                <CheckCircle style={{ color: '#34d399' }} size={20} />
+              </div>
             </div>
-            <div style={{
-              width: '52px', height: '52px', borderRadius: '14px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backgroundColor: 'rgba(16,185,129,0.12)', flexShrink: 0
-            }}>
-              <CheckCircle style={{ color: '#34d399' }} size={24} />
+            <div style={{ height: '6px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: '9999px', backgroundColor: '#10b981',
+                width: `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`,
+                transition: 'width 0.5s ease'
+              }} />
             </div>
-          </div>
-          <div style={{ height: '8px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: '9999px', backgroundColor: '#10b981',
-              width: `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`,
-              transition: 'width 0.5s ease'
-            }} />
           </div>
         </div>
       </div>
