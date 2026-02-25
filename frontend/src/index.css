@@ -623,3 +623,54 @@ a, button, input, select {
     display: none !important;
   }
 }
+
+/* Badge rôle membre : caché sur mobile, visible sur desktop */
+.member-badge-desktop {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .member-badge-desktop {
+    display: inline-flex;
+  }
+}
+
+/* Badge rôle membre : visible sur mobile, caché sur desktop */
+.member-badge-mobile {
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .member-badge-mobile {
+    display: none;
+  }
+}
+
+/* Team tabs scroll sans scrollbar */
+.team-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.team-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Add-rule form : colonne sur mobile, ligne sur desktop */
+.add-rule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .add-rule-form {
+    flex-direction: row;
+    align-items: center;
+  }
+}
