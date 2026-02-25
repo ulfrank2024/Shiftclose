@@ -58,7 +58,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-2xl mx-auto">
+    <div className="space-y-10 animate-fade-in max-w-2xl mx-auto">
 
       {/* ── Header ── */}
       <div className="flex items-center gap-4">

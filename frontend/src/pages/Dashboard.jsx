@@ -73,7 +73,7 @@ export default function Dashboard() {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
 
       {/* ── Welcome Header ── */}
       <div style={{
@@ -274,7 +274,7 @@ export default function Dashboard() {
 
       {/* ── Quick Actions + Recent Activity ── */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1fr', gap: '24px'
+        display: 'grid', gridTemplateColumns: '1fr', gap: '28px'
       }} className="lg:grid-cols-3">
 
         {/* Quick Actions */}
