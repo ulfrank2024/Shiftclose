@@ -209,18 +209,88 @@ export default function Admin() {
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Shield size={20} className="text-purple-400" />
-            <h1 className="text-2xl font-bold text-white">Super Admin</h1>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+              <div style={{
+                padding: '8px',
+                background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1))',
+                borderRadius: '12px',
+                border: '1px solid rgba(245,158,11,0.3)'
+              }}>
+                <Shield size={22} style={{ color: '#f59e0b' }} />
+              </div>
+              <h1 style={{ color: 'white', fontSize: '26px', fontWeight: 700, letterSpacing: '-0.4px' }}>
+                ShiftClose Admin
+              </h1>
+            </div>
+            <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
+              Propriétaire de la plateforme SaaS · Gestion des abonnements et des restaurants clients
+            </p>
           </div>
-          <p className="text-slate-400 text-sm">Panneau de contrôle global — {restaurants.length} restaurant(s)</p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            {/* Badges de stats rapides */}
+            {stats && (
+              <>
+                <div style={{
+                  padding: '8px 14px',
+                  background: 'rgba(16,185,129,0.1)',
+                  border: '1px solid rgba(16,185,129,0.25)',
+                  borderRadius: '10px',
+                  display: 'flex', alignItems: 'center', gap: '6px'
+                }}>
+                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }} />
+                  <span style={{ color: '#34d399', fontSize: '13px', fontWeight: 600 }}>
+                    {stats.activeSubscriptions} actifs
+                  </span>
+                </div>
+                <div style={{
+                  padding: '8px 14px',
+                  background: 'rgba(59,130,246,0.1)',
+                  border: '1px solid rgba(59,130,246,0.25)',
+                  borderRadius: '10px'
+                }}>
+                  <span style={{ color: '#60a5fa', fontSize: '13px', fontWeight: 600 }}>
+                    {restaurants.length} restaurants
+                  </span>
+                </div>
+              </>
+            )}
+            <button
+              onClick={loadData}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px',
+                background: 'rgba(51,65,85,0.6)',
+                border: '1px solid rgba(71,85,105,0.4)',
+                borderRadius: '10px', cursor: 'pointer',
+                color: '#94a3b8', fontSize: '13px', fontWeight: 500,
+                transition: 'all 0.2s'
+              }}
+            >
+              <RefreshCw size={15} />
+              Actualiser
+            </button>
+          </div>
         </div>
-        <button onClick={loadData} className="btn bg-slate-700 hover:bg-slate-600 text-white self-start sm:self-auto">
-          <RefreshCw size={18} />
-          Actualiser
-        </button>
+
+        {/* Bandeau rôle */}
+        <div style={{
+          padding: '12px 16px',
+          background: 'rgba(245,158,11,0.06)',
+          border: '1px solid rgba(245,158,11,0.15)',
+          borderRadius: '12px',
+          display: 'flex', alignItems: 'center', gap: '10px'
+        }}>
+          <Shield size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
+          <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: 1.5 }}>
+            <span style={{ color: '#fbbf24', fontWeight: 600 }}>Votre rôle :</span>{' '}
+            Vous gérez la plateforme ShiftClose — vous invitez les managers à s'abonner, suivez les revenus et les activités globales.
+            La configuration des Tip Out et la gestion des équipes est à la charge de chaque manager dans son restaurant.
+          </p>
+        </div>
       </div>
 
       {/* Error */}

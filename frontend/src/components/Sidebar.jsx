@@ -44,12 +44,10 @@ export default function Sidebar() {
   // Navigation items based on role
   const getNavItems = () => {
     if (isSuperAdmin) {
+      // Super Admin : tout est dans /admin via les onglets internes
       return [
-        { path: '/admin', icon: BarChart3, label: 'Vue d\'ensemble' },
-        { path: '/admin/restaurants', icon: Building2, label: 'Restaurants' },
-        { path: '/admin/subscriptions', icon: CreditCard, label: 'Abonnements' },
-        { path: '/admin/users', icon: Users, label: 'Utilisateurs' },
-        { path: '/settings', icon: Settings, label: t('nav.settings') },
+        { path: '/admin', icon: Shield,   label: 'Administration' },
+        { path: '/profile', icon: Users,  label: 'Mon profil' },
       ]
     }
 

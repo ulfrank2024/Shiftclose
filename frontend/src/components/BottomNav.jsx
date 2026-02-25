@@ -15,17 +15,20 @@ export default function BottomNav() {
   const { isManager, user } = useAuth()
   const isSuperAdmin = user?.role === 'superadmin'
 
-  const navItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
-    // Super Admin sees Admin panel instead of Cash Out
-    ...(isSuperAdmin
-      ? [{ path: '/admin', icon: Shield, label: t('nav.admin') }]
-      : [{ path: '/cash-out', icon: Calculator, label: t('nav.cashOut') }]
-    ),
-    { path: '/reports', icon: FileText, label: t('nav.reports') },
-    ...(isManager && !isSuperAdmin ? [{ path: '/team', icon: Users, label: t('nav.team') }] : []),
-    { path: '/settings', icon: Settings, label: t('nav.settings') }
-  ]
+  // Navigation séparée selon le rôle
+  const navItems = isSuperAdmin
+    ? [
+        // Super Admin : uniquement le panel admin et profil
+        { path: '/admin',   icon: Shield,  label: 'Admin' },
+        { path: '/profile', icon: Settings, label: 'Profil' }
+      ]
+    : [
+        { path: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
+        { path: '/cash-out',  icon: Calculator,      label: t('nav.cashOut') },
+        { path: '/reports',   icon: FileText,         label: t('nav.reports') },
+        ...(isManager ? [{ path: '/team', icon: Users, label: t('nav.team') }] : []),
+        { path: '/settings',  icon: Settings,         label: t('nav.settings') }
+      ]
 
   return (
     <nav className="topbar-mobile" style={{
