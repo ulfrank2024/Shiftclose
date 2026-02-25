@@ -65,15 +65,14 @@ export default function Sidebar() {
   const navItems = getNavItems()
 
   return (
-    <aside style={{
-      display: 'none',
+    <aside className="sidebar-desktop" style={{
       flexDirection: 'column',
       backgroundColor: '#1e293b',
       borderRight: '1px solid #334155',
       transition: 'all 0.3s',
       width: collapsed ? '96px' : '288px',
       minHeight: '100vh'
-    }} className="md:flex">
+    }}>
       {/* Logo Header */}
       <div style={{
         height: '80px',

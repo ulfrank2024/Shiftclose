@@ -28,7 +28,7 @@ export default function BottomNav() {
   ]
 
   return (
-    <nav className="md:hidden" style={{
+    <nav className="topbar-mobile" style={{
       position: 'fixed',
       bottom: 0,
       left: 0,

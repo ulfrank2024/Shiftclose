@@ -24,7 +24,7 @@ export default function TopBar() {
   const isSuperAdmin = user?.role === 'superadmin'
 
   return (
-    <header className="md:hidden" style={{
+    <header className="topbar-mobile" style={{
       backgroundColor: '#1e293b',
       borderBottom: '1px solid #334155',
       position: 'sticky',

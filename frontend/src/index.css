@@ -504,3 +504,25 @@ a, button, input, select {
     padding: 0.75rem;
   }
 }
+
+/* Sidebar : cachée sur mobile, visible sur desktop */
+.sidebar-desktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .sidebar-desktop {
+    display: flex !important;
+  }
+}
+
+/* TopBar : visible sur mobile, cachée sur desktop */
+.topbar-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .topbar-mobile {
+    display: none !important;
+  }
+}
