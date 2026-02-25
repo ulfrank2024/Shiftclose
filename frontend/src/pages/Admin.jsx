@@ -231,16 +231,43 @@ export default function Admin() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div style={{
+        display: 'flex',
+        gap: '10px',
+        overflowX: 'auto',
+        paddingBottom: '8px',
+        paddingTop: '4px',
+        marginBottom: '8px',
+        scrollbarWidth: 'none'
+      }}>
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
-              activeTab === tab.id
-                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-            }`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              borderRadius: '14px',
+              fontSize: '14px',
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'all 0.2s',
+              flexShrink: 0,
+              background: activeTab === tab.id
+                ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)'
+                : 'rgba(30,41,59,0.8)',
+              color: activeTab === tab.id ? 'white' : '#94a3b8',
+              boxShadow: activeTab === tab.id
+                ? '0 4px 16px rgba(99,102,241,0.35)'
+                : 'none',
+              border: activeTab === tab.id
+                ? '1px solid transparent'
+                : '1px solid rgba(51,65,85,0.6)'
+            }}
           >
             <tab.icon size={16} />
             {tab.label}

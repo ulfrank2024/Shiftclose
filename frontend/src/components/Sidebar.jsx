@@ -71,7 +71,11 @@ export default function Sidebar() {
       borderRight: '1px solid #334155',
       transition: 'all 0.3s',
       width: collapsed ? '96px' : '288px',
-      minHeight: '100vh'
+      height: '100vh',
+      position: 'sticky',
+      top: 0,
+      overflowY: 'auto',
+      flexShrink: 0
     }}>
       {/* Logo Header */}
       <div style={{
