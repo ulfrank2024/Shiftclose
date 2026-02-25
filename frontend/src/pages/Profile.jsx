@@ -174,9 +174,20 @@ export default function Profile() {
               )}
             </div>
 
+            {/* Camera badge — toujours visible */}
+            {!photoLoading && !photoSuccess && (
+              <button
+                onClick={handlePhotoClick}
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center border-2 border-slate-800 transition-colors shadow-lg"
+                title="Changer la photo"
+              >
+                <Camera size={14} className="text-white" />
+              </button>
+            )}
+
             {/* Success badge */}
             {photoSuccess && (
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center border-2 border-slate-800">
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-2 border-slate-800">
                 <CheckCircle size={14} className="text-white" />
               </div>
             )}
@@ -194,9 +205,9 @@ export default function Profile() {
           <div className="text-center sm:text-left">
             <h1 className="text-2xl font-bold text-white">{userName}</h1>
             <p className="text-slate-400 mt-1">{user?.email}</p>
-            <p className="text-xs text-slate-500 mt-1">
-              {photoLoading ? 'Téléversement en cours...' : 'Cliquez sur la photo pour la modifier'}
-            </p>
+            {photoLoading && (
+              <p className="text-xs text-slate-500 mt-1">Téléversement en cours...</p>
+            )}
             <div className="mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
               <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 text-sm rounded-full capitalize font-medium">
                 {user?.role || 'server'}

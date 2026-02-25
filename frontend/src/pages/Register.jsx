@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
-import { Eye, EyeOff, Globe, Loader2, Store, User, ChevronRight, ChevronLeft } from 'lucide-react'
+import { authAPI } from '../services/api'
+import { Eye, EyeOff, Globe, Loader2, Store, User, ChevronRight, ChevronLeft, Camera, X } from 'lucide-react'
 
 export default function Register() {
   const { t } = useTranslation()
@@ -26,9 +27,29 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const photoRef = useRef(null)
+  const [photoFile, setPhotoFile] = useState(null)
+  const [localPhoto, setLocalPhoto] = useState(null)
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Seules les images sont acceptées.'); return }
+    if (file.size > 5 * 1024 * 1024) { setError('La photo ne doit pas dépasser 5 Mo.'); return }
+    setPhotoFile(file)
+    setLocalPhoto(URL.createObjectURL(file))
+    setError('')
+  }
+
+  const removePhoto = (e) => {
+    e.stopPropagation()
+    setPhotoFile(null)
+    setLocalPhoto(null)
+    if (photoRef.current) photoRef.current.value = ''
   }
 
   const handleNextStep = (e) => {
@@ -67,6 +88,10 @@ export default function Register() {
         restaurantName: formData.restaurantName,
         restaurantAddress: formData.address
       })
+      // Upload photo after registration (token is now stored)
+      if (photoFile) {
+        try { await authAPI.uploadPhoto(photoFile) } catch (_) { /* silent */ }
+      }
       navigate('/dashboard')
     } catch (err) {
       setError(err.message || t('common.error'))
@@ -136,7 +161,7 @@ export default function Register() {
 
           {/* Step 1: Restaurant Info */}
           {step === 1 && (
-            <form onSubmit={handleNextStep} className="space-y-5">
+            <form onSubmit={handleNextStep} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   {t('settings.restaurantName')} *
@@ -179,7 +204,72 @@ export default function Register() {
 
           {/* Step 2: Personal Info */}
           {step === 2 && (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+              {/* ── Photo (optional) ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                <div
+                  onClick={() => photoRef.current?.click()}
+                  style={{
+                    position: 'relative',
+                    width: '88px', height: '88px',
+                    borderRadius: '50%',
+                    background: localPhoto ? 'transparent' : 'linear-gradient(135deg,#1e3a5f,#1e293b)',
+                    border: localPhoto ? 'none' : '2px dashed #475569',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', overflow: 'hidden', flexShrink: 0,
+                    transition: 'border-color 0.2s'
+                  }}
+                  onMouseEnter={e => { if (!localPhoto) e.currentTarget.style.borderColor = '#3b82f6' }}
+                  onMouseLeave={e => { if (!localPhoto) e.currentTarget.style.borderColor = '#475569' }}
+                >
+                  {localPhoto ? (
+                    <>
+                      <img src={localPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {/* Hover overlay */}
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        backgroundColor: 'rgba(0,0,0,0.45)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        opacity: 0, transition: 'opacity 0.2s', borderRadius: '50%'
+                      }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={e => e.currentTarget.style.opacity = '0'}
+                      >
+                        <Camera color="white" size={22} />
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#64748b' }}>
+                      <Camera size={26} />
+                      <span style={{ fontSize: '11px', fontWeight: 500 }}>Photo</span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ color: '#94a3b8', fontSize: '13px' }}>
+                    Photo de profil <span style={{ color: '#64748b' }}>(optionnel)</span>
+                  </p>
+                  {localPhoto && (
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      style={{ marginTop: '4px', color: '#ef4444', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <X size={12} /> Supprimer
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={photoRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoSelect}
+                  style={{ display: 'none' }}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
