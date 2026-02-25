@@ -131,7 +131,7 @@ export default function Settings() {
 
         <div className="border-t border-slate-700/60 mb-6" />
 
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {Object.entries(notifications).map(([key, value]) => {
             const { label, desc } = notificationLabels[key] || { label: key, desc: '' }
             return (
@@ -190,7 +190,7 @@ export default function Settings() {
           <div className="border-t border-slate-700/60 mb-6" />
 
           {/* Rules list */}
-          <div className="space-y-3 mb-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
             {tipOutRules.map((rule) => (
               <div
                 key={rule.id}
@@ -276,7 +276,7 @@ export default function Settings() {
 
           <div className="border-t border-slate-700/60 mb-6" />
 
-          <div className="space-y-5">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-3">
                 {t('settings.restaurantName')}

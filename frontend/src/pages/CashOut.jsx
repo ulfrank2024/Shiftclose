@@ -88,7 +88,7 @@ export default function CashOut() {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-8 animate-fade-in">
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <div className="text-center">
               <div className="inline-flex p-4 bg-green-500/10 rounded-2xl mb-4">
                 <DollarSign className="text-green-400" size={36} />
@@ -97,7 +97,7 @@ export default function CashOut() {
               <p className="text-slate-400 text-sm">Entrez vos ventes du shift</p>
             </div>
 
-            <div className="space-y-5">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.cashSales')}
@@ -161,7 +161,7 @@ export default function CashOut() {
 
       case 2:
         return (
-          <div className="space-y-8 animate-fade-in">
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <div className="text-center">
               <div className="inline-flex p-4 bg-blue-500/10 rounded-2xl mb-4">
                 <CreditCard className="text-blue-400" size={36} />
@@ -170,7 +170,7 @@ export default function CashOut() {
               <p className="text-slate-400 text-sm">Entrez vos pourboires reçus</p>
             </div>
 
-            <div className="space-y-5">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.cashTips')}
@@ -217,7 +217,7 @@ export default function CashOut() {
 
       case 3:
         return (
-          <div className="space-y-8 animate-fade-in">
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <div className="text-center">
               <div className="inline-flex p-4 bg-amber-500/10 rounded-2xl mb-4">
                 <Wallet className="text-amber-400" size={36} />
@@ -226,7 +226,7 @@ export default function CashOut() {
               <p className="text-slate-400 text-sm">Pourcentage à redistribuer</p>
             </div>
 
-            <div className="space-y-6">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-4">
                   {t('cashOut.tipOutPercent')}
@@ -245,7 +245,7 @@ export default function CashOut() {
                 </div>
               </div>
 
-              <div className="p-5 bg-slate-700/40 rounded-xl border border-slate-600/40 space-y-4">
+              <div className="p-5 bg-slate-700/40 rounded-xl border border-slate-600/40" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">{t('cashOut.totalTips')}</span>
                   <span className="text-white font-medium">${totalTips.toFixed(2)}</span>
@@ -265,7 +265,7 @@ export default function CashOut() {
 
       case 4:
         return (
-          <div className="space-y-8 animate-fade-in">
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <div className="text-center">
               <div className="inline-flex p-4 bg-purple-500/10 rounded-2xl mb-4">
                 <Wallet className="text-purple-400" size={36} />
@@ -274,7 +274,7 @@ export default function CashOut() {
               <p className="text-slate-400 text-sm">Comptez vos espèces</p>
             </div>
 
-            <div className="space-y-6">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('cashOut.cashInHand')}
@@ -292,7 +292,7 @@ export default function CashOut() {
                 </div>
               </div>
 
-              <div className="p-5 bg-slate-700/40 rounded-xl border border-slate-600/40 space-y-4">
+              <div className="p-5 bg-slate-700/40 rounded-xl border border-slate-600/40" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">{t('cashOut.expectedCash')}</span>
                   <span className="text-white font-medium">${expectedCash.toFixed(2)}</span>
@@ -320,7 +320,7 @@ export default function CashOut() {
               {/* Summary */}
               <div className="p-5 bg-slate-800/80 rounded-xl border border-slate-700/60">
                 <h3 className="text-base font-semibold text-white mb-5">{t('cashOut.summary')}</h3>
-                <div className="space-y-3 text-sm">
+                <div className="text-sm" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400">{t('cashOut.totalSales')}</span>
                     <span className="text-white font-medium">${totalSales.toFixed(2)}</span>

@@ -250,7 +250,7 @@ export default function Admin() {
 
       {/* ══════════════ OVERVIEW ══════════════ */}
       {activeTab === 'overview' && stats && (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
             {[
@@ -284,7 +284,7 @@ export default function Admin() {
             {restaurants.length === 0 ? (
               <p className="text-slate-500 text-sm">Aucun restaurant.</p>
             ) : (
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {restaurants.slice(0, 6).map(r => (
                   <div key={r.id} className="flex items-center justify-between py-3 border-b border-slate-700/40 last:border-0">
                     <div className="flex items-center gap-4">
@@ -323,7 +323,7 @@ export default function Admin() {
               </button>
             </div>
 
-            <form onSubmit={handleInviteRestaurant} className="px-7 py-6 space-y-5">
+            <form onSubmit={handleInviteRestaurant} className="px-7 py-6" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <p className="text-slate-400 text-sm leading-relaxed">
                 L'invité recevra un email avec un lien pour créer son compte Manager et configurer son restaurant.
               </p>
@@ -393,7 +393,7 @@ export default function Admin() {
 
       {/* ══════════════ RESTAURANTS ══════════════ */}
       {activeTab === 'restaurants' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Search & Filter */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -505,7 +505,7 @@ export default function Admin() {
 
       {/* ══════════════ SUBSCRIPTIONS ══════════════ */}
       {activeTab === 'subscriptions' && (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Revenue Summary */}
           <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(34,211,238,0.1))', borderColor: 'rgba(99,102,241,0.3)' }}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -553,7 +553,7 @@ export default function Admin() {
                       {plan.maxEmployees === -1 ? 'Employés illimités' : `Jusqu'à ${plan.maxEmployees} employés`}
                     </p>
                     {plan.features && Array.isArray(plan.features) && plan.features.length > 0 && (
-                      <div className="space-y-1 border-t border-slate-700 pt-3">
+                      <div className="border-t border-slate-700 pt-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {plan.features.map(f => (
                           <div key={f} className="flex items-center gap-2 text-xs text-slate-400">
                             <CheckCircle size={12} className="text-green-400 shrink-0" />
@@ -571,7 +571,7 @@ export default function Admin() {
           {/* Restaurants par statut */}
           <div className="card">
             <h3 className="text-lg font-semibold text-white mb-6">Répartition des restaurants</h3>
-            <div className="space-y-4">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {['active', 'trial', 'suspended', 'cancelled'].map(status => {
                 const count = restaurants.filter(r => r.status === status).length
                 const pct = restaurants.length ? Math.round((count / restaurants.length) * 100) : 0
@@ -596,7 +596,7 @@ export default function Admin() {
 
       {/* ══════════════ USERS ══════════════ */}
       {activeTab === 'users' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />

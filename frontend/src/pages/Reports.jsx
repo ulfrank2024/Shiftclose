@@ -142,7 +142,7 @@ export default function Reports() {
           <p className="text-slate-400">{t('reports.noReports')}</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {filteredReports.map((report) => {
             const empName = report.employeeName || '?'
             const initials = empName.split(' ').map(n => n[0]).join('').slice(0, 2)
@@ -263,7 +263,7 @@ export default function Reports() {
 
             {/* Financial Details */}
             <div className="px-7 py-6">
-              <div className="space-y-4">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="flex justify-between items-center py-1">
                   <span className="text-slate-400">{t('cashOut.totalSales')}</span>
                   <span className="text-white font-semibold">${selectedReport.totalSales.toFixed(2)}</span>

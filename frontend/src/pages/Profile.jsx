@@ -173,7 +173,7 @@ export default function Profile() {
         {/* Divider */}
         <div className="border-t border-slate-700/60 mb-6" />
 
-        <div className="space-y-5">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-3">
@@ -264,7 +264,7 @@ export default function Profile() {
 
         <div className="border-t border-slate-700/60 mb-6" />
 
-        <div className="space-y-5">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {[
             { key: 'current', label: t('profile.currentPassword'), field: 'currentPassword' },
             { key: 'new',     label: t('profile.newPassword'),     field: 'newPassword',    minLength: 6 },

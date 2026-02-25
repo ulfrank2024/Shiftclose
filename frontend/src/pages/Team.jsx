@@ -257,7 +257,7 @@ export default function Team() {
 
       {/* Tab Content */}
       {activeTab === 'members' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {members.length === 0 ? (
             <div className="text-center py-12 text-slate-400">
               <Users size={48} className="mx-auto mb-4 opacity-50" />
@@ -335,7 +335,7 @@ export default function Team() {
       )}
 
       {activeTab === 'pending' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {pendingInvites.length === 0 ? (
             <div className="text-center py-12 text-slate-400">
               <Mail size={48} className="mx-auto mb-4 opacity-50" />
@@ -375,7 +375,7 @@ export default function Team() {
       )}
 
       {activeTab === 'tipout' && (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Summary */}
           <div className="card bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/30">
             <div className="flex items-center justify-between">
@@ -388,7 +388,7 @@ export default function Team() {
           </div>
 
           {/* Tip Out Rules */}
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {tipOutRules.map((rule, index) => {
               const IconComponent = POSITION_ICONS[rule.position.toLowerCase()] || POSITION_ICONS.default
               return (
@@ -514,7 +514,7 @@ export default function Team() {
               </div>
             </div>
 
-            <form onSubmit={handleInvite} className="px-7 py-6 space-y-5">
+            <form onSubmit={handleInvite} className="px-7 py-6" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-3">
                   {t('auth.email')}
@@ -600,7 +600,7 @@ export default function Team() {
               </p>
             </div>
 
-            <div className="px-7 py-6 space-y-4">
+            <div className="px-7 py-6" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <button
                 onClick={() => handleUpdateRole(selectedMember.id, 'server')}
                 className={`w-full p-5 rounded-xl border-2 text-left transition-colors ${
