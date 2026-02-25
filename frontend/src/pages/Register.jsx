@@ -4,7 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { authAPI } from '../services/api'
-import { Eye, EyeOff, Globe, Loader2, Store, User, ChevronRight, ChevronLeft, Camera, X } from 'lucide-react'
+import {
+  Eye, EyeOff, Globe, Loader2, Store, User,
+  ChevronRight, ChevronLeft, Camera, X, Zap,
+  Mail, Lock, MapPin, AlertCircle, ArrowRight, Check
+} from 'lucide-react'
 
 export default function Register() {
   const { t } = useTranslation()
@@ -12,24 +16,23 @@ export default function Register() {
   const { language, toggleLanguage } = useLanguage()
   const navigate = useNavigate()
 
-  const [step, setStep] = useState(1) // 1: Restaurant info, 2: Personal info
+  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
-    // Restaurant info
     restaurantName: '',
     address: '',
-    // Personal info
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     confirmPassword: ''
   })
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [showPassword, setShowPassword]   = useState(false)
+  const [loading, setLoading]             = useState(false)
+  const [error, setError]                 = useState('')
+  const [focusedField, setFocusedField]   = useState(null)
   const photoRef = useRef(null)
-  const [photoFile, setPhotoFile] = useState(null)
-  const [localPhoto, setLocalPhoto] = useState(null)
+  const [photoFile, setPhotoFile]         = useState(null)
+  const [localPhoto, setLocalPhoto]       = useState(null)
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -65,20 +68,15 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-
-    // Validate
     if (formData.password !== formData.confirmPassword) {
       setError(t('errors.passwordMismatch'))
       return
     }
-
     if (formData.password.length < 6) {
       setError(t('errors.minLength', { min: 6 }))
       return
     }
-
     setLoading(true)
-
     try {
       await register({
         firstName: formData.firstName,
@@ -88,7 +86,6 @@ export default function Register() {
         restaurantName: formData.restaurantName,
         restaurantAddress: formData.address
       })
-      // Upload photo after registration (token is now stored)
       if (photoFile) {
         try { await authAPI.uploadPhoto(photoFile) } catch (_) { /* silent */ }
       }
@@ -100,298 +97,515 @@ export default function Register() {
     }
   }
 
+  const inputStyle = (field) => ({
+    width: '100%',
+    padding: '13px 14px 13px 46px',
+    background: 'rgba(15,23,42,0.7)',
+    border: `1.5px solid ${focusedField === field ? '#3b82f6' : 'rgba(51,65,85,0.8)'}`,
+    borderRadius: '12px',
+    color: 'white',
+    fontSize: '15px',
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    boxShadow: focusedField === field ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none'
+  })
+
+  const inputStyleNoIcon = (field) => ({
+    width: '100%',
+    padding: '13px 14px',
+    background: 'rgba(15,23,42,0.7)',
+    border: `1.5px solid ${focusedField === field ? '#3b82f6' : 'rgba(51,65,85,0.8)'}`,
+    borderRadius: '12px',
+    color: 'white',
+    fontSize: '15px',
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    boxShadow: focusedField === field ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none'
+  })
+
+  const labelStyle = {
+    display: 'block',
+    color: '#cbd5e1',
+    fontSize: '14px',
+    fontWeight: 500,
+    marginBottom: '8px'
+  }
+
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col">
-      {/* Header */}
-      <div className="flex justify-between items-center p-4">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-xl">S</span>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(160deg, #0a1628 0%, #0f172a 50%, #0c1220 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* ── Décors de fond ── */}
+      <div style={{
+        position: 'absolute', top: '-15%', right: '-8%',
+        width: '700px', height: '700px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 65%)',
+        pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-20%', left: '-12%',
+        width: '600px', height: '600px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 65%)',
+        pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute', top: '40%', left: '30%',
+        width: '300px', height: '300px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%)',
+        pointerEvents: 'none'
+      }} />
+
+      {/* ── Header ── */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '20px 28px', position: 'relative', zIndex: 10
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '44px', height: '44px',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
+            borderRadius: '13px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 8px 24px rgba(59,130,246,0.45)'
+          }}>
+            <Zap size={22} color="white" fill="white" />
           </div>
-          <span className="text-white font-semibold text-xl">ShiftClose</span>
+          <span style={{ color: 'white', fontWeight: 700, fontSize: '22px', letterSpacing: '-0.4px' }}>
+            ShiftClose
+          </span>
         </div>
+
         <button
           onClick={toggleLanguage}
-          className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 14px',
+            background: 'rgba(30,41,59,0.5)',
+            border: '1px solid rgba(71,85,105,0.4)',
+            borderRadius: '10px', cursor: 'pointer',
+            color: '#94a3b8', fontSize: '13px', fontWeight: 500,
+            transition: 'all 0.2s'
+          }}
         >
-          <Globe size={18} />
-          <span className="text-sm font-medium uppercase">{language}</span>
+          <Globe size={15} />
+          <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{language}</span>
         </button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md">
-          {/* Step indicator */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step >= 1 ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
-            }`}>
-              1
+      {/* ── Contenu principal ── */}
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '8px 16px 48px',
+        position: 'relative', zIndex: 10
+      }}>
+        <div style={{ width: '100%', maxWidth: '460px' }}>
+
+          {/* ── Indicateur d'étapes ── */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '28px' }}>
+            {/* Étape 1 */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: step >= 1
+                ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)'
+                : 'rgba(51,65,85,0.6)',
+              border: step >= 1 ? 'none' : '1.5px solid rgba(71,85,105,0.5)',
+              fontSize: '14px', fontWeight: 700, color: step >= 1 ? 'white' : '#64748b',
+              boxShadow: step >= 1 ? '0 4px 12px rgba(99,102,241,0.35)' : 'none',
+              transition: 'all 0.3s', flexShrink: 0
+            }}>
+              {step > 1 ? <Check size={16} /> : '1'}
             </div>
-            <div className={`w-12 h-1 rounded ${step >= 2 ? 'bg-blue-500' : 'bg-slate-700'}`} />
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step >= 2 ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
-            }`}>
+
+            {/* Connecteur */}
+            <div style={{
+              flex: 1, height: '2px', maxWidth: '60px',
+              background: step >= 2
+                ? 'linear-gradient(90deg, #3b82f6, #6366f1)'
+                : 'rgba(51,65,85,0.6)',
+              borderRadius: '2px', transition: 'background 0.3s'
+            }} />
+
+            {/* Étape 2 */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: step >= 2
+                ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)'
+                : 'rgba(51,65,85,0.6)',
+              border: step >= 2 ? 'none' : '1.5px solid rgba(71,85,105,0.5)',
+              fontSize: '14px', fontWeight: 700, color: step >= 2 ? 'white' : '#64748b',
+              boxShadow: step >= 2 ? '0 4px 12px rgba(99,102,241,0.35)' : 'none',
+              transition: 'all 0.3s', flexShrink: 0
+            }}>
               2
             </div>
           </div>
 
-          <div className="text-center mb-8">
-            <div className="inline-flex p-3 bg-blue-500/10 rounded-xl mb-4">
-              {step === 1 ? (
-                <Store className="text-blue-400" size={32} />
-              ) : (
-                <User className="text-blue-400" size={32} />
-              )}
+          {/* ── Carte ── */}
+          <div style={{
+            background: 'rgba(15,23,42,0.85)',
+            border: '1px solid rgba(51,65,85,0.7)',
+            borderRadius: '28px',
+            padding: '36px 32px 32px',
+            backdropFilter: 'blur(24px)',
+            boxShadow: '0 32px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,130,246,0.06), inset 0 1px 0 rgba(255,255,255,0.04)'
+          }}>
+
+            {/* Icône + titre */}
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div style={{
+                display: 'inline-flex', width: '64px', height: '64px',
+                background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.15))',
+                borderRadius: '20px',
+                alignItems: 'center', justifyContent: 'center',
+                marginBottom: '18px',
+                border: '1px solid rgba(99,102,241,0.25)',
+                boxShadow: '0 8px 24px rgba(59,130,246,0.12)'
+              }}>
+                {step === 1
+                  ? <Store size={28} color="#818cf8" />
+                  : <User size={28} color="#818cf8" />
+                }
+              </div>
+              <h1 style={{
+                color: 'white', fontSize: '26px', fontWeight: 700,
+                marginBottom: '6px', letterSpacing: '-0.4px', lineHeight: 1.2
+              }}>
+                {step === 1 ? t('register.restaurantStep') : t('register.personalStep')}
+              </h1>
+              <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.5 }}>
+                {step === 1 ? t('register.restaurantDesc') : t('register.personalDesc')}
+              </p>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {step === 1 ? t('register.restaurantStep') : t('register.personalStep')}
-            </h1>
-            <p className="text-slate-400">
-              {step === 1 ? t('register.restaurantDesc') : t('register.personalDesc')}
-            </p>
-          </div>
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm animate-fade-in mb-6">
-              {error}
-            </div>
-          )}
-
-          {/* Step 1: Restaurant Info */}
-          {step === 1 && (
-            <form onSubmit={handleNextStep} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {t('settings.restaurantName')} *
-                </label>
-                <input
-                  type="text"
-                  name="restaurantName"
-                  value={formData.restaurantName}
-                  onChange={handleChange}
-                  placeholder="Ex: Le Petit Bistro"
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  required
-                  autoFocus
-                />
+            {/* Erreur */}
+            {error && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '12px 16px', marginBottom: '20px',
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                borderRadius: '12px', color: '#f87171', fontSize: '14px'
+              }}>
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                {error}
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {t('settings.address')}
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="123 Rue Principale, Montréal"
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
+            {/* ── Étape 1 : Infos restaurant ── */}
+            {step === 1 && (
+              <form onSubmit={handleNextStep} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-              <button
-                type="submit"
-                className="w-full btn btn-primary py-3 text-base"
-              >
-                {t('common.next')}
-                <ChevronRight size={20} />
-              </button>
-            </form>
-          )}
-
-          {/* Step 2: Personal Info */}
-          {step === 2 && (
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-              {/* ── Photo (optional) ── */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                <div
-                  onClick={() => photoRef.current?.click()}
-                  style={{
-                    position: 'relative',
-                    width: '88px', height: '88px',
-                    borderRadius: '50%',
-                    background: localPhoto ? 'transparent' : 'linear-gradient(135deg,#1e3a5f,#1e293b)',
-                    border: localPhoto ? 'none' : '2px dashed #475569',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', overflow: 'hidden', flexShrink: 0,
-                    transition: 'border-color 0.2s'
-                  }}
-                  onMouseEnter={e => { if (!localPhoto) e.currentTarget.style.borderColor = '#3b82f6' }}
-                  onMouseLeave={e => { if (!localPhoto) e.currentTarget.style.borderColor = '#475569' }}
-                >
-                  {localPhoto ? (
-                    <>
-                      <img src={localPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      {/* Hover overlay */}
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        backgroundColor: 'rgba(0,0,0,0.45)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        opacity: 0, transition: 'opacity 0.2s', borderRadius: '50%'
-                      }}
-                        onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                        onMouseLeave={e => e.currentTarget.style.opacity = '0'}
-                      >
-                        <Camera color="white" size={22} />
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#64748b' }}>
-                      <Camera size={26} />
-                      <span style={{ fontSize: '11px', fontWeight: 500 }}>Photo</span>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ color: '#94a3b8', fontSize: '13px' }}>
-                    Photo de profil <span style={{ color: '#64748b' }}>(optionnel)</span>
-                  </p>
-                  {localPhoto && (
-                    <button
-                      type="button"
-                      onClick={removePhoto}
-                      style={{ marginTop: '4px', color: '#ef4444', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <X size={12} /> Supprimer
-                    </button>
-                  )}
-                </div>
-                <input
-                  ref={photoRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handlePhotoSelect}
-                  style={{ display: 'none' }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+                {/* Nom du restaurant */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    {t('profile.firstName')} *
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder="Jean"
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    required
-                    autoFocus
-                  />
+                  <label style={labelStyle}>{t('settings.restaurantName')} *</label>
+                  <div style={{ position: 'relative' }}>
+                    <Store size={17} style={{
+                      position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)',
+                      color: focusedField === 'restaurantName' ? '#60a5fa' : '#475569',
+                      transition: 'color 0.2s', pointerEvents: 'none'
+                    }} />
+                    <input
+                      type="text"
+                      name="restaurantName"
+                      value={formData.restaurantName}
+                      onChange={handleChange}
+                      placeholder="Ex: Le Petit Bistro"
+                      required
+                      autoFocus
+                      style={inputStyle('restaurantName')}
+                      onFocus={() => setFocusedField('restaurantName')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </div>
                 </div>
+
+                {/* Adresse */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    {t('profile.lastName')} *
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    placeholder="Dupont"
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    required
-                  />
+                  <label style={labelStyle}>{t('settings.address')}</label>
+                  <div style={{ position: 'relative' }}>
+                    <MapPin size={17} style={{
+                      position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)',
+                      color: focusedField === 'address' ? '#60a5fa' : '#475569',
+                      transition: 'color 0.2s', pointerEvents: 'none'
+                    }} />
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      placeholder="123 Rue Principale, Montréal"
+                      style={inputStyle('address')}
+                      onFocus={() => setFocusedField('address')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {t('auth.email')} *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="votre@email.com"
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {t('auth.password')} *
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Min. 6 caractères"
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 pr-12 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    required
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {t('auth.confirmPassword')} *
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirmez votre mot de passe"
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="btn bg-slate-700 hover:bg-slate-600 text-white py-3"
-                >
-                  <ChevronLeft size={20} />
-                  {t('common.back')}
-                </button>
+                {/* Bouton suivant */}
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="flex-1 btn btn-primary py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    width: '100%', padding: '14px',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
+                    border: 'none', borderRadius: '14px',
+                    color: 'white', fontWeight: 600, fontSize: '16px',
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    boxShadow: '0 8px 28px rgba(99,102,241,0.4)',
+                    transition: 'all 0.2s', marginTop: '4px'
+                  }}
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="animate-spin" size={20} />
-                      {t('common.loading')}
-                    </>
-                  ) : (
-                    <>
-                      <Store size={20} />
-                      {t('register.createRestaurant')}
-                    </>
-                  )}
+                  {t('common.next')} <ChevronRight size={18} />
                 </button>
-              </div>
-            </form>
-          )}
+              </form>
+            )}
 
-          <p className="mt-8 text-center text-slate-400">
+            {/* ── Étape 2 : Infos personnelles ── */}
+            {step === 2 && (
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                {/* Photo (optionnel) */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                  <div
+                    onClick={() => photoRef.current?.click()}
+                    style={{
+                      position: 'relative',
+                      width: '84px', height: '84px',
+                      borderRadius: '50%',
+                      background: localPhoto ? 'transparent' : 'rgba(15,23,42,0.7)',
+                      border: localPhoto ? 'none' : `2px dashed ${focusedField === 'photo' ? '#3b82f6' : 'rgba(71,85,105,0.6)'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', overflow: 'hidden', flexShrink: 0,
+                      transition: 'border-color 0.2s'
+                    }}
+                    onMouseEnter={e => { if (!localPhoto) e.currentTarget.style.borderColor = '#3b82f6' }}
+                    onMouseLeave={e => { if (!localPhoto) e.currentTarget.style.borderColor = 'rgba(71,85,105,0.6)' }}
+                  >
+                    {localPhoto ? (
+                      <>
+                        <img src={localPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{
+                          position: 'absolute', inset: 0,
+                          backgroundColor: 'rgba(0,0,0,0.45)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          opacity: 0, transition: 'opacity 0.2s', borderRadius: '50%'
+                        }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '0'}
+                        >
+                          <Camera color="white" size={22} />
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#475569' }}>
+                        <Camera size={24} />
+                        <span style={{ fontSize: '10px', fontWeight: 500 }}>Photo</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ color: '#64748b', fontSize: '12px' }}>
+                      Photo de profil <span style={{ color: '#334155' }}>(optionnel)</span>
+                    </p>
+                    {localPhoto && (
+                      <button
+                        type="button"
+                        onClick={removePhoto}
+                        style={{ marginTop: '4px', color: '#ef4444', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <X size={12} /> Supprimer
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={photoRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handlePhotoSelect}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+
+                {/* Prénom + Nom (côte à côte) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={labelStyle}>{t('profile.firstName')} *</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      placeholder="Jean"
+                      required
+                      autoFocus
+                      style={inputStyleNoIcon('firstName')}
+                      onFocus={() => setFocusedField('firstName')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{t('profile.lastName')} *</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      placeholder="Dupont"
+                      required
+                      style={inputStyleNoIcon('lastName')}
+                      onFocus={() => setFocusedField('lastName')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label style={labelStyle}>{t('auth.email')} *</label>
+                  <div style={{ position: 'relative' }}>
+                    <Mail size={17} style={{
+                      position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)',
+                      color: focusedField === 'email' ? '#60a5fa' : '#475569',
+                      transition: 'color 0.2s', pointerEvents: 'none'
+                    }} />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="votre@email.com"
+                      required
+                      style={inputStyle('email')}
+                      onFocus={() => setFocusedField('email')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </div>
+                </div>
+
+                {/* Mot de passe */}
+                <div>
+                  <label style={labelStyle}>{t('auth.password')} *</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={17} style={{
+                      position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)',
+                      color: focusedField === 'password' ? '#60a5fa' : '#475569',
+                      transition: 'color 0.2s', pointerEvents: 'none'
+                    }} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Min. 6 caractères"
+                      required
+                      minLength={6}
+                      style={{ ...inputStyle('password'), paddingRight: '48px' }}
+                      onFocus={() => setFocusedField('password')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute', right: '13px', top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#475569', padding: '4px',
+                        display: 'flex', alignItems: 'center'
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirmation mot de passe */}
+                <div>
+                  <label style={labelStyle}>{t('auth.confirmPassword')} *</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={17} style={{
+                      position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)',
+                      color: focusedField === 'confirmPassword' ? '#60a5fa' : '#475569',
+                      transition: 'color 0.2s', pointerEvents: 'none'
+                    }} />
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Confirmez votre mot de passe"
+                      required
+                      style={inputStyle('confirmPassword')}
+                      onFocus={() => setFocusedField('confirmPassword')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </div>
+                </div>
+
+                {/* Boutons Retour + Créer */}
+                <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    style={{
+                      padding: '14px 18px',
+                      background: 'rgba(51,65,85,0.5)',
+                      border: '1px solid rgba(71,85,105,0.4)',
+                      borderRadius: '14px', cursor: 'pointer',
+                      color: '#94a3b8', fontWeight: 500,
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      transition: 'all 0.2s', flexShrink: 0
+                    }}
+                  >
+                    <ChevronLeft size={18} /> {t('common.back')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      flex: 1, padding: '14px',
+                      background: loading
+                        ? 'rgba(51,65,85,0.8)'
+                        : 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
+                      border: 'none', borderRadius: '14px',
+                      color: 'white', fontWeight: 600, fontSize: '15px',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      boxShadow: loading ? 'none' : '0 8px 28px rgba(99,102,241,0.4)',
+                      transition: 'all 0.2s',
+                      opacity: loading ? 0.7 : 1
+                    }}
+                  >
+                    {loading
+                      ? <><Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> {t('common.loading')}</>
+                      : <><Store size={18} /> {t('register.createRestaurant')}</>
+                    }
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          {/* Lien vers connexion */}
+          <p style={{ textAlign: 'center', color: '#64748b', fontSize: '14px', marginTop: '24px' }}>
             {t('auth.hasAccount')}{' '}
-            <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+            <Link to="/login" style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'none' }}>
               {t('auth.login')}
             </Link>
+          </p>
+
+          {/* Copyright */}
+          <p style={{ textAlign: 'center', color: '#1e3a5f', fontSize: '12px', marginTop: '16px' }}>
+            © {new Date().getFullYear()} ShiftClose · Gestion de Cash Out
           </p>
         </div>
       </div>
