@@ -407,79 +407,211 @@ export default function Admin() {
 
       {/* ══════════════ INVITE MODAL ══════════════ */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md">
-            <div className="flex items-center justify-between px-7 py-5 border-b border-slate-700">
-              <div className="flex items-center gap-2">
-                <Send size={18} className="text-amber-400" />
-                <h2 className="text-white font-semibold">Inviter un restaurant</h2>
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowInviteModal(false); setInviteError(''); setInviteSuccess('') } }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 50,
+            backgroundColor: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div style={{
+            width: '100%', maxWidth: '460px',
+            background: 'rgba(15,23,42,0.95)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '24px',
+            boxShadow: '0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.08)',
+            backdropFilter: 'blur(24px)',
+            overflow: 'hidden'
+          }}>
+
+            {/* En-tête */}
+            <div style={{
+              padding: '24px 28px 20px',
+              borderBottom: '1px solid rgba(51,65,85,0.6)',
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '14px', flexShrink: 0,
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1))',
+                  border: '1px solid rgba(245,158,11,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Send size={20} style={{ color: '#f59e0b' }} />
+                </div>
+                <div>
+                  <h2 style={{ color: 'white', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px' }}>
+                    Inviter un restaurant
+                  </h2>
+                  <p style={{ color: '#64748b', fontSize: '13px', marginTop: '2px' }}>
+                    Envoyer une invitation par email
+                  </p>
+                </div>
               </div>
-              <button onClick={() => { setShowInviteModal(false); setInviteError(''); setInviteSuccess('') }}
-                className="p-2 hover:bg-slate-700 rounded-xl transition-colors">
-                <X size={18} className="text-slate-400" />
+              <button
+                onClick={() => { setShowInviteModal(false); setInviteError(''); setInviteSuccess('') }}
+                style={{
+                  width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0,
+                  background: 'rgba(51,65,85,0.5)', border: '1px solid rgba(71,85,105,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: '#94a3b8', transition: 'all 0.2s'
+                }}
+              >
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleInviteRestaurant} className="px-7 py-6" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                L'invité recevra un email avec un lien pour créer son compte Manager et configurer son restaurant.
-              </p>
+            {/* Formulaire */}
+            <form onSubmit={handleInviteRestaurant} style={{ padding: '24px 28px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
+              {/* Description */}
+              <div style={{
+                padding: '14px 16px',
+                background: 'rgba(245,158,11,0.06)',
+                border: '1px solid rgba(245,158,11,0.15)',
+                borderRadius: '12px',
+                display: 'flex', alignItems: 'flex-start', gap: '10px'
+              }}>
+                <Mail size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '1px' }} />
+                <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: 1.6 }}>
+                  L'invité recevra un email avec un lien pour créer son compte <span style={{ color: '#fbbf24', fontWeight: 600 }}>Manager</span> et configurer son restaurant.
+                </p>
+              </div>
+
+              {/* Messages */}
               {inviteError && (
-                <div className="flex items-center gap-2 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
-                  <AlertCircle size={14} /> {inviteError}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '12px 16px',
+                  background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+                  borderRadius: '12px', color: '#f87171', fontSize: '14px'
+                }}>
+                  <AlertCircle size={15} style={{ flexShrink: 0 }} /> {inviteError}
                 </div>
               )}
               {inviteSuccess && (
-                <div className="flex items-center gap-2 p-3.5 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm">
-                  <CheckCircle size={14} /> {inviteSuccess}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '12px 16px',
+                  background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
+                  borderRadius: '12px', color: '#34d399', fontSize: '14px'
+                }}>
+                  <CheckCircle size={15} style={{ flexShrink: 0 }} /> {inviteSuccess}
                 </div>
               )}
 
+              {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2.5">
+                <label style={{ display: 'block', color: '#cbd5e1', fontSize: '13px', fontWeight: 600, marginBottom: '8px', letterSpacing: '0.02em' }}>
                   Email du gestionnaire
                 </label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="manager@restaurant.com"
-                  required
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none text-sm"
-                />
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} style={{
+                    position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                    color: '#475569', pointerEvents: 'none', transition: 'color 0.2s'
+                  }} />
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="manager@restaurant.com"
+                    required
+                    onFocus={e => {
+                      e.target.style.borderColor = '#f59e0b'
+                      e.target.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)'
+                      e.target.previousSibling.style.color = '#fbbf24'
+                    }}
+                    onBlur={e => {
+                      e.target.style.borderColor = 'rgba(51,65,85,0.8)'
+                      e.target.style.boxShadow = 'none'
+                      e.target.previousSibling.style.color = '#475569'
+                    }}
+                    style={{
+                      width: '100%', padding: '13px 14px 13px 44px',
+                      background: 'rgba(15,23,42,0.8)',
+                      border: '1.5px solid rgba(51,65,85,0.8)',
+                      borderRadius: '12px', color: 'white', fontSize: '14px',
+                      outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s'
+                    }}
+                  />
+                </div>
               </div>
 
+              {/* Nom du restaurant */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2.5">
+                <label style={{ display: 'block', color: '#cbd5e1', fontSize: '13px', fontWeight: 600, marginBottom: '8px', letterSpacing: '0.02em' }}>
                   Nom du restaurant
                 </label>
-                <input
-                  type="text"
-                  value={inviteRestName}
-                  onChange={(e) => setInviteRestName(e.target.value)}
-                  placeholder="Ex: Jimmies Pizza"
-                  required
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none text-sm"
-                />
+                <div style={{ position: 'relative' }}>
+                  <Building2 size={16} style={{
+                    position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                    color: '#475569', pointerEvents: 'none', transition: 'color 0.2s'
+                  }} />
+                  <input
+                    type="text"
+                    value={inviteRestName}
+                    onChange={(e) => setInviteRestName(e.target.value)}
+                    placeholder="Ex: Jimmies Pizza"
+                    required
+                    onFocus={e => {
+                      e.target.style.borderColor = '#f59e0b'
+                      e.target.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)'
+                      e.target.previousSibling.style.color = '#fbbf24'
+                    }}
+                    onBlur={e => {
+                      e.target.style.borderColor = 'rgba(51,65,85,0.8)'
+                      e.target.style.boxShadow = 'none'
+                      e.target.previousSibling.style.color = '#475569'
+                    }}
+                    style={{
+                      width: '100%', padding: '13px 14px 13px 44px',
+                      background: 'rgba(15,23,42,0.8)',
+                      border: '1.5px solid rgba(51,65,85,0.8)',
+                      borderRadius: '12px', color: 'white', fontSize: '14px',
+                      outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s'
+                    }}
+                  />
+                </div>
               </div>
 
-              <div className="flex gap-3 pt-3">
+              {/* Boutons */}
+              <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
                 <button
                   type="button"
-                  onClick={() => setShowInviteModal(false)}
-                  className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors text-sm"
+                  onClick={() => { setShowInviteModal(false); setInviteError(''); setInviteSuccess('') }}
+                  style={{
+                    flex: 1, padding: '13px',
+                    background: 'rgba(51,65,85,0.5)',
+                    border: '1px solid rgba(71,85,105,0.4)',
+                    borderRadius: '14px', cursor: 'pointer',
+                    color: '#94a3b8', fontSize: '14px', fontWeight: 500,
+                    transition: 'all 0.2s'
+                  }}
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={inviteSending}
-                  className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                  style={{
+                    flex: 2, padding: '13px',
+                    background: inviteSending
+                      ? 'rgba(51,65,85,0.8)'
+                      : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    border: 'none', borderRadius: '14px',
+                    color: 'white', fontSize: '14px', fontWeight: 600,
+                    cursor: inviteSending ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    boxShadow: inviteSending ? 'none' : '0 6px 20px rgba(245,158,11,0.4)',
+                    transition: 'all 0.2s', opacity: inviteSending ? 0.7 : 1
+                  }}
                 >
                   {inviteSending
-                    ? <><Loader size={15} className="animate-spin" /> Envoi...</>
-                    : <><Send size={15} /> Envoyer l'invitation</>
+                    ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Envoi en cours...</>
+                    : <><Send size={16} /> Envoyer l'invitation</>
                   }
                 </button>
               </div>
