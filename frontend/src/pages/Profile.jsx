@@ -97,7 +97,7 @@ export default function Profile() {
   const userName     = `${user?.firstName || user?.first_name || ''} ${user?.lastName || user?.last_name || ''}`
 
   return (
-    <div className="space-y-10 animate-fade-in max-w-2xl mx-auto">
+    <div className="animate-fade-in max-w-2xl mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
 
       {/* ── Error ── */}
       {error && (
