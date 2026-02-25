@@ -13,17 +13,33 @@ import {
   BarChart3,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Check
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 export default function Sidebar() {
   const { t } = useTranslation()
-  const { user, logout, currentRestaurant } = useAuth()
+  const { user, logout, currentRestaurant, switchRestaurant } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
+  const [showRestaurantMenu, setShowRestaurantMenu] = useState(false)
+  const restaurantMenuRef = useRef(null)
 
   const isSuperAdmin = user?.role === 'superadmin'
   const isManager = user?.role === 'manager' || currentRestaurant?.role === 'manager'
+  const hasMultipleRestaurants = (user?.restaurants?.length || 0) > 1
+
+  // Fermer le menu si clic en dehors
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (restaurantMenuRef.current && !restaurantMenuRef.current.contains(e.target)) {
+        setShowRestaurantMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Navigation items based on role
   const getNavItems = () => {
@@ -109,22 +125,195 @@ export default function Sidebar() {
       )}
 
       {/* Restaurant Selector (for non-admin) */}
-      {!isSuperAdmin && currentRestaurant && !collapsed && (
-        <div style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            padding: '16px',
-            backgroundColor: 'rgba(51, 65, 85, 0.5)',
-            borderRadius: '12px'
-          }}>
-            <Building2 size={20} className="text-blue-400 flex-shrink-0" />
-            <div className="overflow-hidden flex-1">
-              <p className="text-white text-sm font-medium truncate">{currentRestaurant.name}</p>
-              <p className="text-slate-400 text-xs capitalize">{currentRestaurant.role}</p>
+      {!isSuperAdmin && currentRestaurant && (
+        <div style={{ padding: collapsed ? '12px' : '16px 20px', borderBottom: '1px solid #334155' }}>
+          {collapsed ? (
+            /* Mode réduit : juste l'icône */
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              padding: '10px',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderRadius: '12px',
+              border: '1px solid rgba(59, 130, 246, 0.2)'
+            }}>
+              <Building2 size={20} className="text-blue-400" />
             </div>
-          </div>
+          ) : (
+            /* Mode normal : dropdown complet */
+            <div ref={restaurantMenuRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => hasMultipleRestaurants && setShowRestaurantMenu(!showRestaurantMenu)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '12px 14px',
+                  backgroundColor: 'rgba(51, 65, 85, 0.5)',
+                  borderRadius: '12px',
+                  border: showRestaurantMenu
+                    ? '1px solid rgba(59, 130, 246, 0.5)'
+                    : '1px solid rgba(51, 65, 85, 0.3)',
+                  cursor: hasMultipleRestaurants ? 'pointer' : 'default',
+                  transition: 'all 0.2s',
+                  textAlign: 'left'
+                }}
+              >
+                {/* Icône restaurant */}
+                <div style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Building2 size={17} className="text-blue-400" />
+                </div>
+
+                {/* Nom + rôle */}
+                <div style={{ overflow: 'hidden', flex: 1 }}>
+                  <p style={{
+                    color: 'white',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    lineHeight: 1.3
+                  }}>
+                    {currentRestaurant.name}
+                  </p>
+                  <p style={{
+                    color: currentRestaurant.role === 'manager' ? '#a78bfa' : '#60a5fa',
+                    fontSize: '11px',
+                    textTransform: 'capitalize',
+                    marginTop: '2px'
+                  }}>
+                    {currentRestaurant.role === 'manager' ? 'Manager' : 'Serveur'}
+                  </p>
+                </div>
+
+                {/* Chevron si plusieurs restaurants */}
+                {hasMultipleRestaurants && (
+                  <ChevronDown
+                    size={15}
+                    style={{
+                      color: '#94a3b8',
+                      flexShrink: 0,
+                      transform: showRestaurantMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s'
+                    }}
+                  />
+                )}
+              </button>
+
+              {/* Dropdown liste des restaurants */}
+              {showRestaurantMenu && hasMultipleRestaurants && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: '#1e293b',
+                  border: '1px solid #334155',
+                  borderRadius: '12px',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                  zIndex: 100,
+                  overflow: 'hidden'
+                }}>
+                  {/* En-tête dropdown */}
+                  <div style={{
+                    padding: '10px 14px 8px',
+                    borderBottom: '1px solid #334155'
+                  }}>
+                    <p style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Mes restaurants
+                    </p>
+                  </div>
+
+                  {/* Liste */}
+                  <div style={{ padding: '6px' }}>
+                    {user?.restaurants?.map((restaurant) => {
+                      const isActive = restaurant.id === currentRestaurant.id
+                      return (
+                        <button
+                          key={restaurant.id}
+                          onClick={() => {
+                            switchRestaurant(restaurant)
+                            setShowRestaurantMenu(false)
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            width: '100%',
+                            padding: '10px 10px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: isActive ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                            transition: 'background-color 0.15s',
+                            textAlign: 'left'
+                          }}
+                          onMouseEnter={e => {
+                            if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.5)'
+                          }}
+                          onMouseLeave={e => {
+                            if (!isActive) e.currentTarget.style.backgroundColor = 'transparent'
+                          }}
+                        >
+                          {/* Icône */}
+                          <div style={{
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: '7px',
+                            backgroundColor: isActive ? 'rgba(59, 130, 246, 0.2)' : 'rgba(51, 65, 85, 0.6)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            <Building2 size={14} style={{ color: isActive ? '#60a5fa' : '#94a3b8' }} />
+                          </div>
+
+                          {/* Nom + rôle */}
+                          <div style={{ overflow: 'hidden', flex: 1 }}>
+                            <p style={{
+                              color: isActive ? 'white' : '#cbd5e1',
+                              fontSize: '13px',
+                              fontWeight: isActive ? 600 : 400,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {restaurant.name}
+                            </p>
+                            <p style={{
+                              color: restaurant.role === 'manager' ? '#a78bfa' : '#64748b',
+                              fontSize: '11px',
+                              textTransform: 'capitalize',
+                              marginTop: '1px'
+                            }}>
+                              {restaurant.role === 'manager' ? 'Manager' : 'Serveur'}
+                            </p>
+                          </div>
+
+                          {/* Check si actif */}
+                          {isActive && (
+                            <Check size={14} style={{ color: '#60a5fa', flexShrink: 0 }} />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
