@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { authAPI } from '../services/api'
 
 const AuthContext = createContext(null)
@@ -91,11 +91,11 @@ export function AuthProvider({ children }) {
     localStorage.setItem('currentRestaurant', JSON.stringify(restaurant))
   }
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const { user: userData } = await authAPI.getProfile()
       setUser(userData)
-      // Update currentRestaurant with fresh canDoCashout data
+      // Mettre à jour currentRestaurant avec canDoCashout frais
       setCurrentRestaurant(prev => {
         if (!prev) return prev
         const fresh = userData.restaurants?.find(r => r.id === prev.id)
@@ -111,7 +111,23 @@ export function AuthProvider({ children }) {
       console.error('Refresh user error:', error)
       logout()
     }
-  }
+  }, []) // eslint-disable-line
+
+  // ── Rafraîchissement automatique des permissions ──────────
+  // Sur focus de fenêtre (retour sur l'onglet)
+  useEffect(() => {
+    if (!user) return
+    const handleFocus = () => { refreshUser() }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [user, refreshUser])
+
+  // Toutes les 60 secondes en arrière-plan
+  useEffect(() => {
+    if (!user) return
+    const interval = setInterval(() => { refreshUser() }, 60_000)
+    return () => clearInterval(interval)
+  }, [user, refreshUser])
 
   const updateProfile = async (data) => {
     await authAPI.updateProfile(data)

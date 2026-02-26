@@ -1,16 +1,18 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import { authAPI } from '../services/api'
+import { authAPI, deletionAPI } from '../services/api'
 import {
   User, Mail, Phone, Lock, Save, Eye, EyeOff,
-  Camera, Loader2, CheckCircle, AlertCircle, X, Shield
+  Camera, Loader2, CheckCircle, AlertCircle, X, Shield,
+  Clock, Trash2
 } from 'lucide-react'
 
 export default function Profile() {
   const { t } = useTranslation()
-  const { user, refreshUser } = useAuth()
+  const { user, currentRestaurant, refreshUser } = useAuth()
   const fileInputRef = useRef(null)
+  const isManager = user?.role === 'manager' || currentRestaurant?.role === 'manager'
 
   const [formData, setFormData] = useState({
     firstName: user?.firstName || user?.first_name || '',
@@ -39,6 +41,46 @@ export default function Profile() {
   const [photoSuccess, setPhotoSuccess]       = useState(false)
   const [error, setError] = useState('')
   const [localPhoto, setLocalPhoto] = useState(null)
+
+  // Deletion request state
+  const [deletionRequest, setDeletionRequest]       = useState(null)  // null | { id, status, requestedAt }
+  const [showDeleteConfirm, setShowDeleteConfirm]   = useState(false)
+  const [deleteLoading, setDeleteLoading]           = useState(false)
+  const [deleteError, setDeleteError]               = useState('')
+
+  // Charger la demande en attente au montage
+  useEffect(() => {
+    if (currentRestaurant?.id && !isManager) {
+      deletionAPI.getMyRequest(currentRestaurant.id)
+        .then(res => setDeletionRequest(res.request || null))
+        .catch(() => {})
+    }
+  }, [currentRestaurant?.id, isManager])
+
+  const handleRequestDeletion = async () => {
+    setDeleteLoading(true)
+    setDeleteError('')
+    try {
+      await deletionAPI.request(currentRestaurant.id)
+      const res = await deletionAPI.getMyRequest(currentRestaurant.id)
+      setDeletionRequest(res.request || null)
+      setShowDeleteConfirm(false)
+    } catch (err) {
+      setDeleteError(err.message)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
+  const handleCancelDeletion = async () => {
+    if (!deletionRequest?.id) return
+    try {
+      await deletionAPI.cancel(deletionRequest.id)
+      setDeletionRequest(null)
+    } catch (err) {
+      setDeleteError(err.message)
+    }
+  }
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault()
@@ -379,23 +421,225 @@ export default function Profile() {
       </form>
 
       {/* ── Zone danger ── */}
-      <div className="card" style={{ borderColor: 'rgba(239,68,68,0.25)' }}>
-        <div className="flex items-center gap-3 mb-5">
-          <div className="p-2.5 bg-red-500/10 rounded-xl">
-            <Shield size={20} className="text-red-400" />
+      <div style={{
+        background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+        border: '1px solid rgba(239,68,68,0.25)',
+        borderRadius: '20px', padding: '28px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ padding: '10px', backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: '12px' }}>
+            <Shield size={20} color="#f87171" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-red-400">{t('profile.dangerZone')}</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Actions irréversibles sur votre compte</p>
+            <h3 style={{ color: '#f87171', fontWeight: 600, fontSize: '15px', margin: 0 }}>
+              {t('profile.dangerZone')}
+            </h3>
+            <p style={{ color: '#64748b', fontSize: '12px', margin: '2px 0 0' }}>
+              Actions irréversibles sur votre compte
+            </p>
           </div>
         </div>
 
-        <div className="border-t border-red-500/15 mb-6" />
+        <div style={{ borderTop: '1px solid rgba(239,68,68,0.12)', marginBottom: '20px' }} />
 
-        <p className="text-slate-400 text-sm mb-5 leading-relaxed">{t('profile.deleteAccountWarning')}</p>
-        <button className="btn bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20">
-          {t('profile.deleteAccount')}
-        </button>
+        {/* Erreur */}
+        {deleteError && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '10px 14px', borderRadius: '10px', marginBottom: '16px',
+            backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+            color: '#fca5a5', fontSize: '13px'
+          }}>
+            <AlertCircle size={15} />
+            {deleteError}
+          </div>
+        )}
+
+        {/* Managers : suppression directe avec confirmation forte */}
+        {isManager ? (
+          <div>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '16px', lineHeight: 1.6 }}>
+              En tant que manager, vous pouvez supprimer votre compte directement. Cette action est irréversible et retirera votre accès au restaurant.
+            </p>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)',
+                  backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171',
+                  fontSize: '14px', fontWeight: 500, cursor: 'pointer'
+                }}
+              >
+                <Trash2 size={16} />
+                {t('profile.deleteAccount')}
+              </button>
+            ) : (
+              <div style={{
+                padding: '16px', borderRadius: '12px',
+                backgroundColor: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.3)'
+              }}>
+                <p style={{ color: '#fca5a5', fontSize: '14px', fontWeight: 500, margin: '0 0 14px' }}>
+                  Êtes-vous certain ? Cette action est irréversible.
+                </p>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    style={{
+                      flex: 1, padding: '10px', borderRadius: '9px',
+                      border: '1px solid #334155', backgroundColor: 'transparent',
+                      color: '#94a3b8', fontSize: '14px', fontWeight: 500, cursor: 'pointer'
+                    }}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleRequestDeletion}
+                    disabled={deleteLoading}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      padding: '10px', borderRadius: '9px', border: 'none',
+                      backgroundColor: '#ef4444', color: 'white',
+                      fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+                    }}
+                  >
+                    {deleteLoading ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                    Oui, supprimer
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : deletionRequest?.status === 'pending' ? (
+          /* Demande en attente */
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '12px',
+              padding: '14px 16px', borderRadius: '12px',
+              backgroundColor: 'rgba(245,158,11,0.1)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              marginBottom: '14px'
+            }}>
+              <Clock size={20} color="#fbbf24" style={{ flexShrink: 0 }} />
+              <div>
+                <p style={{ color: '#fbbf24', fontWeight: 500, fontSize: '14px', margin: '0 0 2px' }}>
+                  Demande de suppression en attente
+                </p>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>
+                  Votre manager doit valider cette demande avant que votre compte soit supprimé.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleCancelDeletion}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '9px 16px', borderRadius: '9px',
+                border: '1px solid #334155', backgroundColor: 'transparent',
+                color: '#94a3b8', fontSize: '13px', cursor: 'pointer'
+              }}
+            >
+              <X size={14} />
+              Annuler la demande
+            </button>
+          </div>
+        ) : deletionRequest?.status === 'rejected' ? (
+          /* Demande refusée */
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: '12px',
+              padding: '14px 16px', borderRadius: '12px',
+              backgroundColor: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              marginBottom: '14px'
+            }}>
+              <X size={20} color="#f87171" style={{ flexShrink: 0, marginTop: '1px' }} />
+              <div>
+                <p style={{ color: '#f87171', fontWeight: 500, fontSize: '14px', margin: '0 0 4px' }}>
+                  Demande refusée par votre manager
+                </p>
+                {deletionRequest.note && (
+                  <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>
+                    Note : {deletionRequest.note}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '10px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)',
+                backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171',
+                fontSize: '14px', fontWeight: 500, cursor: 'pointer'
+              }}
+            >
+              <Trash2 size={16} />
+              Soumettre à nouveau
+            </button>
+          </div>
+        ) : (
+          /* Pas de demande — formulaire initial */
+          <div>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '16px', lineHeight: 1.6 }}>
+              {t('profile.deleteAccountWarning')} Votre demande sera envoyée à votre manager pour validation.
+            </p>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 18px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.4)',
+                  backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171',
+                  fontSize: '14px', fontWeight: 500, cursor: 'pointer'
+                }}
+              >
+                <Trash2 size={16} />
+                {t('profile.deleteAccount')}
+              </button>
+            ) : (
+              <div style={{
+                padding: '16px', borderRadius: '12px',
+                backgroundColor: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.3)'
+              }}>
+                <p style={{ color: '#fca5a5', fontSize: '14px', fontWeight: 500, margin: '0 0 6px' }}>
+                  Confirmer la demande de suppression ?
+                </p>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: '0 0 14px', lineHeight: 1.5 }}>
+                  Votre manager sera notifié et devra approuver avant que votre compte soit supprimé.
+                </p>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteError('') }}
+                    style={{
+                      flex: 1, padding: '10px', borderRadius: '9px',
+                      border: '1px solid #334155', backgroundColor: 'transparent',
+                      color: '#94a3b8', fontSize: '14px', fontWeight: 500, cursor: 'pointer'
+                    }}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleRequestDeletion}
+                    disabled={deleteLoading}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      padding: '10px', borderRadius: '9px', border: 'none',
+                      backgroundColor: '#ef4444', color: 'white',
+                      fontSize: '14px', fontWeight: 600, cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                      opacity: deleteLoading ? 0.7 : 1
+                    }}
+                  >
+                    {deleteLoading ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+                    Envoyer la demande
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
     </div>

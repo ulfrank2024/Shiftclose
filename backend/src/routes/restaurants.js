@@ -11,6 +11,11 @@ import {
   updateTeamMemberRole,
   updateCashoutPermission
 } from '../controllers/restaurantController.js'
+import {
+  getPendingDeletionRequests,
+  approveDeletion,
+  rejectDeletion
+} from '../controllers/deletionController.js'
 
 const router = Router()
 
@@ -43,5 +48,10 @@ router.put('/:restaurantId/team/:userId/role', requireRestaurantAccess, requireR
 
 // Update cashout permission (Manager only)
 router.put('/:restaurantId/team/:userId/cashout', requireRestaurantAccess, requireRole('manager'), updateCashoutPermission)
+
+// Deletion requests (Manager side)
+router.get('/:restaurantId/deletion-requests', requireRestaurantAccess, requireRole('manager'), getPendingDeletionRequests)
+router.put('/:restaurantId/deletion-requests/:requestId/approve', requireRestaurantAccess, requireRole('manager'), approveDeletion)
+router.put('/:restaurantId/deletion-requests/:requestId/reject', requireRestaurantAccess, requireRole('manager'), rejectDeletion)
 
 export default router

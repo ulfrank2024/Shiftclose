@@ -14,6 +14,11 @@ import {
   resetPassword,
   setupSuperAdmin
 } from '../controllers/authController.js'
+import {
+  requestDeletion,
+  getMyDeletionRequest,
+  cancelDeletionRequest
+} from '../controllers/deletionController.js'
 
 const router = Router()
 
@@ -43,5 +48,10 @@ router.post('/photo', verifyToken, upload.single('photo'), uploadPhoto)
 
 // Super Admin routes
 router.get('/users', verifyToken, requireRole('superadmin'), getAllUsers)
+
+// Deletion request routes (employee side)
+router.post('/deletion-request', verifyToken, requestDeletion)
+router.get('/deletion-request', verifyToken, getMyDeletionRequest)
+router.delete('/deletion-request/:requestId', verifyToken, cancelDeletionRequest)
 
 export default router

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import { restaurantAPI, invitationAPI } from '../services/api'
+import { restaurantAPI, invitationAPI, deletionAPI } from '../services/api'
 import { Calculator } from 'lucide-react'
 import {
   Users, UserPlus, Mail, MoreVertical, Shield, User, X, Check, Clock,
   Percent, Settings2, Trash2, Edit3, Save, Plus, Loader2,
-  Wine, Coffee, UtensilsCrossed, Briefcase, AlertCircle
+  Wine, Coffee, UtensilsCrossed, Briefcase, AlertCircle, UserX
 } from 'lucide-react'
 
 const POSITION_ICONS = {
@@ -28,6 +28,12 @@ export default function Team() {
   const [tipOutRules, setTipOutRules] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const [deletionRequests, setDeletionRequests] = useState([])
+  const [showRejectModal, setShowRejectModal]   = useState(false)
+  const [rejectTarget, setRejectTarget]         = useState(null)  // { requestId }
+  const [rejectNote, setRejectNote]             = useState('')
+  const [actionLoadingId, setActionLoadingId]   = useState(null)
 
   // Modals
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -52,19 +58,50 @@ export default function Team() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [membersRes, invitesRes, restaurantRes] = await Promise.all([
+      const [membersRes, invitesRes, restaurantRes, deletionRes] = await Promise.all([
         restaurantAPI.getTeam(currentRestaurant.id),
         invitationAPI.getPending(currentRestaurant.id),
-        restaurantAPI.get(currentRestaurant.id)
+        restaurantAPI.get(currentRestaurant.id),
+        deletionAPI.getPending(currentRestaurant.id).catch(() => ({ requests: [] }))
       ])
 
       setMembers(membersRes.members || [])
       setPendingInvites(invitesRes.invitations || [])
       setTipOutRules(restaurantRes.restaurant?.tipOutRules || [])
+      setDeletionRequests(deletionRes.requests || [])
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleApproveDeletion = async (requestId) => {
+    setActionLoadingId(requestId)
+    try {
+      await deletionAPI.approve(currentRestaurant.id, requestId)
+      setDeletionRequests(prev => prev.filter(r => r.id !== requestId))
+      loadData() // Rafraîchir la liste des membres
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  const handleRejectDeletion = async () => {
+    if (!rejectTarget) return
+    setActionLoadingId(rejectTarget.requestId)
+    try {
+      await deletionAPI.reject(currentRestaurant.id, rejectTarget.requestId, rejectNote)
+      setDeletionRequests(prev => prev.filter(r => r.id !== rejectTarget.requestId))
+      setShowRejectModal(false)
+      setRejectTarget(null)
+      setRejectNote('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
@@ -279,7 +316,8 @@ export default function Team() {
         {[
           { id: 'members', icon: Users, label: t('team.members') },
           { id: 'pending', icon: Clock, label: t('team.pending') },
-          { id: 'tipout', icon: Percent, label: t('team.tipOutConfig') }
+          { id: 'tipout', icon: Percent, label: t('team.tipOutConfig') },
+          { id: 'deletions', icon: UserX, label: 'Suppressions', count: deletionRequests.length }
         ].map(tab => {
           const active = activeTab === tab.id
           return (
@@ -306,6 +344,15 @@ export default function Team() {
                   background: '#f59e0b', color: '#fff', borderRadius: '9999px', fontSize: '11px', fontWeight: 700
                 }}>
                   {pendingInvites.length}
+                </span>
+              )}
+              {tab.id === 'deletions' && deletionRequests.length > 0 && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  minWidth: '18px', height: '18px', padding: '0 5px',
+                  background: '#ef4444', color: '#fff', borderRadius: '9999px', fontSize: '11px', fontWeight: 700
+                }}>
+                  {deletionRequests.length}
                 </span>
               )}
             </button>
@@ -690,6 +737,159 @@ export default function Team() {
             {submitting ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
             {t('common.save')}
           </button>
+        </div>
+      )}
+
+      {/* ── Demandes de suppression ── */}
+      {activeTab === 'deletions' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {deletionRequests.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 0', color: '#94a3b8' }}>
+              <UserX size={48} style={{ margin: '0 auto 16px', opacity: 0.4, display: 'block' }} />
+              <p style={{ margin: 0 }}>Aucune demande de suppression en attente</p>
+            </div>
+          ) : (
+            deletionRequests.map(req => {
+              const isActing = actionLoadingId === req.id
+              const requestDate = new Date(req.requestedAt).toLocaleDateString('fr-CA', {
+                day: 'numeric', month: 'long', year: 'numeric'
+              })
+              return (
+                <div key={req.id} style={{
+                  background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  borderRadius: '16px', padding: '18px 20px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    {/* Avatar */}
+                    <div style={{
+                      width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                      background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <span style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>
+                        {req.firstName?.[0]}{req.lastName?.[0]}
+                      </span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ color: '#f8fafc', fontWeight: 600, fontSize: '15px', margin: 0 }}>
+                        {req.firstName} {req.lastName}
+                      </p>
+                      <p style={{ color: '#64748b', fontSize: '12px', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {req.email}
+                      </p>
+                    </div>
+                    <span style={{
+                      padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600,
+                      backgroundColor: 'rgba(245,158,11,0.12)', color: '#fbbf24',
+                      border: '1px solid rgba(245,158,11,0.3)', flexShrink: 0
+                    }}>
+                      <Clock size={11} style={{ display: 'inline', marginRight: 4 }} />
+                      En attente
+                    </span>
+                  </div>
+
+                  <p style={{ color: '#475569', fontSize: '12px', margin: '0 0 16px' }}>
+                    Demande soumise le {requestDate}
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => {
+                        setRejectTarget({ requestId: req.id })
+                        setShowRejectModal(true)
+                      }}
+                      disabled={isActing}
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        padding: '10px', borderRadius: '10px', border: '1px solid #334155',
+                        backgroundColor: 'transparent', color: '#94a3b8',
+                        fontSize: '13px', fontWeight: 500, cursor: 'pointer'
+                      }}
+                    >
+                      <X size={15} />
+                      Refuser
+                    </button>
+                    <button
+                      onClick={() => handleApproveDeletion(req.id)}
+                      disabled={isActing}
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        padding: '10px', borderRadius: '10px', border: 'none',
+                        backgroundColor: '#ef4444', color: 'white',
+                        fontSize: '13px', fontWeight: 600, cursor: isActing ? 'not-allowed' : 'pointer',
+                        opacity: isActing ? 0.7 : 1
+                      }}
+                    >
+                      {isActing
+                        ? <Loader2 size={15} className="animate-spin" />
+                        : <Trash2 size={15} />}
+                      Approuver la suppression
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
+
+      {/* ── Modal rejet avec note ── */}
+      {showRejectModal && rejectTarget && (
+        <div style={modalOverlay} onClick={(e) => e.target === e.currentTarget && setShowRejectModal(false)}>
+          <div style={{
+            background: 'rgba(15,23,42,0.97)', border: '1px solid #334155',
+            borderRadius: '20px', maxWidth: '400px', width: '100%',
+            backdropFilter: 'blur(20px)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+          }} className="animate-fade-in">
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #1e293b' }}>
+              <h2 style={{ color: '#f8fafc', fontWeight: 700, fontSize: '17px', margin: 0 }}>
+                Refuser la demande
+              </h2>
+            </div>
+            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
+                  Note pour l'employé (optionnel)
+                </label>
+                <textarea
+                  value={rejectNote}
+                  onChange={(e) => setRejectNote(e.target.value)}
+                  placeholder="Ex: Veuillez contacter les RH avant..."
+                  rows={3}
+                  style={{
+                    width: '100%', padding: '10px 14px', background: '#0f172a',
+                    border: '1px solid #334155', borderRadius: '10px',
+                    color: '#f8fafc', fontSize: '14px', outline: 'none',
+                    resize: 'vertical', boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => { setShowRejectModal(false); setRejectNote('') }}
+                  style={{
+                    flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #334155',
+                    background: 'transparent', color: '#94a3b8', fontWeight: 600, fontSize: '14px', cursor: 'pointer'
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleRejectDeletion}
+                  disabled={!!actionLoadingId}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                    background: '#334155', color: '#94a3b8', fontWeight: 600, fontSize: '14px'
+                  }}
+                >
+                  {actionLoadingId ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
+                  Refuser
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

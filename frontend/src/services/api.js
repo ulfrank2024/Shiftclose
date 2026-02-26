@@ -181,6 +181,39 @@ export const reportAPI = {
     fetchWithAuth(`/reports/${restaurantId}/my-tips`)
 }
 
+// Deletion Requests API
+export const deletionAPI = {
+  // Employee: request deletion
+  request: (restaurantId) =>
+    fetchWithAuth('/auth/deletion-request', {
+      method: 'POST',
+      body: JSON.stringify({ restaurantId })
+    }),
+
+  // Employee: get my current request status
+  getMyRequest: (restaurantId) =>
+    fetchWithAuth(`/auth/deletion-request${restaurantId ? `?restaurantId=${restaurantId}` : ''}`),
+
+  // Employee: cancel pending request
+  cancel: (requestId) =>
+    fetchWithAuth(`/auth/deletion-request/${requestId}`, { method: 'DELETE' }),
+
+  // Manager: get pending requests
+  getPending: (restaurantId) =>
+    fetchWithAuth(`/restaurants/${restaurantId}/deletion-requests`),
+
+  // Manager: approve
+  approve: (restaurantId, requestId) =>
+    fetchWithAuth(`/restaurants/${restaurantId}/deletion-requests/${requestId}/approve`, { method: 'PUT' }),
+
+  // Manager: reject
+  reject: (restaurantId, requestId, note = '') =>
+    fetchWithAuth(`/restaurants/${restaurantId}/deletion-requests/${requestId}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ note })
+    })
+}
+
 // Invitations API
 export const invitationAPI = {
   send: (restaurantId, data) =>
