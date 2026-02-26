@@ -89,6 +89,17 @@ function ManagerRoute({ children }) {
   return children
 }
 
+function CashOutRoute({ children }) {
+  const { currentRestaurant } = useAuth()
+  const canDoCashout = currentRestaurant?.canDoCashout !== false
+
+  if (!canDoCashout) {
+    return <Navigate to="/my-tips" replace />
+  }
+
+  return children
+}
+
 function SuperAdminRoute({ children }) {
   const { user } = useAuth()
 
@@ -163,7 +174,7 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/cash-out" element={<CashOut />} />
+          <Route path="/cash-out" element={<CashOutRoute><CashOut /></CashOutRoute>} />
           <Route path="/my-tips" element={<MyTips />} />
           <Route path="/reports" element={<Reports />} />
           <Route

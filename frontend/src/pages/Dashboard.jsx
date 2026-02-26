@@ -20,6 +20,7 @@ import {
 export default function Dashboard() {
   const { t } = useTranslation()
   const { user, currentRestaurant, isManager } = useAuth()
+  const canDoCashout = currentRestaurant?.canDoCashout !== false
 
   const [stats, setStats] = useState({
     totalSales: 0,
@@ -139,21 +140,39 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <Link
-            to="/cash-out"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '10px',
-              padding: '14px 28px',
-              backgroundColor: 'white', color: '#1d4ed8',
-              fontWeight: 600, borderRadius: '14px',
-              textDecoration: 'none',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-              transition: 'all 0.2s', fontSize: '15px'
-            }}
-          >
-            <Calculator size={20} />
-            {t('dashboard.startCashOut')}
-          </Link>
+          {canDoCashout ? (
+            <Link
+              to="/cash-out"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '10px',
+                padding: '14px 28px',
+                backgroundColor: 'white', color: '#1d4ed8',
+                fontWeight: 600, borderRadius: '14px',
+                textDecoration: 'none',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                transition: 'all 0.2s', fontSize: '15px'
+              }}
+            >
+              <Calculator size={20} />
+              {t('dashboard.startCashOut')}
+            </Link>
+          ) : (
+            <Link
+              to="/my-tips"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '10px',
+                padding: '14px 28px',
+                backgroundColor: 'white', color: '#1d4ed8',
+                fontWeight: 600, borderRadius: '14px',
+                textDecoration: 'none',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                transition: 'all 0.2s', fontSize: '15px'
+              }}
+            >
+              <DollarSign size={20} />
+              Voir mes pourboires
+            </Link>
+          )}
         </div>
       </div>
 
@@ -283,25 +302,47 @@ export default function Dashboard() {
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-              <Link to="/cash-out" style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '16px 18px',
-                background: 'linear-gradient(to right, rgba(59,130,246,0.1), transparent)',
-                borderRadius: '14px', border: '1px solid rgba(59,130,246,0.15)',
-                textDecoration: 'none', transition: 'all 0.2s'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{
-                    width: '42px', height: '42px', borderRadius: '12px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: 'rgba(59,130,246,0.2)'
-                  }}>
-                    <Calculator style={{ color: '#60a5fa' }} size={20} />
+              {canDoCashout ? (
+                <Link to="/cash-out" style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '16px 18px',
+                  background: 'linear-gradient(to right, rgba(59,130,246,0.1), transparent)',
+                  borderRadius: '14px', border: '1px solid rgba(59,130,246,0.15)',
+                  textDecoration: 'none', transition: 'all 0.2s'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{
+                      width: '42px', height: '42px', borderRadius: '12px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: 'rgba(59,130,246,0.2)'
+                    }}>
+                      <Calculator style={{ color: '#60a5fa' }} size={20} />
+                    </div>
+                    <span style={{ color: 'white', fontWeight: 500, fontSize: '15px' }}>{t('dashboard.startCashOut')}</span>
                   </div>
-                  <span style={{ color: 'white', fontWeight: 500, fontSize: '15px' }}>{t('dashboard.startCashOut')}</span>
-                </div>
-                <ArrowRight style={{ color: '#64748b' }} size={18} />
-              </Link>
+                  <ArrowRight style={{ color: '#64748b' }} size={18} />
+                </Link>
+              ) : (
+                <Link to="/my-tips" style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '16px 18px',
+                  background: 'linear-gradient(to right, rgba(16,185,129,0.1), transparent)',
+                  borderRadius: '14px', border: '1px solid rgba(16,185,129,0.15)',
+                  textDecoration: 'none', transition: 'all 0.2s'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{
+                      width: '42px', height: '42px', borderRadius: '12px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: 'rgba(16,185,129,0.2)'
+                    }}>
+                      <DollarSign style={{ color: '#34d399' }} size={20} />
+                    </div>
+                    <span style={{ color: 'white', fontWeight: 500, fontSize: '15px' }}>Mes pourboires reçus</span>
+                  </div>
+                  <ArrowRight style={{ color: '#64748b' }} size={18} />
+                </Link>
+              )}
 
               <Link to="/reports" style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
