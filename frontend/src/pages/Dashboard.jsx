@@ -101,23 +101,42 @@ export default function Dashboard() {
           position: 'relative', zIndex: 10,
           display: 'flex', flexDirection: 'column', gap: '24px'
         }} className="md:flex-row md:items-center md:justify-between">
-          <div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+            {/* Avatar utilisateur */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              color: '#bfdbfe', fontSize: '14px', marginBottom: '12px'
+              width: '54px', height: '54px', borderRadius: '50%', flexShrink: 0,
+              background: user?.photoURL ? 'transparent' : 'rgba(255,255,255,0.25)',
+              border: '2px solid rgba(255,255,255,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
             }}>
-              <Calendar size={14} />
-              <span style={{ textTransform: 'capitalize' }}>{today}</span>
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt={user?.firstName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ color: 'white', fontWeight: 700, fontSize: '18px' }}>
+                  {(user?.firstName?.[0] || '?')}{(user?.lastName?.[0] || '')}
+                </span>
+              )}
             </div>
-            <h1 style={{
-              fontSize: '22px', fontWeight: 'bold', color: 'white', marginBottom: '8px', lineHeight: '1.2'
-            }} className="welcome-title">
-              {t('dashboard.welcome')}, {user?.firstName} !
-            </h1>
-            <p style={{ color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
-              <Sparkles size={16} />
-              {currentRestaurant?.name || 'Votre restaurant'}
-            </p>
+
+            <div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                color: '#bfdbfe', fontSize: '14px', marginBottom: '12px'
+              }}>
+                <Calendar size={14} />
+                <span style={{ textTransform: 'capitalize' }}>{today}</span>
+              </div>
+              <h1 style={{
+                fontSize: '22px', fontWeight: 'bold', color: 'white', marginBottom: '8px', lineHeight: '1.2'
+              }} className="welcome-title">
+                {t('dashboard.welcome')}, {user?.firstName} !
+              </h1>
+              <p style={{ color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
+                <Sparkles size={16} />
+                {currentRestaurant?.name || 'Votre restaurant'}
+              </p>
+            </div>
           </div>
 
           <Link

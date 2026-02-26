@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { invitationAPI, authAPI } from '../services/api'
 import {
   Eye, EyeOff, Globe, Loader2, UserPlus, Building2,
-  CheckCircle, XCircle, Mail, Zap, Lock, User, ArrowRight
+  CheckCircle, XCircle, Mail, Zap, Lock, User, ArrowRight, Camera, X
 } from 'lucide-react'
 
 export default function AcceptInvite() {
@@ -27,6 +27,26 @@ export default function AcceptInvite() {
     firstName: '', lastName: '', email: '', password: '', confirmPassword: ''
   })
   const [showPassword, setShowPassword] = useState(false)
+  const photoRef  = useRef(null)
+  const [photoFile, setPhotoFile]   = useState(null)
+  const [localPhoto, setLocalPhoto] = useState(null)
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Seules les images sont acceptées.'); return }
+    if (file.size > 5 * 1024 * 1024) { setError('La photo ne doit pas dépasser 5 Mo.'); return }
+    setPhotoFile(file)
+    setLocalPhoto(URL.createObjectURL(file))
+    setError('')
+  }
+
+  const removePhoto = (e) => {
+    e.stopPropagation()
+    setPhotoFile(null)
+    setLocalPhoto(null)
+    if (photoRef.current) photoRef.current.value = ''
+  }
 
   useEffect(() => { loadInvitation() }, [token])
 
@@ -71,6 +91,9 @@ export default function AcceptInvite() {
         password: formData.password
       })
       await login(formData.email, formData.password)
+      if (photoFile) {
+        try { await authAPI.uploadPhoto(photoFile) } catch (_) { /* silencieux */ }
+      }
       await invitationAPI.accept(token)
       navigate('/dashboard')
     } catch (err) {
@@ -264,6 +287,57 @@ export default function AcceptInvite() {
                     <span style={{ flexShrink: 0 }}>⚠</span> {error}
                   </div>
                 )}
+
+                {/* Photo de profil (optionnel) */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <div
+                    onClick={() => photoRef.current?.click()}
+                    style={{
+                      position: 'relative',
+                      width: '80px', height: '80px', borderRadius: '50%',
+                      background: localPhoto ? 'transparent' : 'rgba(15,23,42,0.7)',
+                      border: localPhoto ? 'none' : '2px dashed rgba(71,85,105,0.6)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', overflow: 'hidden', flexShrink: 0,
+                      transition: 'border-color 0.2s'
+                    }}
+                    onMouseEnter={e => { if (!localPhoto) e.currentTarget.style.borderColor = '#3b82f6' }}
+                    onMouseLeave={e => { if (!localPhoto) e.currentTarget.style.borderColor = 'rgba(71,85,105,0.6)' }}
+                  >
+                    {localPhoto ? (
+                      <>
+                        <img src={localPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{
+                          position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          opacity: 0, transition: 'opacity 0.2s'
+                        }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '0'}
+                        >
+                          <Camera color="white" size={20} />
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#475569' }}>
+                        <Camera size={22} />
+                        <span style={{ fontSize: '10px', fontWeight: 500 }}>Photo</span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ color: '#64748b', fontSize: '12px' }}>
+                      Photo de profil <span style={{ color: '#334155' }}>(optionnel)</span>
+                    </p>
+                    {localPhoto && (
+                      <button type="button" onClick={removePhoto}
+                        style={{ marginTop: '3px', color: '#ef4444', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <X size={11} /> Supprimer
+                      </button>
+                    )}
+                  </div>
+                  <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoSelect} style={{ display: 'none' }} />
+                </div>
 
                 {/* Prénom + Nom */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
