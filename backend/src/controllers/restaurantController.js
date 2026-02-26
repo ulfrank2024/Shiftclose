@@ -8,6 +8,7 @@ export const getMyRestaurants = async (req, res) => {
       .select(`
         restaurant_id,
         role,
+        can_do_cashout,
         restaurants (
           id,
           name,
@@ -32,6 +33,7 @@ export const getMyRestaurants = async (req, res) => {
       currency: ur.restaurants.currency,
       tipOutRules: ur.restaurants.tip_out_rules,
       userRole: ur.role,
+      canDoCashout: ur.can_do_cashout !== false,
       createdAt: ur.restaurants.created_at
     })) || []
 
@@ -182,6 +184,7 @@ export const getTeamMembers = async (req, res) => {
       .select(`
         role,
         joined_at,
+        can_do_cashout,
         users (
           id,
           email,
@@ -203,7 +206,8 @@ export const getTeamMembers = async (req, res) => {
       lastName: m.users.last_name,
       role: m.role,
       status: m.users.status,
-      joinedAt: m.joined_at
+      joinedAt: m.joined_at,
+      canDoCashout: m.can_do_cashout !== false
     })) || []
 
     res.json({ success: true, members: formattedMembers })
@@ -263,6 +267,32 @@ export const removeTeamMember = async (req, res) => {
     })
   } catch (error) {
     console.error('Remove team member error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Update team member cashout permission
+export const updateCashoutPermission = async (req, res) => {
+  try {
+    const { restaurantId, userId } = req.params
+    const { canDoCashout } = req.body
+
+    const { error } = await supabase
+      .from('user_restaurants')
+      .update({ can_do_cashout: !!canDoCashout })
+      .eq('restaurant_id', restaurantId)
+      .eq('user_id', userId)
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la mise à jour' })
+    }
+
+    res.json({
+      success: true,
+      message: canDoCashout ? 'Permission Cash Out accordée' : 'Permission Cash Out retirée'
+    })
+  } catch (error) {
+    console.error('Update cashout permission error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

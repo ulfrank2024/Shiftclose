@@ -213,6 +213,7 @@ export const login = async (req, res) => {
       .select(`
         restaurant_id,
         role,
+        can_do_cashout,
         restaurants (
           id,
           name
@@ -224,7 +225,8 @@ export const login = async (req, res) => {
     const restaurants = userRestaurants?.map(ur => ({
       id: ur.restaurant_id,
       name: ur.restaurants?.name,
-      role: ur.role
+      role: ur.role,
+      canDoCashout: ur.can_do_cashout !== false
     })) || []
 
     // Generate JWT token
@@ -262,6 +264,7 @@ export const getProfile = async (req, res) => {
       .select(`
         restaurant_id,
         role,
+        can_do_cashout,
         restaurants (
           id,
           name
@@ -273,7 +276,8 @@ export const getProfile = async (req, res) => {
     const restaurants = userRestaurants?.map(ur => ({
       id: ur.restaurant_id,
       name: ur.restaurants?.name,
-      role: ur.role
+      role: ur.role,
+      canDoCashout: ur.can_do_cashout !== false
     })) || []
 
     res.json({

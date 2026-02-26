@@ -7,13 +7,15 @@ import {
   FileText,
   Users,
   Settings,
-  Shield
+  Shield,
+  Coins
 } from 'lucide-react'
 
 export default function BottomNav() {
   const { t } = useTranslation()
-  const { isManager, user } = useAuth()
+  const { isManager, user, currentRestaurant } = useAuth()
   const isSuperAdmin = user?.role === 'superadmin'
+  const canDoCashout = currentRestaurant?.canDoCashout !== false
 
   // Navigation séparée selon le rôle
   const navItems = isSuperAdmin
@@ -24,7 +26,10 @@ export default function BottomNav() {
       ]
     : [
         { path: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
-        { path: '/cash-out',  icon: Calculator,      label: t('nav.cashOut') },
+        ...(canDoCashout
+          ? [{ path: '/cash-out', icon: Calculator, label: t('nav.cashOut') }]
+          : [{ path: '/my-tips', icon: Coins, label: 'Mes Tips' }]
+        ),
         { path: '/reports',   icon: FileText,         label: t('nav.reports') },
         ...(isManager ? [{ path: '/team', icon: Users, label: t('nav.team') }] : []),
         { path: '/settings',  icon: Settings,         label: t('nav.settings') }

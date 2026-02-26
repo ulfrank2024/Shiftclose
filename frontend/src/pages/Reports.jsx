@@ -11,7 +11,12 @@ import {
   Download,
   Eye,
   Loader,
-  AlertCircle
+  AlertCircle,
+  DollarSign,
+  Users,
+  Gift,
+  UtensilsCrossed,
+  ArrowRight
 } from 'lucide-react'
 
 export default function Reports() {
@@ -262,43 +267,123 @@ export default function Reports() {
             </div>
 
             {/* Financial Details */}
-            <div className="px-7 py-6">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-400">{t('cashOut.totalSales')}</span>
-                  <span className="text-white font-semibold">${selectedReport.totalSales.toFixed(2)}</span>
+            <div style={{ padding: '20px 28px', borderBottom: '1px solid rgba(51,65,85,0.6)' }}>
+              <p style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 14px' }}>
+                Résumé financier
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#94a3b8', fontSize: '14px' }}>Ventes totales</span>
+                  <span style={{ color: 'white', fontWeight: 600 }}>${(selectedReport.totalSales || 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-400">{t('cashOut.totalTips')}</span>
-                  <span className="text-white font-semibold">${selectedReport.totalTips.toFixed(2)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#94a3b8', fontSize: '14px' }}>Pourboires totaux</span>
+                  <span style={{ color: 'white', fontWeight: 600 }}>${(selectedReport.totalTips || 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-400">{t('cashOut.tipOutAmount')}</span>
-                  <span className="text-amber-400 font-semibold">-${selectedReport.tipOutAmount.toFixed(2)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#94a3b8', fontSize: '14px' }}>Tip-Out total</span>
+                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>-${(selectedReport.tipOutAmount || 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center py-3 mt-1 px-4 bg-slate-700/40 rounded-xl border border-slate-600/40">
-                  <span className="text-white font-bold">{t('cashOut.netTips')}</span>
-                  <span className="text-green-400 font-bold text-xl">${selectedReport.netTips.toFixed(2)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#94a3b8', fontSize: '14px' }}>Argent comptant en main</span>
+                  <span style={{ color: 'white', fontWeight: 600 }}>${(selectedReport.cashAmount || 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-400">{t('cashOut.difference')}</span>
-                  <span className={`font-bold ${
-                    selectedReport.difference === 0 ? 'text-green-400' :
-                    selectedReport.difference > 0 ? 'text-blue-400' : 'text-red-400'
-                  }`}>
-                    {selectedReport.difference === 0 ? t('cashOut.balanced') :
-                     selectedReport.difference > 0 ? `+$${selectedReport.difference.toFixed(2)}` :
-                     `-$${Math.abs(selectedReport.difference).toFixed(2)}`}
-                  </span>
-                </div>
+
+                {/* Due Back */}
+                {(selectedReport.dueBack !== undefined && selectedReport.dueBack !== null) && (
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '14px 16px', marginTop: '6px',
+                    background: 'linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.15) 100%)',
+                    borderRadius: '12px', border: '1px solid rgba(59,130,246,0.25)'
+                  }}>
+                    <div>
+                      <p style={{ color: '#93c5fd', fontSize: '12px', margin: '0 0 2px' }}>Due Back au gérant</p>
+                      <p style={{ color: 'white', fontWeight: 800, fontSize: '22px', margin: 0 }}>
+                        ${(selectedReport.dueBack || 0).toFixed(2)}
+                      </p>
+                    </div>
+                    <DollarSign size={32} color="#60a5fa" style={{ opacity: 0.6 }} />
+                  </div>
+                )}
+
                 {selectedReport.validatedByName && (
-                  <div className="flex justify-between items-center py-1 pt-4 border-t border-slate-700/60">
-                    <span className="text-slate-400 text-sm">Validé par</span>
-                    <span className="text-slate-300 text-sm font-medium">{selectedReport.validatedByName}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #334155', marginTop: '4px' }}>
+                    <span style={{ color: '#64748b', fontSize: '13px' }}>Validé par</span>
+                    <span style={{ color: '#cbd5e1', fontSize: '13px', fontWeight: 500 }}>{selectedReport.validatedByName}</span>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Tip-Out Breakdown */}
+            {selectedReport.tipOutBreakdown && selectedReport.tipOutBreakdown.length > 0 && (
+              <div style={{ padding: '20px 28px', borderBottom: '1px solid rgba(51,65,85,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <Users size={15} color="#60a5fa" />
+                  <p style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                    Distributions Tip-Out
+                  </p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {selectedReport.tipOutBreakdown.map((item, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 14px', borderRadius: '10px',
+                      backgroundColor: 'rgba(51,65,85,0.3)'
+                    }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <p style={{ color: '#e2e8f0', fontSize: '13px', fontWeight: 500, margin: 0 }}>
+                          {item.personName || 'Pool'}
+                        </p>
+                        <p style={{ color: '#64748b', fontSize: '11px', margin: '2px 0 0', textTransform: 'capitalize' }}>
+                          {item.role} · {(item.percentage || 0).toFixed(1)}%
+                        </p>
+                      </div>
+                      <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '15px', flexShrink: 0, marginLeft: '12px' }}>
+                        ${(item.amount || 0).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Voluntary Donations */}
+            {selectedReport.voluntaryDonations && selectedReport.voluntaryDonations.length > 0 && (
+              <div style={{ padding: '16px 28px', borderBottom: '1px solid rgba(51,65,85,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <Gift size={14} color="#fbbf24" />
+                  <p style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                    Dons volontaires
+                  </p>
+                </div>
+                {selectedReport.voluntaryDonations.map((don, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '13px' }}>{don.personName}</span>
+                    <span style={{ color: '#fbbf24', fontWeight: 600, fontSize: '13px' }}>${(don.amount || 0).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Meal Deductions */}
+            {selectedReport.mealDeductions && selectedReport.mealDeductions.length > 0 && (
+              <div style={{ padding: '16px 28px', borderBottom: '1px solid rgba(51,65,85,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <UtensilsCrossed size={14} color="#f87171" />
+                  <p style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                    Déductions repas
+                  </p>
+                </div>
+                {selectedReport.mealDeductions.map((meal, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '13px' }}>{meal.personName} {meal.description && `(${meal.description})`}</span>
+                    <span style={{ color: '#f87171', fontWeight: 600, fontSize: '13px' }}>-${(meal.amount || 0).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Actions */}
             {isManager && selectedReport.status === 'pending' && (

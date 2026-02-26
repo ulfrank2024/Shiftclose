@@ -8,7 +8,8 @@ import {
   getTeamMembers,
   getAllRestaurants,
   removeTeamMember,
-  updateTeamMemberRole
+  updateTeamMemberRole,
+  updateCashoutPermission
 } from '../controllers/restaurantController.js'
 
 const router = Router()
@@ -39,5 +40,8 @@ router.delete('/:restaurantId/team/:userId', requireRestaurantAccess, requireRol
 
 // Update team member role (Manager only)
 router.put('/:restaurantId/team/:userId/role', requireRestaurantAccess, requireRole('manager'), updateTeamMemberRole)
+
+// Update cashout permission (Manager only)
+router.put('/:restaurantId/team/:userId/cashout', requireRestaurantAccess, requireRole('manager'), updateCashoutPermission)
 
 export default router

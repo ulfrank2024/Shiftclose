@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { restaurantAPI, invitationAPI } from '../services/api'
+import { Calculator } from 'lucide-react'
 import {
   Users, UserPlus, Mail, MoreVertical, Shield, User, X, Check, Clock,
   Percent, Settings2, Trash2, Edit3, Save, Plus, Loader2,
@@ -114,6 +115,19 @@ export default function Team() {
       setShowRoleModal(false)
       setSelectedMember(null)
       loadData()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  // Toggle cashout permission
+  const handleToggleCashout = async (member) => {
+    const newValue = !(member.canDoCashout !== false)
+    try {
+      await restaurantAPI.updateCashoutPermission(currentRestaurant.id, member.id, newValue)
+      setMembers(prev => prev.map(m =>
+        m.id === member.id ? { ...m, canDoCashout: newValue } : m
+      ))
     } catch (err) {
       setError(err.message)
     }
@@ -376,6 +390,24 @@ export default function Team() {
                             <Edit3 size={14} />
                             {t('team.changeRole')}
                           </button>
+                          {member.role !== 'manager' && (
+                            <button
+                              onClick={() => {
+                                handleToggleCashout(member)
+                                setOpenMenu(null)
+                              }}
+                              style={{
+                                width: '100%', textAlign: 'left', padding: '8px 14px',
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                color: member.canDoCashout !== false ? '#34d399' : '#94a3b8',
+                                fontSize: '13px',
+                                display: 'flex', alignItems: 'center', gap: '8px'
+                              }}
+                            >
+                              <Calculator size={14} />
+                              {member.canDoCashout !== false ? 'Retirer Cash Out' : 'Autoriser Cash Out'}
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               handleRemoveMember(member.id)
@@ -397,10 +429,29 @@ export default function Team() {
                   </div>
                 </div>
 
-                {/* Role badge — mobile only */}
-                <div className="member-badge-mobile" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #334155' }}>
+                {/* Ligne inférieure mobile : rôle + toggle cashout */}
+                <div className="member-badge-mobile" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                   {getRoleBadge(member.role)}
+                  {member.role !== 'manager' && (
+                    <button
+                      onClick={() => handleToggleCashout(member)}
+                      title={member.canDoCashout !== false ? 'Retirer la permission Cash Out' : 'Autoriser Cash Out'}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                        padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 500,
+                        border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                        backgroundColor: member.canDoCashout !== false
+                          ? 'rgba(16,185,129,0.12)' : 'rgba(100,116,139,0.12)',
+                        color: member.canDoCashout !== false ? '#34d399' : '#64748b'
+                      }}
+                    >
+                      <Calculator size={11} />
+                      {member.canDoCashout !== false ? 'Cash Out ✓' : 'Cash Out ✗'}
+                    </button>
+                  )}
                 </div>
+
+                {/* Toggle cashout — desktop (dans le menu contextuel) */}
               </div>
             ))
           )}

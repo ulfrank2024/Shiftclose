@@ -95,6 +95,17 @@ export function AuthProvider({ children }) {
     try {
       const { user: userData } = await authAPI.getProfile()
       setUser(userData)
+      // Update currentRestaurant with fresh canDoCashout data
+      setCurrentRestaurant(prev => {
+        if (!prev) return prev
+        const fresh = userData.restaurants?.find(r => r.id === prev.id)
+        if (fresh) {
+          const updated = { ...prev, ...fresh }
+          localStorage.setItem('currentRestaurant', JSON.stringify(updated))
+          return updated
+        }
+        return prev
+      })
       return userData
     } catch (error) {
       console.error('Refresh user error:', error)

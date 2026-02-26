@@ -127,6 +127,12 @@ export const restaurantAPI = {
       body: JSON.stringify({ role })
     }),
 
+  updateCashoutPermission: (restaurantId, userId, canDoCashout) =>
+    fetchWithAuth(`/restaurants/${restaurantId}/team/${userId}/cashout`, {
+      method: 'PUT',
+      body: JSON.stringify({ canDoCashout })
+    }),
+
   getAll: () => fetchWithAuth('/restaurants/all')
 }
 
@@ -169,7 +175,10 @@ export const reportAPI = {
     fetchWithAuth(`/reports/${reportId}/validate`, {
       method: 'PUT',
       body: JSON.stringify({ status, note })
-    })
+    }),
+
+  getMyTips: (restaurantId) =>
+    fetchWithAuth(`/reports/${restaurantId}/my-tips`)
 }
 
 // Invitations API

@@ -5,7 +5,8 @@ import {
   getReports,
   getReport,
   validateReport,
-  getDashboardStats
+  getDashboardStats,
+  getMyReceivedTips
 } from '../controllers/reportController.js'
 
 const router = Router()
@@ -15,6 +16,9 @@ router.use(verifyToken)
 
 // Dashboard stats
 router.get('/:restaurantId/stats', requireRestaurantAccess, getDashboardStats)
+
+// Get my received tips (for commis, bartenders, etc.)
+router.get('/:restaurantId/my-tips', requireRestaurantAccess, getMyReceivedTips)
 
 // Get reports for restaurant
 router.get('/:restaurantId', requireRestaurantAccess, getReports)

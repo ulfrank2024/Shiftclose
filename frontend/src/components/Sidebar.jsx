@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Check
+  Check,
+  Coins
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
@@ -28,6 +29,7 @@ export default function Sidebar() {
 
   const isSuperAdmin = user?.role === 'superadmin'
   const isManager = user?.role === 'manager' || currentRestaurant?.role === 'manager'
+  const canDoCashout = currentRestaurant?.canDoCashout !== false
   const hasMultipleRestaurants = (user?.restaurants?.length || 0) > 1
 
   // Fermer le menu si clic en dehors
@@ -53,7 +55,10 @@ export default function Sidebar() {
 
     return [
       { path: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
-      { path: '/cash-out', icon: Calculator, label: t('nav.cashOut') },
+      ...(canDoCashout
+        ? [{ path: '/cash-out', icon: Calculator, label: t('nav.cashOut') }]
+        : [{ path: '/my-tips', icon: Coins, label: 'Mes Tips' }]
+      ),
       { path: '/reports', icon: FileText, label: t('nav.reports') },
       ...(isManager ? [{ path: '/team', icon: Users, label: t('nav.team') }] : []),
       { path: '/settings', icon: Settings, label: t('nav.settings') },

@@ -16,6 +16,7 @@ import AdminLogin from './pages/AdminLogin'
 import SuperAdminSetup from './pages/SuperAdminSetup'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import MyTips from './pages/MyTips'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -163,6 +164,7 @@ export default function App() {
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cash-out" element={<CashOut />} />
+          <Route path="/my-tips" element={<MyTips />} />
           <Route path="/reports" element={<Reports />} />
           <Route
             path="/team"
