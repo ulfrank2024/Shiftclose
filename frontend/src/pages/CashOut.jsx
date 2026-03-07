@@ -126,6 +126,9 @@ export default function CashOut() {
     ))
   }
 
+  const getMemberName = (member) =>
+    `${member.firstName || member.first_name || ''} ${member.lastName || member.last_name || ''}`.trim() || member.email
+
   const togglePersonForDistribution = (distIdx, member) => {
     setDistributions(prev => prev.map((d, i) => {
       if (i !== distIdx) return d
@@ -134,7 +137,7 @@ export default function CashOut() {
         ...d,
         selectedPersons: already
           ? d.selectedPersons.filter(p => p.id !== member.id)
-          : [...d.selectedPersons, { id: member.id, name: member.name || member.email }]
+          : [...d.selectedPersons, { id: member.id, name: getMemberName(member) }]
       }
     }))
   }
@@ -594,7 +597,7 @@ export default function CashOut() {
                                       transition:   'all 0.15s'
                                     }}
                                   >
-                                    {member.name || member.email}
+                                    {getMemberName(member)}
                                   </button>
                                 )
                               })}
