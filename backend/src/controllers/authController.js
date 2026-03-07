@@ -381,12 +381,15 @@ export const uploadPhoto = async (req, res) => {
     const ext = file.mimetype.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg'
     const filename = `${userId}/avatar.${ext}`
 
-    // Create bucket if it doesn't exist (ignore error if already exists)
+    // Ensure bucket exists and is public
     await supabase.storage.createBucket('avatars', {
       public: true,
       fileSizeLimit: 5242880,
       allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-    })
+    }).catch(() => {}) // ignore "already exists" error
+
+    // Force bucket to be public in case it was already created as private
+    await supabase.storage.updateBucket('avatars', { public: true }).catch(() => {})
 
     // Upload to Supabase Storage (upsert = overwrite existing)
     const { error: uploadError } = await supabase

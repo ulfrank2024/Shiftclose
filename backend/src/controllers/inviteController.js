@@ -175,6 +175,20 @@ export const acceptInvitation = async (req, res) => {
       })
       .eq('id', invitation.id)
 
+    // Send welcome email to the employee
+    try {
+      const appLink = `${process.env.FRONTEND_URL}/dashboard`
+      const template = emailTemplates.welcomeEmployee(
+        req.user.first_name,
+        invitation.restaurant_name,
+        invitation.invited_by_name,
+        appLink
+      )
+      await sendEmail({ to: req.user.email, ...template })
+    } catch (emailErr) {
+      console.warn('Welcome email failed (non-fatal):', emailErr.message)
+    }
+
     res.json({
       success: true,
       message: 'Invitation acceptée',

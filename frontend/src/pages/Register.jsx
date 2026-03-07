@@ -12,7 +12,7 @@ import {
 
 export default function Register() {
   const { t } = useTranslation()
-  const { register } = useAuth()
+  const { register, refreshUser } = useAuth()
   const { language, toggleLanguage } = useLanguage()
   const navigate = useNavigate()
 
@@ -87,7 +87,10 @@ export default function Register() {
         restaurantAddress: formData.address
       })
       if (photoFile) {
-        try { await authAPI.uploadPhoto(photoFile) } catch (_) { /* silent */ }
+        try {
+          await authAPI.uploadPhoto(photoFile)
+          await refreshUser() // mettre à jour photoURL dans le contexte
+        } catch (_) { /* silent */ }
       }
       navigate('/dashboard')
     } catch (err) {

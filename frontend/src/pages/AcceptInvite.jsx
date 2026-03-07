@@ -13,7 +13,7 @@ export default function AcceptInvite() {
   const { token }  = useParams()
   const { t }      = useTranslation()
   const { language, toggleLanguage } = useLanguage()
-  const { login, isAuthenticated, user } = useAuth()
+  const { login, isAuthenticated, user, refreshUser } = useAuth()
   const navigate   = useNavigate()
 
   const [invitation, setInvitation]   = useState(null)
@@ -92,7 +92,10 @@ export default function AcceptInvite() {
       })
       await login(formData.email, formData.password)
       if (photoFile) {
-        try { await authAPI.uploadPhoto(photoFile) } catch (_) { /* silencieux */ }
+        try {
+          await authAPI.uploadPhoto(photoFile)
+          await refreshUser() // mettre à jour photoURL dans le contexte
+        } catch (_) { /* silencieux */ }
       }
       await invitationAPI.accept(token)
       navigate('/dashboard')
@@ -107,6 +110,7 @@ export default function AcceptInvite() {
     setSubmitting(true)
     try {
       await invitationAPI.accept(token)
+      await refreshUser() // rafraîchir pour inclure le nouveau restaurant
       navigate('/dashboard')
     } catch (err) {
       setError(err.message || t('common.error'))
