@@ -579,22 +579,76 @@ export default function Reports() {
                     </p>
                   </div>
                   {selectedReport.tipOutBreakdown.map((item, idx) => (
-                    <div key={idx} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '9px 12px', borderRadius: '9px', marginBottom: '6px',
-                      backgroundColor: 'rgba(51,65,85,0.3)'
-                    }}>
-                      <div>
-                        <p style={{ color: '#e2e8f0', fontSize: '13px', fontWeight: 500, margin: 0 }}>{item.personName || 'Pool'}</p>
-                        <p style={{ color: '#64748b', fontSize: '11px', margin: '2px 0 0', textTransform: 'capitalize' }}>
-                          {item.role} · {(item.percentage || 0).toFixed(1)}%
-                          {item.meal > 0 && <> · repas -{fmt(item.meal)}</>}
-                          {item.donation > 0 && <> · don +{fmt(item.donation)}</>}
-                        </p>
+                    <div key={idx} style={{ marginBottom: 10 }}>
+                      {/* En-tête de la position */}
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '8px 12px', borderRadius: '8px',
+                        backgroundColor: 'rgba(59,130,246,0.08)',
+                        border: '1px solid rgba(59,130,246,0.15)',
+                        marginBottom: 4
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ color: '#93c5fd', fontWeight: 600, fontSize: 13 }}>
+                            {item.position || item.role || 'Position'}
+                          </span>
+                          {item.isPool && (
+                            <span style={{
+                              fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                              backgroundColor: 'rgba(251,191,36,0.15)', color: '#fbbf24', fontWeight: 600
+                            }}>POOL</span>
+                          )}
+                        </div>
+                        <span style={{ color: '#94a3b8', fontSize: 12 }}>
+                          {(item.percentage || 0).toFixed(1)}% →{' '}
+                          <strong style={{ color: '#fbbf24' }}>${(item.totalAmount || 0).toFixed(2)}</strong>
+                        </span>
                       </div>
-                      <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '15px' }}>
-                        {fmt(item.netAmount ?? item.amount)}
-                      </span>
+
+                      {/* Personnes (si pas pool) */}
+                      {!item.isPool && item.persons?.length > 0 && item.persons.map((p, pidx) => (
+                        <div key={pidx} style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          padding: '7px 12px 7px 22px', borderRadius: '7px', marginBottom: 3,
+                          backgroundColor: 'rgba(51,65,85,0.3)'
+                        }}>
+                          <div>
+                            <p style={{ color: '#e2e8f0', fontSize: 13, fontWeight: 500, margin: 0 }}>{p.personName}</p>
+                            {(p.meal > 0 || p.donation > 0) && (
+                              <p style={{ color: '#64748b', fontSize: 11, margin: '2px 0 0' }}>
+                                Tip: ${(p.tipAmount || 0).toFixed(2)}
+                                {p.meal > 0 && <> · repas -{fmt(p.meal)}</>}
+                                {p.donation > 0 && <> · don +{fmt(p.donation)}</>}
+                              </p>
+                            )}
+                          </div>
+                          <span style={{ color: '#34d399', fontWeight: 700, fontSize: 14 }}>
+                            ${(p.net ?? p.tipAmount ?? 0).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+
+                      {/* Pool cuisine : aucune personne spécifique */}
+                      {item.isPool && (
+                        <div style={{
+                          padding: '7px 12px 7px 22px', borderRadius: '7px',
+                          backgroundColor: 'rgba(251,191,36,0.06)',
+                          color: '#94a3b8', fontSize: 12
+                        }}>
+                          Versé dans le pool cuisine
+                        </div>
+                      )}
+
+                      {/* Pas de personnes sélectionnées */}
+                      {!item.isPool && (!item.persons || item.persons.length === 0) && (
+                        <div style={{
+                          padding: '7px 12px 7px 22px', borderRadius: '7px',
+                          backgroundColor: 'rgba(51,65,85,0.2)',
+                          color: '#64748b', fontSize: 12
+                        }}>
+                          Aucun bénéficiaire sélectionné
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
