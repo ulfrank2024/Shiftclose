@@ -29,6 +29,7 @@ export default function Dashboard() {
     validatedReports: 0,
     totalReports: 0
   })
+  const [myTipsToday, setMyTipsToday] = useState(0)
   const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -38,23 +39,47 @@ export default function Dashboard() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [statsRes, reportsRes] = await Promise.all([
-          reportAPI.getStats(currentRestaurant.id),
-          reportAPI.getAll(currentRestaurant.id)
-        ])
+        const today = new Date().toISOString().split('T')[0]
 
-        if (statsRes.success) setStats(statsRes.stats)
+        if (canDoCashout) {
+          // Serveur / Manager avec cash out : stats du restaurant + activité récente
+          const [statsRes, reportsRes] = await Promise.allSettled([
+            reportAPI.getStats(currentRestaurant.id),
+            reportAPI.getAll(currentRestaurant.id)
+          ])
+          if (statsRes.status === 'fulfilled' && statsRes.value.success) {
+            setStats(statsRes.value.stats)
+          }
+          if (reportsRes.status === 'fulfilled' && reportsRes.value.success) {
+            const activity = reportsRes.value.reports.slice(0, 5).map(r => ({
+              id: r.id,
+              user: r.employeeName,
+              action: r.status === 'validated' ? 'Rapport validé' : 'Cash Out soumis',
+              amount: r.totalSales,
+              time: new Date(r.createdAt).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' }),
+              color: r.status === 'validated' ? 'green' : 'blue'
+            }))
+            setRecentActivity(activity)
+          }
+        } else {
+          // Employé sans cash out (commis, bar, host…) : tips reçus
+          const tipsRes = await reportAPI.getMyTips(currentRestaurant.id)
+          const todayGroup = (tipsRes.history || []).find(g => g.date === today)
+          setMyTipsToday(todayGroup ? todayGroup.total : 0)
 
-        if (reportsRes.success) {
-          const activity = reportsRes.reports.slice(0, 5).map(r => ({
-            id: r.id,
-            user: r.employeeName,
-            action: r.status === 'validated' ? 'Rapport validé' : 'Cash Out soumis',
-            amount: r.totalSales,
-            time: new Date(r.createdAt).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' }),
-            color: r.status === 'validated' ? 'green' : 'blue'
-          }))
+          // Activité récente = ses tips reçus
+          const activity = (tipsRes.history || []).slice(0, 5).flatMap(g =>
+            (g.items || []).map(item => ({
+              id: item.id,
+              user: item.fromEmployeeName,
+              action: `Pourboire reçu (${item.role || 'tip'})`,
+              amount: item.amount,
+              time: new Date(item.createdAt || g.date).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' }),
+              color: 'green'
+            }))
+          ).slice(0, 5)
           setRecentActivity(activity)
+          setStats(prev => ({ ...prev, totalTips: tipsRes.totalReceived || 0 }))
         }
       } catch (err) {
         console.error('Dashboard fetch error:', err)
@@ -64,7 +89,7 @@ export default function Dashboard() {
     }
 
     fetchData()
-  }, [currentRestaurant?.id])
+  }, [currentRestaurant?.id, canDoCashout])
 
   const today = new Date().toLocaleDateString('fr-CA', {
     weekday: 'long',
@@ -179,30 +204,32 @@ export default function Dashboard() {
       {/* ── Stats Grid ── */}
       <div className="stats-grid">
 
-        {/* Total Sales */}
-        <div style={{
-          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-          border: '1px solid rgba(71,85,105,0.5)',
-          borderRadius: '18px'
-        }}>
-          <div className="stat-card-inner">
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
-                <p className="stat-label">{t('dashboard.totalSales')}</p>
-                <p className="stat-value">{loading ? '—' : `$${stats.totalSales.toFixed(2)}`}</p>
+        {/* Total Sales — masqué pour employés sans cashout */}
+        {canDoCashout && (
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px'
+          }}>
+            <div className="stat-card-inner">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                  <p className="stat-label">{t('dashboard.totalSales')}</p>
+                  <p className="stat-value">{loading ? '—' : `$${stats.totalSales.toFixed(2)}`}</p>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
+                  <DollarSign style={{ color: '#4ade80' }} size={20} />
+                </div>
               </div>
-              <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
-                <DollarSign style={{ color: '#4ade80' }} size={20} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#4ade80', fontSize: '12px' }}>
+                <TrendingUp size={13} />
+                <span>{t('dashboard.today')}</span>
               </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#4ade80', fontSize: '12px' }}>
-              <TrendingUp size={13} />
-              <span>{t('dashboard.today')}</span>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Total Tips */}
+        {/* Pourboires — reçus aujourd'hui pour employés sans cashout, total pour les autres */}
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
           border: '1px solid rgba(71,85,105,0.5)',
@@ -211,8 +238,15 @@ export default function Dashboard() {
           <div className="stat-card-inner">
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
               <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
-                <p className="stat-label">{t('dashboard.totalTips')}</p>
-                <p className="stat-value">{loading ? '—' : `$${stats.totalTips.toFixed(2)}`}</p>
+                <p className="stat-label">
+                  {canDoCashout ? t('dashboard.totalTips') : 'Pourboires reçus (aujourd\'hui)'}
+                </p>
+                <p className="stat-value">
+                  {loading ? '—' : canDoCashout
+                    ? `$${stats.totalTips.toFixed(2)}`
+                    : `$${myTipsToday.toFixed(2)}`
+                  }
+                </p>
               </div>
               <div className="stat-icon" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
                 <TrendingUp style={{ color: '#60a5fa' }} size={20} />
@@ -225,57 +259,86 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Pending Reports */}
-        <div style={{
-          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-          border: '1px solid rgba(71,85,105,0.5)',
-          borderRadius: '18px'
-        }}>
-          <div className="stat-card-inner">
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
-                <p className="stat-label">{t('dashboard.pendingReports')}</p>
-                <p className="stat-value">{loading ? '—' : stats.pendingReports}</p>
+        {/* Pending Reports — seulement si cashout activé */}
+        {canDoCashout && (
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px'
+          }}>
+            <div className="stat-card-inner">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                  <p className="stat-label">{t('dashboard.pendingReports')}</p>
+                  <p className="stat-value">{loading ? '—' : stats.pendingReports}</p>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
+                  <Clock style={{ color: '#fbbf24' }} size={20} />
+                </div>
               </div>
-              <div className="stat-icon" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
-                <Clock style={{ color: '#fbbf24' }} size={20} />
+              <div style={{ height: '6px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: '9999px', backgroundColor: '#f59e0b',
+                  width: `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`,
+                  transition: 'width 0.5s ease'
+                }} />
               </div>
-            </div>
-            <div style={{ height: '6px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', borderRadius: '9999px', backgroundColor: '#f59e0b',
-                width: `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`,
-                transition: 'width 0.5s ease'
-              }} />
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Validated Reports */}
-        <div style={{
-          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-          border: '1px solid rgba(71,85,105,0.5)',
-          borderRadius: '18px'
-        }}>
-          <div className="stat-card-inner">
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
-                <p className="stat-label">{t('dashboard.validatedReports')}</p>
-                <p className="stat-value">{loading ? '—' : stats.validatedReports}</p>
+        {/* Total reçu (tous les shifts) — pour employés sans cashout */}
+        {!canDoCashout && (
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px'
+          }}>
+            <div className="stat-card-inner">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                  <p className="stat-label">Total reçu (tous les shifts)</p>
+                  <p className="stat-value">{loading ? '—' : `$${(stats.totalTips || 0).toFixed(2)}`}</p>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
+                  <CheckCircle style={{ color: '#34d399' }} size={20} />
+                </div>
               </div>
-              <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
-                <CheckCircle style={{ color: '#34d399' }} size={20} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#34d399', fontSize: '12px' }}>
+                <TrendingUp size={13} />
+                <span>Tous les shifts</span>
               </div>
-            </div>
-            <div style={{ height: '6px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', borderRadius: '9999px', backgroundColor: '#10b981',
-                width: `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`,
-                transition: 'width 0.5s ease'
-              }} />
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Validated Reports — seulement si cashout activé */}
+        {canDoCashout && (
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px'
+          }}>
+            <div className="stat-card-inner">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                  <p className="stat-label">{t('dashboard.validatedReports')}</p>
+                  <p className="stat-value">{loading ? '—' : stats.validatedReports}</p>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
+                  <CheckCircle style={{ color: '#34d399' }} size={20} />
+                </div>
+              </div>
+              <div style={{ height: '6px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: '9999px', backgroundColor: '#10b981',
+                  width: `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`,
+                  transition: 'width 0.5s ease'
+                }} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Quick Actions + Recent Activity ── */}
@@ -470,7 +533,9 @@ export default function Dashboard() {
                   <Clock size={44} style={{ color: '#475569', marginBottom: '16px' }} />
                   <p style={{ color: '#94a3b8', fontSize: '15px' }}>Aucune activité récente</p>
                   <p style={{ color: '#64748b', fontSize: '13px', marginTop: '6px' }}>
-                    Soumettez votre premier Cash Out pour commencer
+                    {canDoCashout
+                      ? 'Soumettez votre premier Cash Out pour commencer'
+                      : 'Vos pourboires reçus apparaîtront ici'}
                   </p>
                 </div>
               )}

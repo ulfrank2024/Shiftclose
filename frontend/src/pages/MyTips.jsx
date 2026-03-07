@@ -34,13 +34,13 @@ export default function MyTips() {
     setError(null)
     try {
       const data = await reportAPI.getMyTips(currentRestaurant.id)
-      setTipsData(data.tips || [])
+      setTipsData(data.history || [])
       setTotalReceived(data.totalReceived || 0)
 
       // Expand today's date by default
       const today = new Date().toISOString().split('T')[0]
       const initial = {}
-      ;(data.tips || []).forEach(group => {
+      ;(data.history || []).forEach(group => {
         if (group.date === today) initial[group.date] = true
       })
       setExpandedDates(initial)
@@ -229,7 +229,8 @@ export default function MyTips() {
       {/* Liste par date */}
       {tipsData.map((group) => {
         const isOpen = !!expandedDates[group.date]
-        const dayTotal = group.distributions.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
+        const items = group.items || group.distributions || []
+        const dayTotal = items.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
 
         return (
           <div key={group.date} style={{
@@ -264,7 +265,7 @@ export default function MyTips() {
                   {formatDate(group.date)}
                 </p>
                 <p style={{ color: '#64748b', fontSize: '12px', margin: '2px 0 0' }}>
-                  {group.distributions.length} source{group.distributions.length > 1 ? 's' : ''}
+                  {items.length} source{items.length > 1 ? 's' : ''}
                 </p>
               </div>
 
@@ -286,7 +287,7 @@ export default function MyTips() {
             {/* Détail des distributions */}
             {isOpen && (
               <div style={{ padding: '12px 16px' }}>
-                {group.distributions.map((dist, idx) => {
+                {items.map((dist, idx) => {
                   const roleColor = ROLE_COLORS[dist.role] || '#94a3b8'
                   const roleLabel = ROLE_LABELS[dist.role] || dist.role
 
@@ -297,7 +298,7 @@ export default function MyTips() {
                         display: 'flex', alignItems: 'center', gap: '14px',
                         padding: '12px 14px', borderRadius: '12px',
                         backgroundColor: 'rgba(51,65,85,0.3)',
-                        marginBottom: idx < group.distributions.length - 1 ? '8px' : 0
+                        marginBottom: idx < items.length - 1 ? '8px' : 0
                       }}
                     >
                       {/* Avatar envoyeur */}
