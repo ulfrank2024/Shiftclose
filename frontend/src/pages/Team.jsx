@@ -6,7 +6,8 @@ import { Calculator } from 'lucide-react'
 import {
   Users, UserPlus, Mail, MoreVertical, Shield, User, X, Check, Clock,
   Percent, Settings2, Trash2, Edit3, Save, Plus, Loader2,
-  Wine, Coffee, UtensilsCrossed, Briefcase, AlertCircle, UserX
+  Wine, Coffee, UtensilsCrossed, Briefcase, AlertCircle, UserX,
+  Link2, Copy, CheckCheck, Share2
 } from 'lucide-react'
 
 const POSITION_ICONS = {
@@ -47,6 +48,8 @@ export default function Team() {
   const [newTipOut, setNewTipOut] = useState({ position: '', percentage: '' })
   const [submitting, setSubmitting] = useState(false)
   const [inviteFocused, setInviteFocused] = useState(false)
+  const [inviteLink, setInviteLink] = useState(null)   // lien généré après invitation
+  const [linkCopied, setLinkCopied] = useState(false)  // état du bouton copier
 
   // Load data
   useEffect(() => {
@@ -110,18 +113,58 @@ export default function Team() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await invitationAPI.send(currentRestaurant.id, {
+      const res = await invitationAPI.send(currentRestaurant.id, {
         email: inviteForm.email,
         role: inviteForm.role
       })
-      setShowInviteModal(false)
-      setInviteForm({ email: '', role: 'server', position: 'server' })
+      // Afficher le lien dans le modal (au lieu de fermer immédiatement)
+      setInviteLink(res.inviteLink)
+      setLinkCopied(false)
       loadData()
     } catch (err) {
       setError(err.message)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleCopyLink = async () => {
+    if (!inviteLink) return
+    try {
+      await navigator.clipboard.writeText(inviteLink)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 3000)
+    } catch {
+      // Fallback si clipboard API non disponible
+      const input = document.createElement('input')
+      input.value = inviteLink
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 3000)
+    }
+  }
+
+  const handleShareLink = async () => {
+    if (!inviteLink) return
+    if (navigator.share) {
+      await navigator.share({
+        title: `Invitation ShiftClose — ${currentRestaurant?.name}`,
+        text: `Tu es invité(e) à rejoindre ${currentRestaurant?.name} sur ShiftClose`,
+        url: inviteLink
+      })
+    } else {
+      handleCopyLink()
+    }
+  }
+
+  const closeInviteModal = () => {
+    setShowInviteModal(false)
+    setInviteLink(null)
+    setLinkCopied(false)
+    setInviteForm({ email: '', role: 'server', position: 'server' })
   }
 
   // Cancel invitation
@@ -895,7 +938,7 @@ export default function Team() {
 
       {/* ── Modal Invitation ── */}
       {showInviteModal && (
-        <div style={modalOverlay} onClick={(e) => e.target === e.currentTarget && setShowInviteModal(false)}>
+        <div style={modalOverlay} onClick={(e) => e.target === e.currentTarget && closeInviteModal()}>
           <div style={{
             background: 'rgba(15,23,42,0.97)', border: '1px solid #334155',
             borderRadius: '20px', maxWidth: '440px', width: '100%',
@@ -910,16 +953,20 @@ export default function Team() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: 40, height: 40, borderRadius: '10px', flexShrink: 0,
-                  background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  background: inviteLink ? 'rgba(52,211,153,0.15)' : 'rgba(59,130,246,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
-                  <UserPlus size={20} style={{ color: '#60a5fa' }} />
+                  {inviteLink
+                    ? <Link2 size={20} style={{ color: '#34d399' }} />
+                    : <UserPlus size={20} style={{ color: '#60a5fa' }} />
+                  }
                 </div>
                 <h2 style={{ color: '#f8fafc', fontWeight: 700, fontSize: '17px', margin: 0 }}>
-                  {t('team.inviteMember')}
+                  {inviteLink ? 'Lien d\'invitation' : t('team.inviteMember')}
                 </h2>
               </div>
               <button
-                onClick={() => setShowInviteModal(false)}
+                onClick={closeInviteModal}
                 style={{
                   padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer',
                   background: 'transparent', color: '#64748b'
@@ -929,102 +976,205 @@ export default function Team() {
               </button>
             </div>
 
-            {/* Formulaire */}
-            <form onSubmit={handleInvite} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* ── État 1 : Formulaire ── */}
+            {!inviteLink && (
+              <form onSubmit={handleInvite} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-              {/* Email */}
-              <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
-                  {t('auth.email')}
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Mail size={16} style={{
-                    position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
-                    color: inviteFocused ? '#60a5fa' : '#475569', pointerEvents: 'none'
-                  }} />
-                  <input
-                    type="email"
-                    value={inviteForm.email}
-                    onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                    onFocus={() => setInviteFocused(true)}
-                    onBlur={() => setInviteFocused(false)}
-                    placeholder="employe@restaurant.com"
-                    required
+                {/* Email */}
+                <div>
+                  <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
+                    {t('auth.email')}
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Mail size={16} style={{
+                      position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                      color: inviteFocused ? '#60a5fa' : '#475569', pointerEvents: 'none'
+                    }} />
+                    <input
+                      type="email"
+                      value={inviteForm.email}
+                      onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                      onFocus={() => setInviteFocused(true)}
+                      onBlur={() => setInviteFocused(false)}
+                      placeholder="employe@restaurant.com"
+                      required
+                      style={{
+                        width: '100%', padding: '11px 14px 11px 40px',
+                        background: '#0f172a', borderRadius: '10px', color: '#f8fafc', fontSize: '14px',
+                        border: inviteFocused ? '1px solid #3b82f6' : '1px solid #334155',
+                        boxShadow: inviteFocused ? '0 0 0 3px rgba(59,130,246,0.15)' : 'none',
+                        outline: 'none', transition: 'all 0.2s', boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Rôle */}
+                <div>
+                  <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
+                    {t('team.role')}
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {[
+                      { value: 'server', icon: User, label: t('roles.server'), desc: t('team.serverDesc'), color: '#60a5fa', bg: 'rgba(59,130,246,0.12)', border: '#3b82f6' },
+                      { value: 'manager', icon: Shield, label: t('roles.manager'), desc: t('team.managerDesc'), color: '#a78bfa', bg: 'rgba(139,92,246,0.12)', border: '#8b5cf6' }
+                    ].map(opt => {
+                      const active = inviteForm.role === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setInviteForm({ ...inviteForm, role: opt.value })}
+                          style={{
+                            padding: '16px 12px', borderRadius: '12px', cursor: 'pointer',
+                            background: active ? opt.bg : 'rgba(30,41,59,0.6)',
+                            border: active ? `2px solid ${opt.border}` : '2px solid #1e293b',
+                            textAlign: 'center', transition: 'all 0.2s'
+                          }}
+                        >
+                          <opt.icon size={22} style={{ color: active ? opt.color : '#475569', margin: '0 auto 8px' }} />
+                          <p style={{ color: active ? opt.color : '#94a3b8', fontWeight: 600, fontSize: '13px', margin: '0 0 4px' }}>
+                            {opt.label}
+                          </p>
+                          <p style={{ color: '#475569', fontSize: '11px', margin: 0, lineHeight: 1.4 }}>
+                            {opt.desc}
+                          </p>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Boutons */}
+                <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={closeInviteModal}
                     style={{
-                      width: '100%', padding: '11px 14px 11px 40px',
-                      background: '#0f172a', borderRadius: '10px', color: '#f8fafc', fontSize: '14px',
-                      border: inviteFocused ? '1px solid #3b82f6' : '1px solid #334155',
-                      boxShadow: inviteFocused ? '0 0 0 3px rgba(59,130,246,0.15)' : 'none',
-                      outline: 'none', transition: 'all 0.2s', boxSizing: 'border-box'
+                      flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #334155',
+                      background: 'transparent', color: '#94a3b8', fontWeight: 600, fontSize: '14px', cursor: 'pointer'
                     }}
-                  />
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: '#fff', fontWeight: 600, fontSize: '14px',
+                      boxShadow: '0 4px 14px rgba(59,130,246,0.3)',
+                      opacity: submitting ? 0.7 : 1
+                    }}
+                  >
+                    {submitting ? <Loader2 className="animate-spin" size={16} /> : <Link2 size={16} />}
+                    Générer le lien
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ── État 2 : Lien généré ── */}
+            {inviteLink && (
+              <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                {/* Confirmation */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.25)',
+                  borderRadius: '12px', padding: '12px 16px'
+                }}>
+                  <Check size={18} style={{ color: '#34d399', flexShrink: 0 }} />
+                  <div>
+                    <p style={{ color: '#34d399', fontWeight: 600, fontSize: '14px', margin: 0 }}>
+                      Invitation créée pour {inviteForm.email}
+                    </p>
+                    <p style={{ color: 'rgba(52,211,153,0.7)', fontSize: '12px', margin: '2px 0 0' }}>
+                      Un email a également été envoyé si la livraison est disponible
+                    </p>
+                  </div>
+                </div>
+
+                {/* Lien */}
+                <div>
+                  <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
+                    Lien d'invitation (valide 7 jours)
+                  </label>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '0',
+                    background: '#0f172a', border: '1px solid #334155', borderRadius: '10px', overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      flex: 1, padding: '11px 14px',
+                      fontSize: '12px', color: '#64748b',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      fontFamily: 'monospace'
+                    }}>
+                      {inviteLink}
+                    </div>
+                    <button
+                      onClick={handleCopyLink}
+                      style={{
+                        padding: '11px 16px', border: 'none', cursor: 'pointer', flexShrink: 0,
+                        background: linkCopied ? 'rgba(52,211,153,0.15)' : 'rgba(59,130,246,0.12)',
+                        color: linkCopied ? '#34d399' : '#60a5fa',
+                        borderLeft: '1px solid #334155',
+                        transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px',
+                        fontSize: '13px', fontWeight: 600
+                      }}
+                    >
+                      {linkCopied ? <CheckCheck size={16} /> : <Copy size={16} />}
+                      {linkCopied ? 'Copié !' : 'Copier'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Instructions */}
+                <div style={{
+                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '10px', padding: '14px 16px'
+                }}>
+                  <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px', fontWeight: 600 }}>
+                    Comment partager ?
+                  </p>
+                  <ul style={{ color: '#64748b', fontSize: '12px', margin: 0, paddingLeft: '16px', lineHeight: 1.8 }}>
+                    <li>Copiez le lien ci-dessus</li>
+                    <li>Envoyez-le par WhatsApp, SMS ou email</li>
+                    <li>L'employé clique sur le lien et crée son compte</li>
+                  </ul>
+                </div>
+
+                {/* Boutons */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={handleShareLink}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      padding: '12px', borderRadius: '10px', border: '1px solid #334155',
+                      background: 'rgba(255,255,255,0.04)', color: '#94a3b8',
+                      fontWeight: 600, fontSize: '14px', cursor: 'pointer'
+                    }}
+                  >
+                    <Share2 size={16} />
+                    Partager
+                  </button>
+                  <button
+                    onClick={closeInviteModal}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: '#fff', fontWeight: 600, fontSize: '14px'
+                    }}
+                  >
+                    <Check size={16} />
+                    Terminé
+                  </button>
                 </div>
               </div>
-
-              {/* Rôle */}
-              <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>
-                  {t('team.role')}
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  {[
-                    { value: 'server', icon: User, label: t('roles.server'), desc: t('team.serverDesc'), color: '#60a5fa', bg: 'rgba(59,130,246,0.12)', border: '#3b82f6' },
-                    { value: 'manager', icon: Shield, label: t('roles.manager'), desc: t('team.managerDesc'), color: '#a78bfa', bg: 'rgba(139,92,246,0.12)', border: '#8b5cf6' }
-                  ].map(opt => {
-                    const active = inviteForm.role === opt.value
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setInviteForm({ ...inviteForm, role: opt.value })}
-                        style={{
-                          padding: '16px 12px', borderRadius: '12px', cursor: 'pointer',
-                          background: active ? opt.bg : 'rgba(30,41,59,0.6)',
-                          border: active ? `2px solid ${opt.border}` : '2px solid #1e293b',
-                          textAlign: 'center', transition: 'all 0.2s'
-                        }}
-                      >
-                        <opt.icon size={22} style={{ color: active ? opt.color : '#475569', margin: '0 auto 8px' }} />
-                        <p style={{ color: active ? opt.color : '#94a3b8', fontWeight: 600, fontSize: '13px', margin: '0 0 4px' }}>
-                          {opt.label}
-                        </p>
-                        <p style={{ color: '#475569', fontSize: '11px', margin: 0, lineHeight: 1.4 }}>
-                          {opt.desc}
-                        </p>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Boutons */}
-              <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowInviteModal(false)}
-                  style={{
-                    flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #334155',
-                    background: 'transparent', color: '#94a3b8', fontWeight: 600, fontSize: '14px', cursor: 'pointer'
-                  }}
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                    padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                    color: '#fff', fontWeight: 600, fontSize: '14px',
-                    boxShadow: '0 4px 14px rgba(59,130,246,0.3)'
-                  }}
-                >
-                  {submitting ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
-                  {t('team.sendInvite')}
-                </button>
-              </div>
-            </form>
+            )}
           </div>
         </div>
       )}

@@ -88,22 +88,31 @@ export const sendInvitation = async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la création de l\'invitation' })
     }
 
-    // Send invitation email
+    // Generate invite link
     const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}`
-    const template = emailTemplates.invitation(
-      restaurant.name,
-      `${req.user.first_name} ${req.user.last_name}`,
-      inviteLink
-    )
 
-    await sendEmail({
-      to: email,
-      ...template
-    })
+    // Send email (non-blocking — link is returned regardless)
+    try {
+      const template = emailTemplates.invitation(
+        restaurant.name,
+        `${req.user.first_name} ${req.user.last_name}`,
+        inviteLink
+      )
+      await sendEmail({ to: email, ...template })
+    } catch (emailErr) {
+      console.warn('Email send failed (non-fatal):', emailErr.message)
+    }
 
     res.status(201).json({
-      success: true,
-      message: 'Invitation envoyée'
+      success:    true,
+      message:    'Invitation créée',
+      inviteLink,
+      invitation: {
+        email,
+        role,
+        token,
+        expiresAt: expiresAt.toISOString()
+      }
     })
   } catch (error) {
     console.error('Send invitation error:', error)
