@@ -36,6 +36,7 @@ export default function Profile() {
   const [profileLoading, setProfileLoading]   = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [photoLoading, setPhotoLoading]       = useState(false)
+  const [photoHovered, setPhotoHovered]       = useState(false)
   const [profileSuccess, setProfileSuccess]   = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
   const [photoSuccess, setPhotoSuccess]       = useState(false)
@@ -185,52 +186,94 @@ export default function Profile() {
       )}
 
       {/* ── Profile Header ── */}
-      <div className="card">
-        <div className="flex flex-col sm:flex-row items-center gap-6">
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 16,
+        padding: '28px 24px'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
           {/* Photo */}
-          <div className="relative flex-shrink-0">
+          <div style={{ position: 'relative', flexShrink: 0 }}>
             <div
               onClick={handlePhotoClick}
-              className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center cursor-pointer group overflow-hidden"
+              onMouseEnter={() => setPhotoHovered(true)}
+              onMouseLeave={() => setPhotoHovered(false)}
               title="Changer la photo"
+              style={{
+                width: 96, height: 96,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                position: 'relative',
+                flexShrink: 0
+              }}
             >
               {(localPhoto || user?.photoURL) ? (
                 <img
                   src={localPhoto || user.photoURL}
                   alt={userName}
-                  className="w-full h-full object-cover"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
                 />
               ) : (
-                <span className="text-white text-3xl font-bold">{userInitials}</span>
+                <span style={{ color: '#fff', fontSize: 28, fontWeight: 700 }}>{userInitials}</span>
               )}
-              {/* Overlay: spinner during upload, camera icon on hover */}
+
+              {/* Overlay upload / hover */}
               {photoLoading ? (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
-                  <Loader2 className="text-white animate-spin" size={28} />
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'rgba(0,0,0,0.6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: '50%'
+                }}>
+                  <Loader2 size={28} style={{ color: '#fff', animation: 'spin 1s linear infinite' }} />
                 </div>
               ) : (
-                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                  <Camera className="text-white" size={22} />
-                  <span className="text-white text-xs font-medium">Modifier</span>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'rgba(0,0,0,0.5)',
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: 4,
+                  opacity: photoHovered ? 1 : 0,
+                  transition: 'opacity 0.2s',
+                  borderRadius: '50%'
+                }}>
+                  <Camera size={22} style={{ color: '#fff' }} />
+                  <span style={{ color: '#fff', fontSize: 11, fontWeight: 500 }}>Modifier</span>
                 </div>
               )}
             </div>
 
-            {/* Camera badge — toujours visible */}
+            {/* Badge caméra */}
             {!photoLoading && !photoSuccess && (
               <button
                 onClick={handlePhotoClick}
-                className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center border-2 border-slate-800 transition-colors shadow-lg"
                 title="Changer la photo"
+                style={{
+                  position: 'absolute', bottom: -4, right: -4,
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: '#3b82f6', border: '2px solid #0f172a',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                }}
               >
-                <Camera size={14} className="text-white" />
+                <Camera size={14} style={{ color: '#fff' }} />
               </button>
             )}
 
-            {/* Success badge */}
+            {/* Badge succès */}
             {photoSuccess && (
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-2 border-slate-800">
-                <CheckCircle size={14} className="text-white" />
+              <div style={{
+                position: 'absolute', bottom: -4, right: -4,
+                width: 32, height: 32, borderRadius: '50%',
+                background: '#10b981', border: '2px solid #0f172a',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <CheckCircle size={14} style={{ color: '#fff' }} />
               </div>
             )}
 
@@ -239,23 +282,29 @@ export default function Profile() {
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               onChange={handlePhotoChange}
-              className="hidden"
+              style={{ display: 'none' }}
             />
           </div>
 
           {/* Info */}
-          <div className="text-center sm:text-left">
-            <h1 className="text-2xl font-bold text-white">{userName}</h1>
-            <p className="text-slate-400 mt-1">{user?.email}</p>
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f8fafc', margin: 0 }}>{userName}</h1>
+            <p style={{ color: '#94a3b8', marginTop: 4, fontSize: 14 }}>{user?.email}</p>
             {photoLoading && (
-              <p className="text-xs text-slate-500 mt-1">Téléversement en cours...</p>
+              <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Téléversement en cours...</p>
             )}
-            <div className="mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
-              <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 text-sm rounded-full capitalize font-medium">
+            <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+              <span style={{
+                padding: '4px 12px', background: 'rgba(59,130,246,0.15)',
+                color: '#60a5fa', fontSize: 13, borderRadius: 9999, fontWeight: 500
+              }}>
                 {user?.role || 'server'}
               </span>
               {user?.restaurants?.length > 0 && (
-                <span className="px-3 py-1.5 bg-purple-500/20 text-purple-400 text-sm rounded-full font-medium">
+                <span style={{
+                  padding: '4px 12px', background: 'rgba(139,92,246,0.15)',
+                  color: '#a78bfa', fontSize: 13, borderRadius: 9999, fontWeight: 500
+                }}>
                   {user.restaurants.length} {user.restaurants.length === 1 ? 'restaurant' : 'restaurants'}
                 </span>
               )}
@@ -642,6 +691,9 @@ export default function Profile() {
         )}
       </div>
 
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }
