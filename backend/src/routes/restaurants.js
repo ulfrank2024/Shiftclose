@@ -37,8 +37,8 @@ router.get('/:restaurantId', requireRestaurantAccess, getRestaurant)
 // Update restaurant (Manager only)
 router.put('/:restaurantId', requireRestaurantAccess, requireRole('manager'), updateRestaurant)
 
-// Get team members (Manager only)
-router.get('/:restaurantId/team', requireRestaurantAccess, requireRole('manager'), getTeamMembers)
+// Get team members (tous les membres du restaurant — le serveur en a besoin pour les distributions)
+router.get('/:restaurantId/team', requireRestaurantAccess, getTeamMembers)
 
 // Remove team member (Manager only)
 router.delete('/:restaurantId/team/:userId', requireRestaurantAccess, requireRole('manager'), removeTeamMember)

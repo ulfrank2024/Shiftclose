@@ -65,15 +65,18 @@ export default function CashOut() {
   useEffect(() => {
     if (!currentRestaurant?.id) return
     const load = async () => {
-      try {
-        const [teamRes, restRes] = await Promise.all([
-          restaurantAPI.getTeam(currentRestaurant.id),
-          restaurantAPI.get(currentRestaurant.id)
-        ])
-        const members = (teamRes.members || []).filter(m => m.id !== user?.id)
-        setTeamMembers(members)
+      const [teamResult, restResult] = await Promise.allSettled([
+        restaurantAPI.getTeam(currentRestaurant.id),
+        restaurantAPI.get(currentRestaurant.id)
+      ])
 
-        const rules = restRes.restaurant?.tipOutRules || []
+      if (teamResult.status === 'fulfilled') {
+        const members = (teamResult.value.members || []).filter(m => m.id !== user?.id)
+        setTeamMembers(members)
+      }
+
+      if (restResult.status === 'fulfilled') {
+        const rules = restResult.value.restaurant?.tipOutRules || []
         setDistributions(rules.map(rule => ({
           rule,
           enabled: rule.position?.toLowerCase() !== 'manager',
@@ -81,8 +84,8 @@ export default function CashOut() {
           meals:     {},
           donations: {}
         })))
-      } catch (err) {
-        console.error('Load data error:', err)
+      } else {
+        console.error('Load restaurant error:', restResult.reason)
       }
     }
     load()
