@@ -216,6 +216,128 @@ export const emailTemplates = {
     `
   }),
 
+  // Email au manager quand un serveur soumet un rapport
+  reportSubmitted: (managerName, employeeName, restaurantName, date, time, totalSales, tipOutTotal, dueBack, distributions) => {
+    const dbColor  = dueBack > 0 ? '#ef4444' : dueBack < 0 ? '#10b981' : '#94a3b8'
+    const dbLabel  = dueBack > 0 ? 'À remettre au gérant' : dueBack < 0 ? 'Le gérant doit à l\'employé' : 'Caisse équilibrée'
+    const distRows = distributions.map(d =>
+      `<tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #334155;color:#e2e8f0;">${d.personName}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #334155;color:#94a3b8;">${d.position || d.role || ''} · ${(d.percentage || 0).toFixed(1)}%</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #334155;color:#34d399;font-weight:700;text-align:right;">$${(d.amount || 0).toFixed(2)}</td>
+      </tr>`
+    ).join('')
+    return {
+      subject: `📋 Nouveau rapport — ${employeeName} · ${restaurantName}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+        <body style="font-family:'Segoe UI',Arial,sans-serif;background-color:#0f172a;color:#f8fafc;padding:20px;margin:0;">
+          <div style="max-width:600px;margin:0 auto;background-color:#1e293b;border-radius:16px;padding:40px;">
+            <div style="text-align:center;margin-bottom:28px;">
+              <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-size:26px;font-weight:bold;padding:14px 22px;border-radius:14px;display:inline-block;">S</span>
+            </div>
+            <h1 style="color:#f8fafc;text-align:center;margin-bottom:6px;font-size:22px;">Nouveau rapport soumis</h1>
+            <p style="color:#64748b;text-align:center;margin-bottom:28px;font-size:14px;">${restaurantName}</p>
+
+            <div style="background:#0f172a;border-radius:12px;padding:20px;margin-bottom:20px;">
+              <p style="color:#94a3b8;margin:0 0 16px;font-size:14px;">Bonjour <strong style="color:#f8fafc;">${managerName}</strong>,</p>
+              <p style="color:#94a3b8;margin:0;font-size:14px;">
+                <strong style="color:#f8fafc;">${employeeName}</strong> vient de soumettre son rapport de Cash Out du
+                <strong style="color:#f8fafc;">${date}</strong> à <strong style="color:#f8fafc;">${time}</strong>.
+              </p>
+            </div>
+
+            <!-- Résumé financier -->
+            <div style="background:#0f172a;border-radius:12px;padding:20px;margin-bottom:20px;">
+              <p style="color:#475569;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 14px;">Résumé financier</p>
+              <table style="width:100%;border-collapse:collapse;">
+                <tr>
+                  <td style="padding:8px 0;color:#94a3b8;font-size:14px;">Ventes totales</td>
+                  <td style="padding:8px 0;color:#f8fafc;font-weight:700;font-size:15px;text-align:right;">$${(totalSales || 0).toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;color:#94a3b8;font-size:14px;">Tip-Out total</td>
+                  <td style="padding:8px 0;color:#fbbf24;font-weight:700;font-size:15px;text-align:right;">-$${(tipOutTotal || 0).toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0 0;border-top:1px solid #334155;color:#94a3b8;font-size:14px;">${dbLabel}</td>
+                  <td style="padding:10px 0 0;border-top:1px solid #334155;color:${dbColor};font-weight:800;font-size:20px;text-align:right;">$${Math.abs(dueBack || 0).toFixed(2)}</td>
+                </tr>
+              </table>
+            </div>
+
+            ${distRows ? `
+            <!-- Distributions -->
+            <div style="background:#0f172a;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+              <p style="color:#475569;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0;padding:14px 16px;border-bottom:1px solid #334155;">Distributions Tip-Out</p>
+              <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                  <tr style="background:#1e293b;">
+                    <th style="padding:8px 12px;text-align:left;color:#64748b;font-size:11px;font-weight:600;text-transform:uppercase;">Bénéficiaire</th>
+                    <th style="padding:8px 12px;text-align:left;color:#64748b;font-size:11px;font-weight:600;text-transform:uppercase;">Rôle</th>
+                    <th style="padding:8px 12px;text-align:right;color:#64748b;font-size:11px;font-weight:600;text-transform:uppercase;">Montant</th>
+                  </tr>
+                </thead>
+                <tbody>${distRows}</tbody>
+              </table>
+            </div>` : ''}
+
+            <a href="${process.env.FRONTEND_URL}/reports" style="display:block;width:fit-content;margin:0 auto 24px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#ffffff !important;padding:14px 36px;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">Valider le rapport →</a>
+            <div style="text-align:center;padding-top:24px;border-top:1px solid #334155;color:#64748b;font-size:13px;">© 2026 ShiftClose</div>
+          </div>
+        </body></html>`
+    }
+  },
+
+  // Email à l'employé quand il reçoit des pourboires
+  tipsReceived: (recipientName, senderName, restaurantName, date, items, totalAmount) => {
+    const rows = items.map(item =>
+      `<tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #334155;color:#e2e8f0;">${item.role || 'Tip'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #334155;color:#94a3b8;">${(item.percentage || 0).toFixed(1)}%</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #334155;color:#34d399;font-weight:700;text-align:right;">+$${(item.amount || 0).toFixed(2)}</td>
+      </tr>`
+    ).join('')
+    return {
+      subject: `💰 Vous avez reçu des pourboires — ${restaurantName}`,
+      html: `
+        <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+        <body style="font-family:'Segoe UI',Arial,sans-serif;background-color:#0f172a;color:#f8fafc;padding:20px;margin:0;">
+          <div style="max-width:600px;margin:0 auto;background-color:#1e293b;border-radius:16px;padding:40px;">
+            <div style="text-align:center;margin-bottom:28px;">
+              <span style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:26px;font-weight:bold;padding:14px 22px;border-radius:14px;display:inline-block;">$</span>
+            </div>
+            <h1 style="color:#10b981;text-align:center;margin-bottom:6px;font-size:22px;">Pourboires reçus 🎉</h1>
+            <p style="color:#64748b;text-align:center;margin-bottom:28px;font-size:14px;">${restaurantName} · ${date}</p>
+
+            <div style="background:#0f172a;border-radius:12px;padding:20px;margin-bottom:20px;">
+              <p style="color:#94a3b8;margin:0;font-size:14px;">
+                Bonjour <strong style="color:#f8fafc;">${recipientName}</strong>,<br><br>
+                <strong style="color:#f8fafc;">${senderName}</strong> vous a inclus·e dans son tip-out du <strong style="color:#f8fafc;">${date}</strong>.
+              </p>
+            </div>
+
+            <!-- Montant total -->
+            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:14px;padding:24px;text-align:center;margin-bottom:20px;">
+              <p style="color:#6ee7b7;font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Total reçu</p>
+              <p style="color:#10b981;font-size:44px;font-weight:900;margin:0;letter-spacing:-1px;">$${(totalAmount || 0).toFixed(2)}</p>
+            </div>
+
+            ${rows ? `
+            <div style="background:#0f172a;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+              <p style="color:#475569;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0;padding:14px 16px;border-bottom:1px solid #334155;">Détail</p>
+              <table style="width:100%;border-collapse:collapse;">
+                <tbody>${rows}</tbody>
+              </table>
+            </div>` : ''}
+
+            <a href="${process.env.FRONTEND_URL}/my-tips" style="display:block;width:fit-content;margin:0 auto 24px;background:linear-gradient(135deg,#10b981,#059669);color:#ffffff !important;padding:14px 36px;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">Voir mes pourboires →</a>
+            <div style="text-align:center;padding-top:24px;border-top:1px solid #334155;color:#64748b;font-size:13px;">© 2026 ShiftClose</div>
+          </div>
+        </body></html>`
+    }
+  },
+
   welcomeUser: (firstName) => ({
     subject: `Bienvenue sur ShiftClose !`,
     html: `

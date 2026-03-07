@@ -265,6 +265,98 @@ export const createReport = async (req, res) => {
       }
     }
 
+    // ── Notifications email (non-bloquantes) ─────────────────
+    const reportDate = new Date(newReport.created_at)
+    const dateStr    = reportDate.toLocaleDateString('fr-CA')
+    const timeStr    = reportDate.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })
+
+    // 1. Email aux managers du restaurant (rapport soumis par l'employé)
+    if (!submittedByManagerId) {
+      ;(async () => {
+        try {
+          const [{ data: managers }, { data: restRow }] = await Promise.all([
+            supabase
+              .from('user_restaurants')
+              .select('user_id, users!inner(first_name, last_name, email)')
+              .eq('restaurant_id', restaurantId)
+              .eq('role', 'manager'),
+            supabase.from('restaurants').select('name').eq('id', restaurantId).single()
+          ])
+          if (!managers?.length) return
+          const restaurantName = restRow?.name || 'Restaurant'
+
+          // Préparer les distributions pour l'email
+          const emailDist = []
+          for (const item of tipOutBreakdown) {
+            if (item.isPool || item.position?.toLowerCase().includes('pool')) {
+              emailDist.push({ personName: 'Pool Cuisine', position: item.position, percentage: item.percentage, amount: item.totalAmount || 0 })
+            } else {
+              for (const p of (item.persons || [])) {
+                emailDist.push({ personName: p.personName, position: item.position, percentage: item.percentage, amount: p.net ?? p.tipAmount ?? 0 })
+              }
+            }
+          }
+
+          for (const mgr of managers) {
+            const u = mgr.users
+            await sendEmail({
+              to: u.email,
+              ...emailTemplates.reportSubmitted(
+                `${u.first_name} ${u.last_name}`,
+                employeeName,
+                restaurantName,
+                dateStr, timeStr,
+                totalSales, tipOutTotal, dueBack,
+                emailDist
+              )
+            })
+          }
+        } catch (e) { console.warn('Manager notification error:', e.message) }
+      })()
+    }
+
+    // 2. Email aux bénéficiaires des tips
+    if (distributions.length > 0) {
+      // Regrouper par bénéficiaire
+      const byRecipient = {}
+      for (const d of distributions) {
+        if (!d.to_employee_id || d.amount <= 0) continue
+        if (!byRecipient[d.to_employee_id]) {
+          byRecipient[d.to_employee_id] = { items: [], total: 0 }
+        }
+        byRecipient[d.to_employee_id].items.push({ role: d.role, percentage: d.percentage, amount: d.amount })
+        byRecipient[d.to_employee_id].total += d.amount
+      }
+
+      // Fetch recipient details & send emails
+      const recipientIds = Object.keys(byRecipient)
+      if (recipientIds.length > 0) {
+        supabase
+          .from('users')
+          .select('id, first_name, last_name, email')
+          .in('id', recipientIds)
+          .then(async ({ data: recipientUsers }) => {
+            const { data: restRow } = await supabase.from('restaurants').select('name').eq('id', restaurantId).single()
+            const restaurantName = restRow?.name || 'Restaurant'
+
+            for (const ru of (recipientUsers || [])) {
+              const rec = byRecipient[ru.id]
+              sendEmail({
+                to: ru.email,
+                ...emailTemplates.tipsReceived(
+                  `${ru.first_name} ${ru.last_name}`,
+                  fromName,
+                  restaurantName,
+                  dateStr,
+                  rec.items,
+                  rec.total
+                )
+              }).catch(() => {})
+            }
+          }).catch(() => {})
+      }
+    }
+
     res.status(201).json({
       success: true,
       report:  formatReport(newReport)

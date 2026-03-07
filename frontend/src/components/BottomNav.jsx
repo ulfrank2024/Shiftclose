@@ -30,6 +30,10 @@ export default function BottomNav() {
           ? [{ path: '/cash-out', icon: Calculator, label: t('nav.cashOut') }]
           : [{ path: '/my-tips', icon: Coins, label: 'Mes Tips' }]
         ),
+        ...(isManager && canDoCashout
+          ? [{ path: '/my-tips', icon: Coins, label: 'Tips Reçus' }]
+          : []
+        ),
         { path: '/reports',   icon: FileText,         label: t('nav.reports') },
         ...(isManager ? [{ path: '/team', icon: Users, label: t('nav.team') }] : []),
         { path: '/settings',  icon: Settings,         label: t('nav.settings') }
