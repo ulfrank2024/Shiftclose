@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { reportAPI, restaurantAPI } from '../services/api'
 import {
@@ -34,8 +34,13 @@ const ROLE_COLORS = {
 export default function CashOut() {
   const { t }                   = useTranslation()
   const navigate                = useNavigate()
+  const [searchParams]          = useSearchParams()
   const { currentRestaurant, user } = useAuth()
   const proofInputRef           = useRef(null)
+
+  // Params URL pour soumission manager au nom d'un employé
+  const forUserId   = searchParams.get('forUserId')
+  const forUserName = searchParams.get('forUserName')
 
   const [step, setStep]             = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -213,7 +218,8 @@ export default function CashOut() {
         tipOutBreakdown,
         proofImageBase64:   proofPreview || null,
         voluntaryDonations: [],
-        mealDeductions:     []
+        mealDeductions:     [],
+        ...(forUserId ? { forUserId } : {})
       }
 
       await reportAPI.create(currentRestaurant?.id, payload)
@@ -273,10 +279,24 @@ export default function CashOut() {
       {/* ── Titre ── */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 }}>
-          Cash Out
+          {forUserId ? `Saisir pour ${forUserName || 'un employé'}` : 'Cash Out'}
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.45)', margin: '4px 0 0', fontSize: 14 }}>
           {currentRestaurant?.name || 'Mon Restaurant'}
+          {forUserId && (
+            <span style={{
+              marginLeft: 8,
+              background: 'rgba(251,191,36,0.15)',
+              border: '1px solid rgba(251,191,36,0.3)',
+              borderRadius: 6,
+              padding: '2px 8px',
+              fontSize: 11,
+              color: '#fbbf24',
+              fontWeight: 600
+            }}>
+              Soumission Manager
+            </span>
+          )}
         </p>
       </div>
 
@@ -1050,7 +1070,7 @@ export default function CashOut() {
             ) : (
               <>
                 <Check size={20} />
-                Soumettre le rapport
+                {forUserId ? `Soumettre pour ${forUserName || 'l\'employé'}` : 'Soumettre le rapport'}
               </>
             )}
           </button>

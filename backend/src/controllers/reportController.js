@@ -8,50 +8,96 @@ export const createReport = async (req, res) => {
   try {
     const { restaurantId } = req.params
     const {
-      // Sales
+      // New simplified fields (from machine printout)
+      totalSales: rawTotalSales,
+      comptant,
+      // Sales (legacy breakdown)
       cashSales, cardSales, otherSales,
-      // Tips
+      // Tips (legacy)
       cashTips, cardTips,
-      // Cash amount in hand (cashSales + cashTips physically held)
+      // Cash amount
       cashAmount,
-      // Tip-out breakdown: [{ role, personId, personName, percentage, baseAmount, amount }]
+      // Tip-out breakdown: [{ position, percentage, totalAmount, isPool, persons:[...] }]
       tipOutBreakdown = [],
-      // Voluntary donations: [{ personId, personName, amount }]
+      tipOutTotal: rawTipOutTotal,
+      dueBack: rawDueBack,
+      // Proof photo
+      proofImageBase64,
+      // Manager submitting on behalf of an employee
+      forUserId,
+      // Voluntary donations + meal deductions (legacy arrays)
       voluntaryDonations = [],
-      // Meal deductions: [{ personId, personName, amount, description }]
       mealDeductions = [],
-      // Legacy single-percent field (backwards compat)
+      // Legacy
       tipOutPercent, cashInHand
     } = req.body
 
-    // ── Totals ──────────────────────────────────────────────
-    const totalSales  = (cashSales || 0) + (cardSales || 0) + (otherSales || 0)
-    const totalTips   = (cashTips  || 0) + (cardTips  || 0)
+    // ── Determine the employee this report is for ────────────
+    let employeeId   = req.user.id
+    let employeeName = `${req.user.first_name} ${req.user.last_name}`
+    let employeeEmail = req.user.email
+    let submittedByManagerId = null
 
-    // Tip-out total = sum of all breakdown amounts (new system)
-    // Falls back to legacy % if breakdown is empty
-    const tipOutTotal = tipOutBreakdown.length > 0
-      ? tipOutBreakdown.reduce((sum, b) => sum + (b.amount || 0), 0)
-      : totalTips * ((tipOutPercent || 0) / 100)
+    if (forUserId && forUserId !== req.user.id) {
+      // Verify the requester is a manager of this restaurant
+      const { data: managerCheck } = await supabase
+        .from('user_restaurants')
+        .select('role')
+        .eq('user_id', req.user.id)
+        .eq('restaurant_id', restaurantId)
+        .single()
+
+      if (!managerCheck || managerCheck.role !== 'manager') {
+        return res.status(403).json({ error: 'Seul un manager peut soumettre pour un employé' })
+      }
+
+      // Fetch the target employee info
+      const { data: targetUser } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email')
+        .eq('id', forUserId)
+        .single()
+
+      if (targetUser) {
+        employeeId    = targetUser.id
+        employeeName  = `${targetUser.first_name} ${targetUser.last_name}`
+        employeeEmail = targetUser.email
+        submittedByManagerId = req.user.id
+      }
+    }
+
+    // ── Totals (new simplified system) ──────────────────────
+    const totalSales  = parseFloat(rawTotalSales) || (cashSales || 0) + (cardSales || 0) + (otherSales || 0)
+    const totalTips   = (cashTips || 0) + (cardTips || 0)
+    const physicalCash = parseFloat(comptant) !== undefined && rawTotalSales !== undefined
+      ? parseFloat(comptant) || 0
+      : (cashAmount !== undefined ? cashAmount : ((cashSales || 0) + (cashTips || 0)))
+
+    // Tip-out total from breakdown or legacy
+    const tipOutTotal = rawTipOutTotal !== undefined
+      ? parseFloat(rawTipOutTotal) || 0
+      : tipOutBreakdown.length > 0
+        ? tipOutBreakdown.reduce((sum, b) => sum + (b.totalAmount || b.amount || 0), 0)
+        : totalTips * ((tipOutPercent || 0) / 100)
 
     const donationTotal = voluntaryDonations.reduce((sum, d) => sum + (d.amount || 0), 0)
-    const netTips       = totalTips - tipOutTotal - donationTotal
+    const netTips = totalTips - tipOutTotal - donationTotal
 
-    // Cash amount the server physically holds (cashSales + cashTips)
-    const physicalCash  = cashAmount !== undefined ? cashAmount : ((cashSales || 0) + (cashTips || 0))
-    const dueBack       = tipOutTotal + physicalCash  // what server owes restaurant
+    const dueBack = rawDueBack !== undefined
+      ? parseFloat(rawDueBack) || 0
+      : tipOutTotal + physicalCash
 
-    // Legacy fields for backwards compat
-    const expectedCash  = (cashSales || 0) + (cashTips || 0)
+    // Legacy
+    const expectedCash     = (cashSales || 0) + (cashTips || 0)
     const legacyCashInHand = cashInHand || physicalCash
-    const difference    = legacyCashInHand - expectedCash
+    const difference       = legacyCashInHand - expectedCash
 
     // ── Insert report ────────────────────────────────────────
     const reportData = {
       restaurant_id:      restaurantId,
-      employee_id:        req.user.id,
-      employee_name:      `${req.user.first_name} ${req.user.last_name}`,
-      employee_email:     req.user.email,
+      employee_id:        employeeId,
+      employee_name:      employeeName,
+      employee_email:     employeeEmail,
       // Sales
       cash_sales:         cashSales  || 0,
       card_sales:         cardSales  || 0,
@@ -71,12 +117,17 @@ export const createReport = async (req, res) => {
       meal_deductions:    JSON.stringify(mealDeductions),
       cash_amount:        physicalCash,
       due_back:           dueBack,
+      // Proof photo
+      proof_image_base64: proofImageBase64 || null,
+      // Manager submission
+      submitted_by_manager_id:  submittedByManagerId,
+      submitted_for_employee_id: forUserId && forUserId !== req.user.id ? forUserId : null,
       // Legacy cash balance
       cash_in_hand:       legacyCashInHand,
       expected_cash:      expectedCash,
       difference:         difference,
-      // Status
-      status:             'pending'
+      // Status: auto-validate if submitted by manager
+      status:             submittedByManagerId ? 'validated' : 'pending'
     }
 
     const { data: newReport, error: reportError } = await supabase
@@ -184,7 +235,7 @@ export const createReport = async (req, res) => {
 export const getReports = async (req, res) => {
   try {
     const { restaurantId } = req.params
-    const { status, startDate, endDate, employeeId } = req.query
+    const { status, startDate, endDate, employeeId, month } = req.query
 
     let query = supabase
       .from('reports')
@@ -203,6 +254,15 @@ export const getReports = async (req, res) => {
     if (status)    query = query.eq('status', status)
     if (startDate) query = query.gte('created_at', startDate)
     if (endDate)   query = query.lte('created_at', endDate)
+
+    // Filter by month — expects 'YYYY-MM' format
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const [year, mon] = month.split('-')
+      const start = `${year}-${mon}-01T00:00:00.000Z`
+      const endDate2 = new Date(parseInt(year), parseInt(mon), 1) // first day of next month
+      const end = endDate2.toISOString()
+      query = query.gte('created_at', start).lt('created_at', end)
+    }
 
     const { data: reports, error } = await query
 
@@ -448,6 +508,11 @@ function formatReport(report) {
     cashInHand:      parseFloat(report.cash_in_hand)     || 0,
     expectedCash:    parseFloat(report.expected_cash)    || 0,
     difference:      parseFloat(report.difference)       || 0,
+    // Proof photo
+    proofImageBase64:  report.proof_image_base64 || null,
+    // Manager submission
+    submittedByManagerId:    report.submitted_by_manager_id || null,
+    submittedForEmployeeId:  report.submitted_for_employee_id || null,
     // Status
     status:            report.status,
     validatedBy:       report.validated_by,
