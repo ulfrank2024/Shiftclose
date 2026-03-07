@@ -11,9 +11,9 @@ ALTER TABLE reports
   ADD COLUMN IF NOT EXISTS submitted_by_manager_id UUID REFERENCES users(id),
   ADD COLUMN IF NOT EXISTS submitted_for_employee_id UUID REFERENCES users(id);
 
--- Index sur la colonne de recherche par mois (optimise le filtre par mois)
-CREATE INDEX IF NOT EXISTS idx_reports_created_month
-  ON reports (DATE_TRUNC('month', created_at));
+-- Index sur created_at pour optimiser les filtres par plage de dates (mois, etc.)
+CREATE INDEX IF NOT EXISTS idx_reports_created_at
+  ON reports (created_at DESC);
 
 -- Index sur submitted_for_employee pour les rapports soumis par manager
 CREATE INDEX IF NOT EXISTS idx_reports_submitted_for
