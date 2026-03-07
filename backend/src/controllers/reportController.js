@@ -144,21 +144,67 @@ export const createReport = async (req, res) => {
     // ── Insert tip_distributions (for beneficiary view) ─────
     const distributions = []
     const reportDate = new Date().toISOString().split('T')[0]
+    const fromName   = `${req.user.first_name} ${req.user.last_name}`
 
-    // Standard tip-out breakdown
+    // Standard tip-out breakdown — structure : { position, percentage, totalAmount, isPool, persons:[{personId, personName, tipAmount, meal, donation, net}] }
     for (const item of tipOutBreakdown) {
-      if (item.amount > 0 || item.role === 'kitchen_pool') {
+      const position = item.position || item.role || 'unknown'
+      const pct      = parseFloat(item.percentage) || 0
+      const total    = parseFloat(item.totalAmount ?? item.amount) || 0
+
+      if (item.isPool || position.toLowerCase().includes('pool') || position.toLowerCase().includes('cuisine')) {
+        // Pool cuisine : une seule ligne sans bénéficiaire individuel
+        if (total > 0) {
+          distributions.push({
+            report_id:          newReport.id,
+            restaurant_id:      restaurantId,
+            from_employee_id:   req.user.id,
+            from_employee_name: fromName,
+            to_employee_id:     null,
+            to_employee_name:   'Pool Cuisine',
+            role:               position,
+            percentage:         pct,
+            base_amount:        totalSales,
+            amount:             total,
+            is_donation:        false,
+            is_meal_deduction:  false,
+            report_date:        reportDate
+          })
+        }
+      } else if (item.persons?.length > 0) {
+        // Distribution individuelle : une ligne par personne
+        for (const p of item.persons) {
+          const net = parseFloat(p.net ?? p.tipAmount) || 0
+          if (net === 0 && !p.personId) continue
+          distributions.push({
+            report_id:          newReport.id,
+            restaurant_id:      restaurantId,
+            from_employee_id:   req.user.id,
+            from_employee_name: fromName,
+            to_employee_id:     p.personId || null,
+            to_employee_name:   p.personName || 'Inconnu',
+            role:               position,
+            percentage:         pct,
+            base_amount:        totalSales,
+            amount:             net,
+            is_donation:        false,
+            is_meal_deduction:  false,
+            report_date:        reportDate
+          })
+        }
+      } else if (!item.persons && total > 0) {
+        // Fallback: structure legacy avec personId/personName directement sur l'item
         distributions.push({
           report_id:          newReport.id,
           restaurant_id:      restaurantId,
           from_employee_id:   req.user.id,
-          from_employee_name: `${req.user.first_name} ${req.user.last_name}`,
+          from_employee_name: fromName,
           to_employee_id:     item.personId || null,
-          to_employee_name:   item.personName || 'Pool Cuisine',
-          role:               item.role,
-          percentage:         item.percentage || 0,
-          base_amount:        item.baseAmount || totalSales,
-          amount:             item.amount || 0,
+          to_employee_name:   item.personName || position,
+          role:               position,
+          percentage:         pct,
+          base_amount:        totalSales,
+          amount:             total,
           is_donation:        false,
           is_meal_deduction:  false,
           report_date:        reportDate
