@@ -59,8 +59,8 @@ export default function Sidebar() {
         ? [{ path: '/cash-out', icon: Calculator, label: t('nav.cashOut') }]
         : [{ path: '/my-tips', icon: Coins, label: 'Mes Tips' }]
       ),
-      // Les managers peuvent aussi recevoir des tips (ex: hôte, host)
-      ...(isManager && canDoCashout
+      // Tous ceux qui peuvent faire cash out peuvent aussi recevoir des tips (ex: serveur fait le bar)
+      ...(canDoCashout
         ? [{ path: '/my-tips', icon: Coins, label: 'Tips Reçus' }]
         : []
       ),
