@@ -45,24 +45,61 @@ function exportStatsCSV(reports, monthLabel) {
   const totalTipOut  = validated.reduce((s, r) => s + (r.tipOutAmount || 0), 0)
   const totalDueBack = validated.reduce((s, r) => s + (r.dueBack      || 0), 0)
 
-  // Distributions par employé (depuis tipOutBreakdown)
-  const byEmployee = {}
+  // Agréger distributions par position ET par personne
+  const byPosition = {}  // { position: { pct, total, persons: { name: total } } }
+  const byPerson   = {}  // { personName: total }
+
   validated.forEach(r => {
-    (r.tipOutBreakdown || []).forEach(item => {
-      const name = item.personName || 'Pool'
-      if (!byEmployee[name]) byEmployee[name] = 0
-      byEmployee[name] += parseFloat(item.amount) || 0
+    ;(r.tipOutBreakdown || []).forEach(item => {
+      const pos = item.position || item.role || 'Autre'
+      const pct = parseFloat(item.percentage) || 0
+      if (!byPosition[pos]) byPosition[pos] = { pct, total: 0, persons: {} }
+
+      if (item.isPool || pos.toLowerCase().includes('pool') || pos.toLowerCase().includes('cuisine')) {
+        const amt = parseFloat(item.totalAmount ?? item.amount) || 0
+        byPosition[pos].total += amt
+        byPosition[pos].persons['Pool Cuisine'] = (byPosition[pos].persons['Pool Cuisine'] || 0) + amt
+        byPerson['Pool Cuisine'] = (byPerson['Pool Cuisine'] || 0) + amt
+      } else {
+        for (const p of (item.persons || [])) {
+          const amt = parseFloat(p.net ?? p.tipAmount) || 0
+          byPosition[pos].total += amt
+          byPosition[pos].persons[p.personName] = (byPosition[pos].persons[p.personName] || 0) + amt
+          byPerson[p.personName] = (byPerson[p.personName] || 0) + amt
+        }
+        // Fallback structure legacy (personName/amount directement sur l'item)
+        if (!item.persons?.length && item.personName) {
+          const amt = parseFloat(item.amount) || 0
+          byPosition[pos].total += amt
+          byPosition[pos].persons[item.personName] = (byPosition[pos].persons[item.personName] || 0) + amt
+          byPerson[item.personName] = (byPerson[item.personName] || 0) + amt
+        }
+      }
     })
   })
 
-  const headers = ['Type', 'Nom / Catégorie', 'Montant ($)']
+  const headers = ['Type', 'Catégorie / Nom', 'Rôle / Position', '%', 'Montant ($)']
   const rows = [
-    ['RÉSUMÉ', `Ventes totales ${monthLabel}`, totalSales.toFixed(2)],
-    ['RÉSUMÉ', `Tip-Out total ${monthLabel}`, totalTipOut.toFixed(2)],
-    ['RÉSUMÉ', `Due Back total ${monthLabel}`, totalDueBack.toFixed(2)],
-    ['RÉSUMÉ', `Nombre de rapports validés`, validated.length],
-    ...Object.entries(byEmployee).map(([name, amt]) => ['DISTRIBUTION', name, amt.toFixed(2)])
+    // Résumé global
+    ['RÉSUMÉ', `Ventes totales (${monthLabel})`,    '', '',  totalSales.toFixed(2)],
+    ['RÉSUMÉ', `Tip-Out total (${monthLabel})`,     '', '',  totalTipOut.toFixed(2)],
+    ['RÉSUMÉ', `Due Back total (${monthLabel})`,    '', '',  totalDueBack.toFixed(2)],
+    ['RÉSUMÉ', 'Rapports validés',                  '', '',  validated.length],
+    ['', '', '', '', ''],
+    // Par position avec détail des personnes
+    ...Object.entries(byPosition).flatMap(([pos, data]) => [
+      ['POSITION', pos, pos, data.pct.toFixed(1) + '%', data.total.toFixed(2)],
+      ...Object.entries(data.persons).map(([name, amt]) =>
+        ['  BÉNÉFICIAIRE', name, pos, '', amt.toFixed(2)]
+      )
+    ]),
+    ['', '', '', '', ''],
+    // Récap total reçu par personne (toutes positions confondues)
+    ...Object.entries(byPerson).map(([name, amt]) =>
+      ['TOTAL REÇU', name, 'Tous rôles', '', amt.toFixed(2)]
+    )
   ]
+
   const csv = [headers, ...rows].map(row => row.map(v => `"${v}"`).join(',')).join('\n')
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const url  = URL.createObjectURL(blob)
