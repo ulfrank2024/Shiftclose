@@ -1201,7 +1201,7 @@ export default function CashOut() {
       )}
 
       {/* ── Navigation Précédent / Suivant ── */}
-      {!(step === 3 && !proofPreview) && step !== 4 && (
+      {step !== 3 && step !== 4 && (
         <div style={{
           display:        'flex',
           gap:            12,
