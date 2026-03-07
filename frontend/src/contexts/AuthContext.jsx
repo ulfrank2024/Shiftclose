@@ -14,31 +14,66 @@ export function AuthProvider({ children }) {
       const token = localStorage.getItem('token')
       const savedRestaurant = localStorage.getItem('currentRestaurant')
 
-      if (token) {
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      // Attempt to verify the token, with one retry on network errors
+      const tryGetProfile = async (attempt = 1) => {
         try {
           const { user: userData } = await authAPI.getProfile()
-          setUser(userData)
+          return { userData, error: null }
+        } catch (err) {
+          const isNetworkError = !err.message || err.message === 'Failed to fetch' ||
+            err.message.includes('NetworkError') || err.message.includes('network')
+          // Retry once after 3 seconds on network errors (backend waking up)
+          if (isNetworkError && attempt === 1) {
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            return tryGetProfile(2)
+          }
+          return { userData: null, error: err }
+        }
+      }
 
-          // Restore saved restaurant or set first one
-          if (savedRestaurant) {
+      const { userData, error } = await tryGetProfile()
+
+      if (userData) {
+        setUser(userData)
+        // Restore saved restaurant or set first one
+        if (savedRestaurant) {
+          try {
             const restaurant = JSON.parse(savedRestaurant)
-            // Verify user still has access to this restaurant
             if (userData.restaurants?.some(r => r.id === restaurant.id)) {
               setCurrentRestaurant(restaurant)
             } else if (userData.restaurants?.length > 0) {
               setCurrentRestaurant(userData.restaurants[0])
               localStorage.setItem('currentRestaurant', JSON.stringify(userData.restaurants[0]))
             }
-          } else if (userData.restaurants?.length > 0) {
-            setCurrentRestaurant(userData.restaurants[0])
-            localStorage.setItem('currentRestaurant', JSON.stringify(userData.restaurants[0]))
+          } catch (_) {
+            if (userData.restaurants?.length > 0) {
+              setCurrentRestaurant(userData.restaurants[0])
+              localStorage.setItem('currentRestaurant', JSON.stringify(userData.restaurants[0]))
+            }
           }
-        } catch (error) {
-          console.error('Auth init error:', error)
-          // Token invalid, clear storage
+        } else if (userData.restaurants?.length > 0) {
+          setCurrentRestaurant(userData.restaurants[0])
+          localStorage.setItem('currentRestaurant', JSON.stringify(userData.restaurants[0]))
+        }
+      } else if (error) {
+        console.error('Auth init error:', error)
+        // Seulement effacer le token pour les vraies erreurs d'authentification
+        // (token invalide / expiré), PAS pour les erreurs réseau/serveur
+        const msg = error.message || ''
+        const isAuthError = msg.includes('Token') || msg.includes('expiré') ||
+          msg.includes('invalide') || msg.includes('Non authentifié') ||
+          msg.includes('Utilisateur non trouvé')
+        if (isAuthError) {
           localStorage.removeItem('token')
           localStorage.removeItem('currentRestaurant')
         }
+        // Pour les erreurs réseau : on garde le token, l'utilisateur verra
+        // le spinner puis le dashboard une fois le backend disponible
       }
 
       setLoading(false)

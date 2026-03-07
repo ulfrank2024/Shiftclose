@@ -80,7 +80,9 @@ function AdminPublicRoute({ children }) {
 }
 
 function ManagerRoute({ children }) {
-  const { isManager } = useAuth()
+  const { isManager, loading } = useAuth()
+
+  if (loading) return null  // ProtectedRoute gère déjà le spinner
 
   if (!isManager) {
     return <Navigate to="/dashboard" replace />
@@ -90,9 +92,11 @@ function ManagerRoute({ children }) {
 }
 
 function CashOutRoute({ children }) {
-  const { currentRestaurant } = useAuth()
-  const canDoCashout = currentRestaurant?.canDoCashout !== false
+  const { currentRestaurant, loading } = useAuth()
 
+  if (loading) return null  // ProtectedRoute gère déjà le spinner
+
+  const canDoCashout = currentRestaurant?.canDoCashout !== false
   if (!canDoCashout) {
     return <Navigate to="/my-tips" replace />
   }
@@ -101,7 +105,9 @@ function CashOutRoute({ children }) {
 }
 
 function SuperAdminRoute({ children }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+
+  if (loading) return null  // ProtectedRoute gère déjà le spinner
 
   if (user?.role !== 'superadmin') {
     return <Navigate to="/dashboard" replace />
