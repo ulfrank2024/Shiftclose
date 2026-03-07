@@ -266,9 +266,9 @@ export const createReport = async (req, res) => {
     }
 
     // ── Notifications email (non-bloquantes) ─────────────────
-    const reportDate = new Date(newReport.created_at)
-    const dateStr    = reportDate.toLocaleDateString('fr-CA')
-    const timeStr    = reportDate.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })
+    const reportDateTime = new Date(newReport.created_at)
+    const dateStr        = reportDateTime.toLocaleDateString('fr-CA')
+    const timeStr        = reportDateTime.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })
 
     // 1. Email aux managers du restaurant (rapport soumis par l'employé)
     if (!submittedByManagerId) {
