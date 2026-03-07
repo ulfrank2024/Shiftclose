@@ -481,14 +481,147 @@ export default function CashOut() {
             </div>
           )}
 
-          {distributions.map((dist, distIdx) => {
-            const pool      = isKitchenPool(dist)
+          {/* ── Pool Cuisine — carte dédiée, toujours en premier ── */}
+          {distributions.filter(d => isKitchenPool(d)).map((dist, idx) => {
+            const pct       = parseFloat(dist.rule?.percentage) || 0
+            const distTotal = calcDistTipTotal(dist)
+            return (
+              <div key={`pool-${idx}`} style={{
+                background:   'rgba(245,158,11,0.08)',
+                border:       '2px solid rgba(245,158,11,0.4)',
+                borderRadius: 16,
+                padding:      '20px 24px',
+                marginBottom: 16
+              }}>
+                {/* En-tête */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width:        48,
+                      height:       48,
+                      borderRadius: 12,
+                      background:   'rgba(245,158,11,0.15)',
+                      border:       '1px solid rgba(245,158,11,0.4)',
+                      display:      'flex',
+                      alignItems:   'center',
+                      justifyContent: 'center'
+                    }}>
+                      <UtensilsCrossed size={22} color="#fbbf24" />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <p style={{ margin: 0, fontWeight: 700, color: '#fbbf24', fontSize: 16 }}>
+                          Pool Cuisine
+                        </p>
+                        <span style={{
+                          fontSize:     10,
+                          background:   'rgba(245,158,11,0.2)',
+                          color:        '#fbbf24',
+                          border:       '1px solid rgba(245,158,11,0.4)',
+                          borderRadius: 4,
+                          padding:      '2px 6px',
+                          fontWeight:   700,
+                          letterSpacing: '0.05em'
+                        }}>AUTO</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                        Versé automatiquement — {pct}% des ventes
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Toggle on/off */}
+                  <button
+                    onClick={() => toggleDistribution(distributions.indexOf(dist))}
+                    style={{
+                      width:        44,
+                      height:       24,
+                      borderRadius: 12,
+                      border:       'none',
+                      cursor:       'pointer',
+                      background:   dist.enabled ? '#fbbf24' : 'rgba(255,255,255,0.1)',
+                      position:     'relative',
+                      transition:   'background 0.2s'
+                    }}
+                  >
+                    <div style={{
+                      width:        18,
+                      height:       18,
+                      borderRadius: '50%',
+                      background:   '#fff',
+                      position:     'absolute',
+                      top:          3,
+                      left:         dist.enabled ? 23 : 3,
+                      transition:   'left 0.2s'
+                    }} />
+                  </button>
+                </div>
+
+                {/* Montant calculé */}
+                <div style={{
+                  display:        'flex',
+                  alignItems:     'center',
+                  justifyContent: 'space-between',
+                  background:     'rgba(245,158,11,0.1)',
+                  border:         '1px solid rgba(245,158,11,0.25)',
+                  borderRadius:   12,
+                  padding:        '14px 18px'
+                }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
+                      Montant versé au pool cuisine
+                    </p>
+                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,191,36,0.6)' }}>
+                      ${totalSales.toFixed(2)} × {pct}%
+                    </p>
+                  </div>
+                  <p style={{
+                    margin:     0,
+                    fontSize:   28,
+                    fontWeight: 900,
+                    color:      dist.enabled ? '#fbbf24' : 'rgba(255,255,255,0.2)',
+                    opacity:    dist.enabled ? 1 : 0.5,
+                    transition: 'all 0.2s'
+                  }}>
+                    ${distTotal.toFixed(2)}
+                  </p>
+                </div>
+
+                {!dist.enabled && (
+                  <p style={{ margin: '10px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'center' }}>
+                    Pool cuisine désactivé pour ce service
+                  </p>
+                )}
+              </div>
+            )
+          })}
+
+          {/* ── Séparateur si pool cuisine + autres règles ── */}
+          {distributions.some(d => isKitchenPool(d)) && distributions.some(d => !isKitchenPool(d)) && (
+            <div style={{
+              display:        'flex',
+              alignItems:     'center',
+              gap:            12,
+              marginBottom:   16
+            }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Distributions équipe
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            </div>
+          )}
+
+          {/* ── Distributions régulières (hors kitchen pool) ── */}
+          {distributions.filter(d => !isKitchenPool(d)).map((dist, distIdx) => {
             const pos       = dist.rule?.position?.toLowerCase() || 'default'
             const colors    = ROLE_COLORS[pos] || ROLE_COLORS.bar
             const Icon      = ROLE_ICONS[pos]  || ROLE_ICONS.default
             const pct       = parseFloat(dist.rule?.percentage) || 0
             const distTotal = calcDistTipTotal(dist)
             const count     = dist.selectedPersons.length
+            // Index réel dans le tableau distributions complet
+            const realIdx   = distributions.indexOf(dist)
 
             return (
               <div key={distIdx} style={{
@@ -522,18 +655,6 @@ export default function CashOut() {
                     <div>
                       <p style={{ margin: 0, fontWeight: 700, color: '#fff', fontSize: 15 }}>
                         {dist.rule?.position || 'Position'}
-                        {pool && (
-                          <span style={{
-                            marginLeft:   8,
-                            fontSize:     10,
-                            background:   colors.bg,
-                            color:        colors.color,
-                            border:       `1px solid ${colors.border}`,
-                            borderRadius: 4,
-                            padding:      '2px 6px',
-                            verticalAlign: 'middle'
-                          }}>POOL</span>
-                        )}
                       </p>
                       <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
                         {pct}% des ventes — <strong style={{ color: colors.color }}>${distTotal.toFixed(2)}</strong>
@@ -543,7 +664,7 @@ export default function CashOut() {
 
                   {/* Toggle activé */}
                   <button
-                    onClick={() => toggleDistribution(distIdx)}
+                    onClick={() => toggleDistribution(realIdx)}
                     style={{
                       width:        44,
                       height:       24,
@@ -570,164 +691,144 @@ export default function CashOut() {
 
                 {dist.enabled && (
                   <>
-                    {/* Kitchen pool : pas de sélection de personne */}
-                    {pool ? (
-                      <div style={{
-                        padding:    '12px 16px',
-                        background: colors.bg,
-                        border:     `1px solid ${colors.border}`,
-                        borderRadius: 10,
-                        fontSize:   13,
-                        color:      colors.color
-                      }}>
-                        Montant versé dans le pool cuisine : <strong>${distTotal.toFixed(2)}</strong>
-                      </div>
-                    ) : (
-                      <>
-                        {/* Sélection des personnes */}
-                        <div style={{ marginBottom: 14 }}>
-                          <p style={{ ...labelStyle, marginBottom: 10 }}>
-                            Sélectionnez les bénéficiaires :
+                    {/* Sélection des personnes */}
+                    <div style={{ marginBottom: 14 }}>
+                      <p style={{ ...labelStyle, marginBottom: 10 }}>
+                        Sélectionnez les bénéficiaires :
+                      </p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {teamMembers
+                          .filter(() => true)
+                          .map(member => {
+                            const selected = dist.selectedPersons.some(p => p.id === member.id)
+                            return (
+                              <button
+                                key={member.id}
+                                onClick={() => togglePersonForDistribution(realIdx, member)}
+                                style={{
+                                  padding:      '6px 14px',
+                                  borderRadius: 20,
+                                  border:       selected
+                                    ? `1px solid ${colors.color}`
+                                    : '1px solid rgba(255,255,255,0.12)',
+                                  background:   selected ? colors.bg : 'transparent',
+                                  color:        selected ? colors.color : 'rgba(255,255,255,0.6)',
+                                  cursor:       'pointer',
+                                  fontSize:     13,
+                                  fontWeight:   selected ? 600 : 400,
+                                  transition:   'all 0.15s'
+                                }}
+                              >
+                                {getMemberName(member)}
+                              </button>
+                            )
+                          })}
+                        {teamMembers.length === 0 && (
+                          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', margin: 0 }}>
+                            Aucun membre dans l'équipe
                           </p>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                            {teamMembers
-                              .filter(m => {
-                                const mRole = m.role?.toLowerCase() || ''
-                                const dPos  = dist.rule?.position?.toLowerCase() || ''
-                                return mRole === dPos || dPos === 'all' || true
-                              })
-                              .map(member => {
-                                const selected = dist.selectedPersons.some(p => p.id === member.id)
-                                return (
-                                  <button
-                                    key={member.id}
-                                    onClick={() => togglePersonForDistribution(distIdx, member)}
-                                    style={{
-                                      padding:      '6px 14px',
-                                      borderRadius: 20,
-                                      border:       selected
-                                        ? `1px solid ${colors.color}`
-                                        : '1px solid rgba(255,255,255,0.12)',
-                                      background:   selected ? colors.bg : 'transparent',
-                                      color:        selected ? colors.color : 'rgba(255,255,255,0.6)',
-                                      cursor:       'pointer',
-                                      fontSize:     13,
-                                      fontWeight:   selected ? 600 : 400,
-                                      transition:   'all 0.15s'
-                                    }}
-                                  >
-                                    {getMemberName(member)}
-                                  </button>
-                                )
-                              })}
-                            {teamMembers.length === 0 && (
-                              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', margin: 0 }}>
-                                Aucun membre dans l'équipe
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Cartes par personne */}
-                        {dist.selectedPersons.length > 0 && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {dist.selectedPersons.map(person => {
-                              const tipAmt   = calcPersonTip(dist, count)
-                              const meal     = parseFloat(dist.meals?.[person.id])     || 0
-                              const donation = parseFloat(dist.donations?.[person.id]) || 0
-                              const net      = tipAmt - meal + donation
-
-                              return (
-                                <div key={person.id} style={{
-                                  background:   'rgba(255,255,255,0.04)',
-                                  border:       '1px solid rgba(255,255,255,0.08)',
-                                  borderRadius: 12,
-                                  padding:      '14px 16px'
-                                }}>
-                                  {/* Nom + tip calculé */}
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                      <div style={{
-                                        width:        32,
-                                        height:       32,
-                                        borderRadius: '50%',
-                                        background:   colors.bg,
-                                        border:       `1px solid ${colors.border}`,
-                                        display:      'flex',
-                                        alignItems:   'center',
-                                        justifyContent: 'center',
-                                        fontSize:     12,
-                                        fontWeight:   700,
-                                        color:        colors.color
-                                      }}>
-                                        {(person.name || '?')[0].toUpperCase()}
-                                      </div>
-                                      <span style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>
-                                        {person.name}
-                                      </span>
-                                    </div>
-                                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
-                                      Tip calculé : <strong style={{ color: colors.color }}>${tipAmt.toFixed(2)}</strong>
-                                    </span>
-                                  </div>
-
-                                  {/* Repas du shift */}
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', flex: 1, minWidth: 130 }}>
-                                      Repas du shift $
-                                    </span>
-                                    <input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      value={dist.meals?.[person.id] || ''}
-                                      onChange={e => setPersonMeal(distIdx, person.id, e.target.value)}
-                                      style={smallInputStyle}
-                                    />
-                                  </div>
-
-                                  {/* Don supplémentaire */}
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', flex: 1, minWidth: 130 }}>
-                                      Don supplémentaire $
-                                    </span>
-                                    <input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      value={dist.donations?.[person.id] || ''}
-                                      onChange={e => setPersonDonation(distIdx, person.id, e.target.value)}
-                                      style={smallInputStyle}
-                                    />
-                                  </div>
-
-                                  {/* Net à remettre */}
-                                  <div style={{
-                                    display:        'flex',
-                                    alignItems:     'center',
-                                    justifyContent: 'space-between',
-                                    paddingTop:     10,
-                                    borderTop:      '1px solid rgba(255,255,255,0.06)'
-                                  }}>
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>
-                                      Net à remettre
-                                    </span>
-                                    <span style={{
-                                      fontSize:   16,
-                                      fontWeight: 800,
-                                      color:      net >= 0 ? '#34d399' : '#f87171'
-                                    }}>
-                                      ${net.toFixed(2)}
-                                    </span>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
                         )}
-                      </>
+                      </div>
+                    </div>
+
+                    {/* Cartes par personne */}
+                    {dist.selectedPersons.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {dist.selectedPersons.map(person => {
+                          const tipAmt   = calcPersonTip(dist, count)
+                          const meal     = parseFloat(dist.meals?.[person.id])     || 0
+                          const donation = parseFloat(dist.donations?.[person.id]) || 0
+                          const net      = tipAmt - meal + donation
+
+                          return (
+                            <div key={person.id} style={{
+                              background:   'rgba(255,255,255,0.04)',
+                              border:       '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: 12,
+                              padding:      '14px 16px'
+                            }}>
+                              {/* Nom + tip calculé */}
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <div style={{
+                                    width:        32,
+                                    height:       32,
+                                    borderRadius: '50%',
+                                    background:   colors.bg,
+                                    border:       `1px solid ${colors.border}`,
+                                    display:      'flex',
+                                    alignItems:   'center',
+                                    justifyContent: 'center',
+                                    fontSize:     12,
+                                    fontWeight:   700,
+                                    color:        colors.color
+                                  }}>
+                                    {(person.name || '?')[0].toUpperCase()}
+                                  </div>
+                                  <span style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>
+                                    {person.name}
+                                  </span>
+                                </div>
+                                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
+                                  Tip calculé : <strong style={{ color: colors.color }}>${tipAmt.toFixed(2)}</strong>
+                                </span>
+                              </div>
+
+                              {/* Repas du shift */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', flex: 1, minWidth: 130 }}>
+                                  Repas du shift $
+                                </span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={dist.meals?.[person.id] || ''}
+                                  onChange={e => setPersonMeal(realIdx, person.id, e.target.value)}
+                                  style={smallInputStyle}
+                                />
+                              </div>
+
+                              {/* Don supplémentaire */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', flex: 1, minWidth: 130 }}>
+                                  Don supplémentaire $
+                                </span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={dist.donations?.[person.id] || ''}
+                                  onChange={e => setPersonDonation(realIdx, person.id, e.target.value)}
+                                  style={smallInputStyle}
+                                />
+                              </div>
+
+                              {/* Net à remettre */}
+                              <div style={{
+                                display:        'flex',
+                                alignItems:     'center',
+                                justifyContent: 'space-between',
+                                paddingTop:     10,
+                                borderTop:      '1px solid rgba(255,255,255,0.06)'
+                              }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>
+                                  Net à remettre
+                                </span>
+                                <span style={{
+                                  fontSize:   16,
+                                  fontWeight: 800,
+                                  color:      net >= 0 ? '#34d399' : '#f87171'
+                                }}>
+                                  ${net.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
                     )}
                   </>
                 )}

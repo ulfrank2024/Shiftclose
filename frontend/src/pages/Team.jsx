@@ -46,6 +46,7 @@ export default function Team() {
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'server', position: 'server' })
   const [editingTipOut, setEditingTipOut] = useState(null)
   const [newTipOut, setNewTipOut] = useState({ position: '', percentage: '' })
+  const [kitchenPoolPct, setKitchenPoolPct] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [inviteFocused, setInviteFocused] = useState(false)
   const [inviteLink, setInviteLink] = useState(null)   // lien généré après invitation
@@ -70,7 +71,11 @@ export default function Team() {
 
       setMembers(membersRes.members || [])
       setPendingInvites(invitesRes.invitations || [])
-      setTipOutRules(restaurantRes.restaurant?.tipOutRules || [])
+      const allRules = restaurantRes.restaurant?.tipOutRules || []
+      // Séparer la règle pool cuisine des autres règles
+      const poolRule = allRules.find(r => ['kitchen_pool', 'cuisine', 'pool cuisine'].includes(r.position?.toLowerCase()))
+      setKitchenPoolPct(poolRule?.percentage?.toString() || '')
+      setTipOutRules(allRules.filter(r => !['kitchen_pool', 'cuisine', 'pool cuisine'].includes(r.position?.toLowerCase())))
       setDeletionRequests(deletionRes.requests || [])
     } catch (err) {
       setError(err.message)
@@ -217,7 +222,11 @@ export default function Team() {
   const handleSaveTipOutRules = async () => {
     setSubmitting(true)
     try {
-      await restaurantAPI.update(currentRestaurant.id, { tipOutRules })
+      // Fusionner pool cuisine + règles individuelles
+      const poolRules = kitchenPoolPct && parseFloat(kitchenPoolPct) > 0
+        ? [{ position: 'kitchen_pool', percentage: parseFloat(kitchenPoolPct) }]
+        : []
+      await restaurantAPI.update(currentRestaurant.id, { tipOutRules: [...poolRules, ...tipOutRules] })
       setEditingTipOut(null)
     } catch (err) {
       setError(err.message)
@@ -619,7 +628,55 @@ export default function Team() {
             <Percent size={40} style={{ color: '#60a5fa', opacity: 0.5 }} />
           </div>
 
-          {/* Règles */}
+          {/* ── Pool Cuisine (dédiée) ── */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(217,119,6,0.08) 100%)',
+            border: '1px solid rgba(245,158,11,0.35)',
+            borderRadius: '16px', padding: '18px 20px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  background: 'rgba(245,158,11,0.2)',
+                  border: '1px solid rgba(245,158,11,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <UtensilsCrossed size={22} color="#f59e0b" />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, color: '#fbbf24', fontSize: 15 }}>Pool Cuisine</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(251,191,36,0.6)' }}>
+                    Automatique · aucune sélection de personne
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  placeholder="0.0"
+                  value={kitchenPoolPct}
+                  onChange={e => setKitchenPoolPct(e.target.value)}
+                  style={{
+                    width: 76, padding: '8px 12px', background: '#0f172a',
+                    border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10,
+                    color: '#fbbf24', fontSize: 16, fontWeight: 700,
+                    textAlign: 'center', outline: 'none'
+                  }}
+                />
+                <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: 18 }}>%</span>
+              </div>
+            </div>
+            <p style={{ margin: '12px 0 0', fontSize: 12, color: 'rgba(245,158,11,0.5)', paddingTop: 10, borderTop: '1px solid rgba(245,158,11,0.2)' }}>
+              Le montant sera calculé automatiquement lors du Cash Out (% des ventes totales) et affiché séparément.
+              {!kitchenPoolPct || parseFloat(kitchenPoolPct) === 0 ? ' Entrez un % pour activer.' : ''}
+            </p>
+          </div>
+
+          {/* ── Règles individuelles ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {tipOutRules.map((rule, index) => {
               const IconComponent = POSITION_ICONS[rule.position?.toLowerCase()] || POSITION_ICONS.default
