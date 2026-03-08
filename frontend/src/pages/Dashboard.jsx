@@ -37,12 +37,10 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // ── Accordéon — sections ouvertes/fermées ──────────────────
-  const [open, setOpen] = useState({
-    stats:    true,
-    period:   true,
-    actions:  true,
-    activity: true
+  // ── Accordéon — sur mobile seul "stats" est ouvert par défaut ──
+  const [open, setOpen] = useState(() => {
+    const mobile = typeof window !== 'undefined' && window.innerWidth < 640
+    return { stats: true, period: !mobile, actions: !mobile, activity: !mobile }
   })
   const toggle = (key) => setOpen(prev => ({ ...prev, [key]: !prev[key] }))
 
