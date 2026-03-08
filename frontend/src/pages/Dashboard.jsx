@@ -205,7 +205,7 @@ export default function Dashboard() {
       {/* ── Stats Grid ── */}
       <div className="stats-grid">
 
-        {/* Total Sales — masqué pour employés sans cashout */}
+        {/* Total Sales — manager voit restaurant, serveur voit ses propres ventes */}
         {canDoCashout && (
           <div style={{
             background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
@@ -215,8 +215,10 @@ export default function Dashboard() {
             <div className="stat-card-inner">
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
-                  <p className="stat-label">{t('dashboard.totalSales')}</p>
-                  <p className="stat-value">{loading ? '—' : `$${stats.totalSales.toFixed(2)}`}</p>
+                  <p className="stat-label">{isManager ? t('dashboard.totalSales') : 'Mes ventes'}</p>
+                  <p className="stat-value">
+                    {loading ? '—' : `$${(isManager ? stats.totalSales : (stats.myTotalSales || 0)).toFixed(2)}`}
+                  </p>
                 </div>
                 <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
                   <DollarSign style={{ color: '#4ade80' }} size={20} />
@@ -294,7 +296,7 @@ export default function Dashboard() {
                 <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
                   <p className="stat-label">Mon Tip-Out distribué</p>
                   <p className="stat-value">
-                    {loading ? '—' : `$${(stats.myTipOutGiven || 0).toFixed(2)}`}
+                    {loading ? '—' : `$${(stats.myTotalTipOut || 0).toFixed(2)}`}
                   </p>
                 </div>
                 <div className="stat-icon" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
@@ -303,7 +305,7 @@ export default function Dashboard() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#fbbf24', fontSize: '12px' }}>
                 <TrendingUp size={13} />
-                <span>{t('dashboard.today')}</span>
+                <span>Cumul total</span>
               </div>
             </div>
           </div>

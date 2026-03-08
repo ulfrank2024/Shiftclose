@@ -645,14 +645,20 @@ export const getDashboardStats = async (req, res) => {
     }
 
     let totalSales = 0, totalTipOut = 0, pendingReports = 0, validatedReports = 0
+    let myTotalSales = 0, myTotalTipOut = 0
     allReports?.forEach(report => {
       totalSales  += parseFloat(report.total_sales)    || 0
       totalTipOut += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
       if (report.status === 'pending')   pendingReports++
       if (report.status === 'validated') validatedReports++
+      // Cumul personnel (tous les rapports de cet employé)
+      if (report.employee_id === userId) {
+        myTotalSales  += parseFloat(report.total_sales)    || 0
+        myTotalTipOut += parseFloat(report.tip_out_amount) || 0
+      }
     })
 
-    // ── Stats personnelles : mes rapports des 24 dernières heures ─
+    // ── Stats personnelles 24h : mes rapports des 24 dernières heures ─
     const myReports = allReports?.filter(
       r => r.employee_id === userId &&
            new Date(r.created_at) >= last24h
@@ -677,11 +683,15 @@ export const getDashboardStats = async (req, res) => {
     try {
       const period = await getOrCreateCurrentPeriod(restaurantId)
       if (period) {
+        // Filtrer par pay_period_id OU par plage de dates (rétrocompat rapports anciens)
+        const periodStart = `${period.start_date}T00:00:00.000Z`
+        const periodEnd   = `${period.end_date}T23:59:59.999Z`
+
         const { data: periodReports } = await supabase
           .from('reports')
-          .select('total_sales, tip_out_amount, employee_id')
+          .select('total_sales, tip_out_amount, employee_id, pay_period_id, created_at')
           .eq('restaurant_id', restaurantId)
-          .eq('pay_period_id', period.id)
+          .or(`pay_period_id.eq.${period.id},and(pay_period_id.is.null,created_at.gte.${periodStart},created_at.lte.${periodEnd})`)
 
         let periodTotalSales = 0, periodTotalTipOut = 0, periodMyTipOut = 0, periodMyReports = 0
         for (const r of periodReports || []) {
@@ -693,13 +703,14 @@ export const getDashboardStats = async (req, res) => {
           }
         }
 
+        // Tips reçus dans la période (par pay_period_id ou par date)
         const { data: periodReceived } = await supabase
           .from('tip_distributions')
-          .select('amount')
+          .select('amount, pay_period_id, created_at')
           .eq('restaurant_id', restaurantId)
           .eq('to_employee_id', userId)
-          .eq('pay_period_id', period.id)
           .eq('is_meal_deduction', false)
+          .or(`pay_period_id.eq.${period.id},and(pay_period_id.is.null,created_at.gte.${periodStart},created_at.lte.${periodEnd})`)
 
         const periodMyReceived = (periodReceived || []).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0)
 
@@ -723,20 +734,23 @@ export const getDashboardStats = async (req, res) => {
       success: true,
       isManager,
       stats: {
-        // Restaurant (tous)
+        // Restaurant (tous) — visible manager
         totalSales,
         totalTipOut,
         pendingReports,
         validatedReports,
         totalReports: allReports?.length || 0,
-        // Personnels (propres à l'utilisateur connecté)
+        // Cumul personnel (tous les rapports de cet employé)
+        myTotalSales,
+        myTotalTipOut,
+        // Personnels 24h
         myTipOutGiven,
         tipsReceivedToday,
         // Période courante
         currentPeriod: currentPeriodStats,
         // Rétrocompatibilité
-        tipOutGiven: isManager ? totalTipOut : myTipOutGiven,
-        totalTips: isManager ? totalTipOut : myTipOutGiven
+        tipOutGiven: isManager ? totalTipOut : myTotalTipOut,
+        totalTips: isManager ? totalTipOut : myTotalTipOut
       }
     })
   } catch (error) {
