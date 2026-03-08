@@ -621,11 +621,9 @@ export const getDashboardStats = async (req, res) => {
     const { restaurantId } = req.params
     const userId = req.user.id
 
-    // Utiliser la date locale du client si fournie, sinon UTC midnight
-    // Le frontend envoie ?todayStart=2026-03-08T04:00:00.000Z (minuit local)
-    const today = req.query.todayStart
-      ? new Date(req.query.todayStart)
-      : (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d })()
+    // Pour un restaurant, "aujourd'hui" = les 24 dernières heures glissantes.
+    // Cela couvre les shifts de nuit qui chevauchent minuit.
+    const today = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
     // Vérifier le rôle de l'utilisateur dans ce restaurant
     const { data: membership } = await supabase
@@ -645,22 +643,8 @@ export const getDashboardStats = async (req, res) => {
       .gte('created_at', today.toISOString())
 
     if (error) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération', debug: error.message })
+      return res.status(500).json({ error: 'Erreur lors de la récupération' })
     }
-
-    // Debug temporaire — à retirer après diagnostic
-    console.log('[STATS DEBUG]', {
-      restaurantId,
-      userId,
-      todayISO: today.toISOString(),
-      reportsFound: allReports?.length ?? 0,
-      reportSample: allReports?.[0] ? {
-        id: allReports[0].id,
-        created_at: allReports[0].created_at,
-        total_sales: allReports[0].total_sales,
-        employee_id: allReports[0].employee_id
-      } : null
-    })
 
     let totalSales = 0, totalTipOut = 0, pendingReports = 0, validatedReports = 0
     allReports?.forEach(report => {
