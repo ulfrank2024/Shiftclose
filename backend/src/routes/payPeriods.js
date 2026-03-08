@@ -1,0 +1,31 @@
+import { Router } from 'express'
+import { verifyToken, requireRole, requireRestaurantAccess } from '../middleware/auth.js'
+import {
+  getCurrentPeriod,
+  listPeriods,
+  updatePeriod,
+  closePeriod,
+  getPeriodSummary
+} from '../controllers/payPeriodController.js'
+
+const router = Router()
+
+// Toutes les routes nécessitent une authentification
+router.use(verifyToken)
+
+// GET  /api/pay-periods/:restaurantId/current  → Période active
+router.get('/:restaurantId/current', requireRestaurantAccess, getCurrentPeriod)
+
+// GET  /api/pay-periods/:restaurantId          → Liste toutes les périodes
+router.get('/:restaurantId', requireRestaurantAccess, listPeriods)
+
+// GET  /api/pay-periods/:restaurantId/:periodId/summary → Résumé (manager)
+router.get('/:restaurantId/:periodId/summary', requireRole('manager'), getPeriodSummary)
+
+// PUT  /api/pay-periods/:restaurantId/:periodId/close   → Clôturer (manager)
+router.put('/:restaurantId/:periodId/close', requireRole('manager'), closePeriod)
+
+// PUT  /api/pay-periods/:restaurantId/:periodId          → Ajuster les dates (manager)
+router.put('/:restaurantId/:periodId', requireRole('manager'), updatePeriod)
+
+export default router

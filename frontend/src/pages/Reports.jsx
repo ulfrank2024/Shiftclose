@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { reportAPI, restaurantAPI } from '../services/api'
+import { reportAPI, restaurantAPI, payPeriodAPI } from '../services/api'
 import {
   FileText, Check, X, Clock, ChevronDown, Download,
   Eye, Loader, AlertCircle, DollarSign, Users, Gift,
-  UtensilsCrossed, Calculator, Image, BarChart3, UserPlus
+  UtensilsCrossed, Calculator, Image, BarChart3, UserPlus,
+  CalendarDays, Lock
 } from 'lucide-react'
 
 // ── Noms d'affichage des positions ────────────────────────────
@@ -145,11 +146,17 @@ export default function Reports() {
 
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterMonth,  setFilterMonth]  = useState('all')
+  const [filterPeriod, setFilterPeriod] = useState('all')
   const [selectedReport, setSelectedReport] = useState(null)
   const [reports, setReports]   = useState([])
   const [loading, setLoading]   = useState(true)
   const [actionLoading, setActionLoading] = useState(null)
   const [error, setError]       = useState('')
+
+  // Périodes de paie
+  const [periods, setPeriods] = useState([])
+  const [closingPeriod, setClosingPeriod] = useState(false)
+  const [showCloseModal, setShowCloseModal] = useState(false)
 
   // Manager: saisir pour un serveur
   const [teamMembers, setTeamMembers] = useState([])
@@ -160,7 +167,15 @@ export default function Reports() {
   useEffect(() => {
     if (!currentRestaurant?.id) return
     fetchReports()
-  }, [currentRestaurant?.id, filterStatus, filterMonth])
+  }, [currentRestaurant?.id, filterStatus, filterMonth, filterPeriod])
+
+  useEffect(() => {
+    if (!currentRestaurant?.id) return
+    // Charger les périodes de paie
+    payPeriodAPI.getAll(currentRestaurant.id)
+      .then(res => setPeriods(res.periods || []))
+      .catch(() => {})
+  }, [currentRestaurant?.id])
 
   useEffect(() => {
     if (isManager && currentRestaurant?.id) {
@@ -175,8 +190,9 @@ export default function Reports() {
     setError('')
     try {
       const filters = {}
-      if (filterStatus !== 'all') filters.status = filterStatus
-      if (filterMonth  !== 'all') filters.month  = filterMonth
+      if (filterStatus !== 'all') filters.status   = filterStatus
+      if (filterPeriod !== 'all') filters.periodId = filterPeriod
+      else if (filterMonth !== 'all') filters.month = filterMonth
       const res = await reportAPI.getAll(currentRestaurant.id, filters)
       if (res.success) setReports(res.reports)
     } catch (err) {
@@ -184,6 +200,65 @@ export default function Reports() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleClosePeriod = async () => {
+    const activePeriod = periods.find(p => p.status === 'active')
+    if (!activePeriod) return
+    setClosingPeriod(true)
+    try {
+      const res = await payPeriodAPI.close(currentRestaurant.id, activePeriod.id)
+      // Export CSV automatique du résumé
+      if (res.summary) {
+        exportPeriodSummaryCSV(res.summary, activePeriod)
+      }
+      // Rafraîchir les périodes
+      const updatedPeriods = await payPeriodAPI.getAll(currentRestaurant.id)
+      setPeriods(updatedPeriods.periods || [])
+      setFilterPeriod('all')
+      setShowCloseModal(false)
+      fetchReports()
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la clôture.')
+    } finally {
+      setClosingPeriod(false)
+    }
+  }
+
+  // Export CSV du résumé d'une période
+  const exportPeriodSummaryCSV = (summary, period) => {
+    const headers = ['Employé', 'Ventes Totales', 'Tip-Out Distribué', 'Tips Reçus', 'Nb Rapports']
+    const rows = (summary.employees || []).map(e => [
+      e.employeeName,
+      (e.totalSales   || 0).toFixed(2),
+      (e.tipOutGiven  || 0).toFixed(2),
+      (e.tipsReceived || 0).toFixed(2),
+      e.reportCount || 0
+    ])
+    const totalsRow = [
+      'TOTAL',
+      (summary.totals?.totalSales    || 0).toFixed(2),
+      (summary.totals?.totalTipOut   || 0).toFixed(2),
+      (summary.totals?.totalReceived || 0).toFixed(2),
+      summary.totals?.totalReports || 0
+    ]
+    rows.push([])
+    rows.push(totalsRow)
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `periode_${period.startDate}_${period.endDate}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Format une période pour l'affichage
+  const formatPeriodLabel = (p) => {
+    const start = new Date(p.startDate + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
+    const end   = new Date(p.endDate   + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
+    return `${start} → ${end} ${p.status === 'active' ? '(active)' : '(clôturée)'}`
   }
 
   const handleValidate = async (reportId) => {
@@ -273,9 +348,32 @@ export default function Reports() {
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-          {/* Filtre par mois */}
+          {/* Filtre par période de paie */}
+          {periods.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <CalendarDays size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
+              <select
+                value={filterPeriod}
+                onChange={e => { setFilterPeriod(e.target.value); if (e.target.value !== 'all') setFilterMonth('all') }}
+                style={{ ...sel, paddingLeft: '28px' }}
+              >
+                <option value="all">Toutes les périodes</option>
+                {periods.map(p => (
+                  <option key={p.id} value={p.id}>{formatPeriodLabel(p)}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
+            </div>
+          )}
+
+          {/* Filtre par mois (désactivé si période sélectionnée) */}
           <div style={{ position: 'relative' }}>
-            <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={sel}>
+            <select
+              value={filterMonth}
+              onChange={e => { setFilterMonth(e.target.value); setFilterPeriod('all') }}
+              style={{ ...sel, opacity: filterPeriod !== 'all' ? 0.4 : 1 }}
+              disabled={filterPeriod !== 'all'}
+            >
               {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
@@ -321,6 +419,22 @@ export default function Reports() {
             >
               <BarChart3 size={15} />
               Stats comptable
+            </button>
+          )}
+
+          {/* Clôturer la période (manager — période active existante) */}
+          {isManager && periods.some(p => p.status === 'active') && (
+            <button
+              onClick={() => setShowCloseModal(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '9px 14px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.3)',
+                backgroundColor: 'rgba(239,68,68,0.08)',
+                color: '#f87171', fontSize: '13px', cursor: 'pointer'
+              }}
+            >
+              <Lock size={15} />
+              Clôturer la période
             </button>
           )}
 
@@ -471,6 +585,81 @@ export default function Reports() {
           })}
         </div>
       )}
+
+      {/* ── Modal Clôture de période ── */}
+      {showCloseModal && (() => {
+        const activePeriod = periods.find(p => p.status === 'active')
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px'
+          }} onClick={e => e.target === e.currentTarget && setShowCloseModal(false)}>
+            <div style={{
+              background: 'rgba(15,23,42,0.97)', border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: '20px', maxWidth: '420px', width: '100%',
+              backdropFilter: 'blur(20px)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{ padding: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ padding: '10px', backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: '12px' }}>
+                    <Lock size={20} color="#f87171" />
+                  </div>
+                  <div>
+                    <h2 style={{ color: 'white', fontWeight: 700, fontSize: '17px', margin: 0 }}>Clôturer la période</h2>
+                    <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 0' }}>Cette action est irréversible</p>
+                  </div>
+                </div>
+
+                {activePeriod && (
+                  <div style={{
+                    backgroundColor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
+                    borderRadius: '12px', padding: '14px 16px', marginBottom: '20px'
+                  }}>
+                    <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 6px' }}>Période en cours</p>
+                    <p style={{ color: 'white', fontWeight: 600, fontSize: '15px', margin: 0 }}>
+                      {new Date(activePeriod.startDate + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })}
+                      {' → '}
+                      {new Date(activePeriod.endDate + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                )}
+
+                <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', margin: '0 0 24px' }}>
+                  La clôture va <strong style={{ color: 'white' }}>générer un export CSV</strong> de la période et créer automatiquement la période suivante.
+                </p>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={() => setShowCloseModal(false)}
+                    style={{
+                      flex: 1, padding: '12px', borderRadius: '11px',
+                      border: '1px solid #334155', backgroundColor: 'transparent',
+                      color: '#94a3b8', fontWeight: 500, cursor: 'pointer'
+                    }}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleClosePeriod}
+                    disabled={closingPeriod}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      padding: '12px', borderRadius: '11px', border: 'none',
+                      background: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: 'white',
+                      fontWeight: 600, cursor: closingPeriod ? 'not-allowed' : 'pointer',
+                      opacity: closingPeriod ? 0.7 : 1
+                    }}
+                  >
+                    {closingPeriod
+                      ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Clôture...</>
+                      : <><Lock size={16} /> Clôturer & Exporter</>}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Modal "Saisir pour un serveur" ── */}
       {showForUserModal && (

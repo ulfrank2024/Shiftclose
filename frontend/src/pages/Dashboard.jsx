@@ -418,6 +418,102 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* ── Période de paie en cours ── */}
+      {!loading && stats.currentPeriod && (
+        <div style={{
+          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+          border: '1px solid rgba(71,85,105,0.5)',
+          borderRadius: '18px',
+          padding: '24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '40px', height: '40px', borderRadius: '12px',
+                backgroundColor: 'rgba(99,102,241,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Calendar size={20} style={{ color: '#818cf8' }} />
+              </div>
+              <div>
+                <h2 style={{ color: 'white', fontSize: '16px', fontWeight: 600, margin: 0 }}>Période de paie en cours</h2>
+                <p style={{ color: '#6366f1', fontSize: '13px', margin: '3px 0 0', fontWeight: 500 }}>
+                  {new Date(stats.currentPeriod.startDate + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })}
+                  {' → '}
+                  {new Date(stats.currentPeriod.endDate + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            </div>
+            <Link to="/reports" style={{
+              fontSize: '13px', color: '#818cf8', textDecoration: 'none',
+              display: 'flex', alignItems: 'center', gap: '4px'
+            }}>
+              Voir les rapports <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }} className="sm:grid-cols-4">
+            {/* Mes ventes (période) — pour canDoCashout */}
+            {canDoCashout && (
+              <div style={{
+                backgroundColor: 'rgba(30,41,59,0.7)', borderRadius: '14px',
+                padding: '14px 16px', border: '1px solid rgba(51,65,85,0.5)'
+              }}>
+                <p style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+                  {isManager ? 'Ventes resto (période)' : 'Mes ventes (période)'}
+                </p>
+                <p style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: 0 }}>
+                  ${(isManager ? stats.currentPeriod.totalSales : stats.currentPeriod.totalSales).toFixed(2)}
+                </p>
+              </div>
+            )}
+
+            {/* Mon tip-out distribué (période) */}
+            {canDoCashout && (
+              <div style={{
+                backgroundColor: 'rgba(30,41,59,0.7)', borderRadius: '14px',
+                padding: '14px 16px', border: '1px solid rgba(51,65,85,0.5)'
+              }}>
+                <p style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+                  Mon Tip-Out (période)
+                </p>
+                <p style={{ color: '#fbbf24', fontSize: '20px', fontWeight: 700, margin: 0 }}>
+                  -${(stats.currentPeriod.myTipOut || 0).toFixed(2)}
+                </p>
+              </div>
+            )}
+
+            {/* Tips reçus (période) — tous */}
+            <div style={{
+              backgroundColor: 'rgba(30,41,59,0.7)', borderRadius: '14px',
+              padding: '14px 16px', border: '1px solid rgba(51,65,85,0.5)'
+            }}>
+              <p style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+                Tips reçus (période)
+              </p>
+              <p style={{ color: '#34d399', fontSize: '20px', fontWeight: 700, margin: 0 }}>
+                +${(stats.currentPeriod.myTipsReceived || 0).toFixed(2)}
+              </p>
+            </div>
+
+            {/* Rapports soumis (période) */}
+            {canDoCashout && (
+              <div style={{
+                backgroundColor: 'rgba(30,41,59,0.7)', borderRadius: '14px',
+                padding: '14px 16px', border: '1px solid rgba(51,65,85,0.5)'
+              }}>
+                <p style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+                  Mes rapports (période)
+                </p>
+                <p style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: 0 }}>
+                  {stats.currentPeriod.myReportCount || 0}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Quick Actions + Recent Activity ── */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr', gap: '28px'

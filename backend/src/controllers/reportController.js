@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { sendEmail, emailTemplates } from '../config/email.js'
+import { getOrCreateCurrentPeriod } from './payPeriodController.js'
 
 // ─────────────────────────────────────────────────────────────
 // Create new cash out report (with full tip-out distribution)
@@ -92,6 +93,10 @@ export const createReport = async (req, res) => {
     const legacyCashInHand = cashInHand || physicalCash
     const difference       = legacyCashInHand - expectedCash
 
+    // ── Récupérer ou créer la période de paie courante ───────
+    const currentPeriod = await getOrCreateCurrentPeriod(restaurantId)
+    const payPeriodId = currentPeriod?.id || null
+
     // ── Insert report ────────────────────────────────────────
     const reportData = {
       restaurant_id:      restaurantId,
@@ -127,7 +132,9 @@ export const createReport = async (req, res) => {
       expected_cash:      expectedCash,
       difference:         difference,
       // Status: auto-validate if submitted by manager
-      status:             submittedByManagerId ? 'validated' : 'pending'
+      status:             submittedByManagerId ? 'validated' : 'pending',
+      // Période de paie
+      pay_period_id:      payPeriodId
     }
 
     const { data: newReport, error: reportError } = await supabase
@@ -168,7 +175,8 @@ export const createReport = async (req, res) => {
             amount:             total,
             is_donation:        false,
             is_meal_deduction:  false,
-            report_date:        reportDate
+            report_date:        reportDate,
+            pay_period_id:      payPeriodId
           })
         }
       } else if (item.persons?.length > 0) {
@@ -189,7 +197,8 @@ export const createReport = async (req, res) => {
             amount:             net,
             is_donation:        false,
             is_meal_deduction:  false,
-            report_date:        reportDate
+            report_date:        reportDate,
+            pay_period_id:      payPeriodId
           })
         }
       } else if (!item.persons && total > 0) {
@@ -207,7 +216,8 @@ export const createReport = async (req, res) => {
           amount:             total,
           is_donation:        false,
           is_meal_deduction:  false,
-          report_date:        reportDate
+          report_date:        reportDate,
+          pay_period_id:      payPeriodId
         })
       }
     }
@@ -228,7 +238,8 @@ export const createReport = async (req, res) => {
           amount:             donation.amount,
           is_donation:        true,
           is_meal_deduction:  false,
-          report_date:        reportDate
+          report_date:        reportDate,
+          pay_period_id:      payPeriodId
         })
       }
     }
@@ -249,7 +260,8 @@ export const createReport = async (req, res) => {
           amount:             -Math.abs(meal.amount),   // negative = deduction
           is_donation:        false,
           is_meal_deduction:  true,
-          report_date:        reportDate
+          report_date:        reportDate,
+          pay_period_id:      payPeriodId
         })
       }
     }
@@ -373,7 +385,7 @@ export const createReport = async (req, res) => {
 export const getReports = async (req, res) => {
   try {
     const { restaurantId } = req.params
-    const { status, startDate, endDate, employeeId, month } = req.query
+    const { status, startDate, endDate, employeeId, month, periodId } = req.query
 
     let query = supabase
       .from('reports')
@@ -390,6 +402,7 @@ export const getReports = async (req, res) => {
     }
 
     if (status)    query = query.eq('status', status)
+    if (periodId)  query = query.eq('pay_period_id', periodId)
     if (startDate) query = query.gte('created_at', startDate)
     if (endDate)   query = query.lte('created_at', endDate)
 
@@ -435,7 +448,7 @@ export const getReport = async (req, res) => {
       return res.status(404).json({ error: 'Rapport non trouvé' })
     }
 
-    // Also fetch distributions for this report
+    // Also fetch distributions for this report (with pay_period_id)
     const { data: distributions } = await supabase
       .from('tip_distributions')
       .select('*')
@@ -459,17 +472,18 @@ export const getReport = async (req, res) => {
 export const getMyReceivedTips = async (req, res) => {
   try {
     const { restaurantId } = req.params
-    const { startDate, endDate, date } = req.query
+    const { startDate, endDate, date, periodId } = req.query
 
     let query = supabase
       .from('tip_distributions')
-      .select('*')
+      .select('*, pay_periods(start_date, end_date, status)')
       .eq('restaurant_id', restaurantId)
       .eq('to_employee_id', req.user.id)
       .eq('is_meal_deduction', false)
       .order('report_date', { ascending: false })
 
     if (date)      query = query.eq('report_date', date)
+    if (periodId)  query = query.eq('pay_period_id', periodId)
     if (startDate) query = query.gte('report_date', startDate)
     if (endDate)   query = query.lte('report_date', endDate)
 
@@ -479,31 +493,60 @@ export const getMyReceivedTips = async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la récupération' })
     }
 
-    // Group by date for a cleaner response
-    const grouped = {}
+    // Group by pay_period_id (puis par date à l'intérieur)
+    const byPeriod = {}
+    const byDate   = {}
+
     for (const dist of distributions || []) {
-      const d = dist.report_date
-      if (!grouped[d]) {
-        grouped[d] = { date: d, total: 0, items: [] }
-      }
-      grouped[d].total += parseFloat(dist.amount) || 0
-      grouped[d].items.push({
+      const amount = parseFloat(dist.amount) || 0
+      const item = {
         id:               dist.id,
         fromEmployeeId:   dist.from_employee_id,
         fromEmployeeName: dist.from_employee_name,
         role:             dist.role,
         percentage:       parseFloat(dist.percentage) || 0,
-        amount:           parseFloat(dist.amount) || 0,
+        amount,
         isDonation:       dist.is_donation,
         reportDate:       dist.report_date,
+        payPeriodId:      dist.pay_period_id,
         createdAt:        dist.created_at
-      })
+      }
+
+      // Groupement par période
+      const pId = dist.pay_period_id || 'no-period'
+      if (!byPeriod[pId]) {
+        byPeriod[pId] = {
+          periodId:  dist.pay_period_id,
+          startDate: dist.pay_periods?.start_date || null,
+          endDate:   dist.pay_periods?.end_date   || null,
+          status:    dist.pay_periods?.status     || null,
+          total:     0,
+          items:     []
+        }
+      }
+      byPeriod[pId].total += amount
+      byPeriod[pId].items.push(item)
+
+      // Groupement par date (compatibilité ancienne)
+      const d = dist.report_date
+      if (!byDate[d]) byDate[d] = { date: d, total: 0, items: [] }
+      byDate[d].total += amount
+      byDate[d].items.push(item)
     }
+
+    const totalReceived = Object.values(byDate).reduce((sum, d) => sum + d.total, 0)
 
     res.json({
       success: true,
-      history: Object.values(grouped).sort((a, b) => new Date(b.date) - new Date(a.date)),
-      totalReceived: Object.values(grouped).reduce((sum, d) => sum + d.total, 0)
+      // Groupé par période (nouveau)
+      byPeriod: Object.values(byPeriod).sort((a, b) => {
+        if (!a.startDate) return 1
+        if (!b.startDate) return -1
+        return new Date(b.startDate) - new Date(a.startDate)
+      }),
+      // Groupé par date (rétrocompatibilité)
+      history: Object.values(byDate).sort((a, b) => new Date(b.date) - new Date(a.date)),
+      totalReceived
     })
   } catch (error) {
     console.error('Get received tips error:', error)
@@ -626,6 +669,53 @@ export const getDashboardStats = async (req, res) => {
 
     const tipsReceivedToday = (receivedRows || []).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0)
 
+    // ── Stats de la période de paie courante ─────────────────
+    let currentPeriodStats = null
+    try {
+      const period = await getOrCreateCurrentPeriod(restaurantId)
+      if (period) {
+        const { data: periodReports } = await supabase
+          .from('reports')
+          .select('total_sales, tip_out_amount, employee_id')
+          .eq('restaurant_id', restaurantId)
+          .eq('pay_period_id', period.id)
+
+        let periodTotalSales = 0, periodTotalTipOut = 0, periodMyTipOut = 0, periodMyReports = 0
+        for (const r of periodReports || []) {
+          periodTotalSales  += parseFloat(r.total_sales)    || 0
+          periodTotalTipOut += parseFloat(r.tip_out_amount) || 0
+          if (r.employee_id === userId) {
+            periodMyTipOut  += parseFloat(r.tip_out_amount) || 0
+            periodMyReports += 1
+          }
+        }
+
+        const { data: periodReceived } = await supabase
+          .from('tip_distributions')
+          .select('amount')
+          .eq('restaurant_id', restaurantId)
+          .eq('to_employee_id', userId)
+          .eq('pay_period_id', period.id)
+          .eq('is_meal_deduction', false)
+
+        const periodMyReceived = (periodReceived || []).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0)
+
+        currentPeriodStats = {
+          periodId:        period.id,
+          startDate:       period.start_date,
+          endDate:         period.end_date,
+          status:          period.status,
+          totalSales:      periodTotalSales,
+          totalTipOut:     periodTotalTipOut,
+          myTipOut:        periodMyTipOut,
+          myReportCount:   periodMyReports,
+          myTipsReceived:  periodMyReceived
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch current period stats:', e.message)
+    }
+
     res.json({
       success: true,
       isManager,
@@ -639,6 +729,8 @@ export const getDashboardStats = async (req, res) => {
         // Personnels (propres à l'utilisateur connecté)
         myTipOutGiven,
         tipsReceivedToday,
+        // Période courante
+        currentPeriod: currentPeriodStats,
         // Rétrocompatibilité
         tipOutGiven: isManager ? totalTipOut : myTipOutGiven,
         totalTips: isManager ? totalTipOut : myTipOutGiven
@@ -701,6 +793,8 @@ function formatReport(report) {
     validatedByName:   report.validated_by_name,
     validationNote:    report.validation_note,
     validatedAt:       report.validated_at,
+    // Période de paie
+    payPeriodId:       report.pay_period_id || null,
     // Timestamps
     createdAt:         report.created_at,
     updatedAt:         report.updated_at

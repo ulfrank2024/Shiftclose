@@ -268,6 +268,31 @@ export const invitationAPI = {
     })
 }
 
+// Pay Periods API
+export const payPeriodAPI = {
+  getCurrent: (restaurantId) =>
+    fetchWithAuth(`/pay-periods/${restaurantId}/current`),
+
+  getAll: (restaurantId, params = {}) => {
+    const qs = new URLSearchParams(params).toString()
+    return fetchWithAuth(`/pay-periods/${restaurantId}${qs ? `?${qs}` : ''}`)
+  },
+
+  update: (restaurantId, periodId, data) =>
+    fetchWithAuth(`/pay-periods/${restaurantId}/${periodId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+
+  close: (restaurantId, periodId) =>
+    fetchWithAuth(`/pay-periods/${restaurantId}/${periodId}/close`, {
+      method: 'PUT'
+    }),
+
+  getSummary: (restaurantId, periodId) =>
+    fetchWithAuth(`/pay-periods/${restaurantId}/${periodId}/summary`)
+}
+
 // Admin API (Super Admin only)
 export const adminAPI = {
   getStats: () => fetchWithAuth('/admin/stats'),
@@ -323,5 +348,6 @@ export default {
   restaurant: restaurantAPI,
   report: reportAPI,
   invitation: invitationAPI,
-  admin: adminAPI
+  admin: adminAPI,
+  payPeriod: payPeriodAPI
 }
