@@ -590,8 +590,10 @@ export const getDashboardStats = async (req, res) => {
     let totalSales = 0, totalTips = 0, pendingReports = 0, validatedReports = 0
 
     reports?.forEach(report => {
-      totalSales += parseFloat(report.total_sales) || 0
-      totalTips  += parseFloat(report.total_tips)  || 0
+      totalSales += parseFloat(report.total_sales)  || 0
+      // tip_out_amount = total distribué à l'équipe (nouveau système)
+      // total_tips = ancien système (cashTips + cardTips), souvent 0
+      totalTips  += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
       if (report.status === 'pending')   pendingReports++
       if (report.status === 'validated') validatedReports++
     })
