@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
-import { restaurantAPI } from '../services/api'
+import { restaurantAPI, payPeriodAPI } from '../services/api'
 import {
   Settings as SettingsIcon,
   Globe,
@@ -43,13 +43,17 @@ export default function Settings() {
     if (!currentRestaurant?.id) return
     setSavingPeriod(true)
     try {
+      // 1. Sauvegarder la config dans le restaurant
       await restaurantAPI.update(currentRestaurant.id, {
         pay_period_frequency:       payPeriodFrequency,
         pay_period_start_day:       parseInt(payPeriodStartDay),
         pay_period_reference_date:  payPeriodRefDate || null
       })
+      // 2. Recalculer la période active selon la nouvelle config
+      await payPeriodAPI.recalculate(currentRestaurant.id)
+
       setSavedPeriod(true)
-      setTimeout(() => setSavedPeriod(false), 2000)
+      setTimeout(() => setSavedPeriod(false), 2500)
     } catch (e) {
       console.error('Save pay period error:', e)
     } finally {

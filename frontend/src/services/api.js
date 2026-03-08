@@ -289,6 +289,11 @@ export const payPeriodAPI = {
       method: 'PUT'
     }),
 
+  recalculate: (restaurantId) =>
+    fetchWithAuth(`/pay-periods/${restaurantId}/recalculate`, {
+      method: 'PUT'
+    }),
+
   getSummary: (restaurantId, periodId) =>
     fetchWithAuth(`/pay-periods/${restaurantId}/${periodId}/summary`)
 }

@@ -5,7 +5,8 @@ import {
   listPeriods,
   updatePeriod,
   closePeriod,
-  getPeriodSummary
+  getPeriodSummary,
+  recalculatePeriod
 } from '../controllers/payPeriodController.js'
 
 const router = Router()
@@ -21,6 +22,9 @@ router.get('/:restaurantId', requireRestaurantAccess, listPeriods)
 
 // GET  /api/pay-periods/:restaurantId/:periodId/summary → Résumé (manager)
 router.get('/:restaurantId/:periodId/summary', requireRole('manager'), getPeriodSummary)
+
+// PUT  /api/pay-periods/:restaurantId/recalculate       → Recalculer la période active (manager)
+router.put('/:restaurantId/recalculate', requireRole('manager'), recalculatePeriod)
 
 // PUT  /api/pay-periods/:restaurantId/:periodId/close   → Clôturer (manager)
 router.put('/:restaurantId/:periodId/close', requireRole('manager'), closePeriod)

@@ -379,6 +379,58 @@ async function buildPeriodSummary(restaurantId, periodId) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// PUT /pay-periods/:restaurantId/recalculate
+// Recalcule la période active selon la config courante du restaurant
+// (utilisé après un changement de fréquence/date de référence dans Settings)
+// ─────────────────────────────────────────────────────────────
+export const recalculatePeriod = async (req, res) => {
+  try {
+    const { restaurantId } = req.params
+
+    // Lire la nouvelle config
+    const { data: restaurant } = await supabase
+      .from('restaurants')
+      .select('pay_period_frequency, pay_period_start_day, pay_period_reference_date')
+      .eq('id', restaurantId)
+      .single()
+
+    const frequency     = restaurant?.pay_period_frequency      || 'biweekly'
+    const startDay      = restaurant?.pay_period_start_day      ?? 1
+    const referenceDate = restaurant?.pay_period_reference_date || null
+
+    const bounds = computePeriodBounds(frequency, startDay, referenceDate)
+
+    // Supprimer la période active existante (sans historique à préserver)
+    await supabase
+      .from('pay_periods')
+      .delete()
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'active')
+
+    // Créer la nouvelle période avec les dates recalculées
+    const { data: newPeriod, error } = await supabase
+      .from('pay_periods')
+      .insert({
+        restaurant_id: restaurantId,
+        start_date:    bounds.start_date,
+        end_date:      bounds.end_date,
+        status:        'active'
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors du recalcul' })
+    }
+
+    res.json({ success: true, period: formatPeriod(newPeriod) })
+  } catch (error) {
+    console.error('recalculatePeriod error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // Helper : Formater une période pour l'API
 // ─────────────────────────────────────────────────────────────
 function formatPeriod(period) {

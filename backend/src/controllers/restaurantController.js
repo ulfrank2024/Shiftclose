@@ -16,6 +16,9 @@ export const getMyRestaurants = async (req, res) => {
           timezone,
           currency,
           tip_out_rules,
+          pay_period_frequency,
+          pay_period_start_day,
+          pay_period_reference_date,
           created_at
         )
       `)
@@ -32,6 +35,9 @@ export const getMyRestaurants = async (req, res) => {
       timezone: ur.restaurants.timezone,
       currency: ur.restaurants.currency,
       tipOutRules: ur.restaurants.tip_out_rules,
+      payPeriodFrequency:     ur.restaurants.pay_period_frequency || 'biweekly',
+      payPeriodStartDay:      ur.restaurants.pay_period_start_day ?? 1,
+      payPeriodReferenceDate: ur.restaurants.pay_period_reference_date || null,
       userRole: ur.role,
       canDoCashout: ur.can_do_cashout !== false,
       createdAt: ur.restaurants.created_at
@@ -146,7 +152,11 @@ export const createRestaurant = async (req, res) => {
 export const updateRestaurant = async (req, res) => {
   try {
     const { restaurantId } = req.params
-    const { name, address, timezone, currency, tipOutRules } = req.body
+    const {
+      name, address, timezone, currency, tipOutRules,
+      // Pay period config
+      pay_period_frequency, pay_period_start_day, pay_period_reference_date
+    } = req.body
 
     const updateData = {}
     if (name) updateData.name = name
@@ -154,6 +164,11 @@ export const updateRestaurant = async (req, res) => {
     if (timezone) updateData.timezone = timezone
     if (currency) updateData.currency = currency
     if (tipOutRules) updateData.tip_out_rules = tipOutRules
+
+    // Pay period configuration
+    if (pay_period_frequency !== undefined) updateData.pay_period_frequency = pay_period_frequency
+    if (pay_period_start_day !== undefined) updateData.pay_period_start_day = parseInt(pay_period_start_day)
+    if (pay_period_reference_date !== undefined) updateData.pay_period_reference_date = pay_period_reference_date || null
 
     const { error } = await supabase
       .from('restaurants')
