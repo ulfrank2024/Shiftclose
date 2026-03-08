@@ -152,8 +152,8 @@ export const createReport = async (req, res) => {
       const pct      = parseFloat(item.percentage) || 0
       const total    = parseFloat(item.totalAmount ?? item.amount) || 0
 
-      if (item.isPool || position.toLowerCase().includes('pool') || position.toLowerCase().includes('cuisine')) {
-        // Pool cuisine : une seule ligne sans bénéficiaire individuel
+      if (item.isPool || item.isAutomatic || position.toLowerCase().includes('pool') || position.toLowerCase().includes('cuisine')) {
+        // Pool cuisine ou règle automatique : une seule ligne sans bénéficiaire individuel
         if (total > 0) {
           distributions.push({
             report_id:          newReport.id,

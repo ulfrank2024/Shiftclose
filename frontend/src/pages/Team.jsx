@@ -45,7 +45,7 @@ export default function Team() {
   // Form states
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'server', position: 'server' })
   const [editingTipOut, setEditingTipOut] = useState(null)
-  const [newTipOut, setNewTipOut] = useState({ position: '', percentage: '' })
+  const [newTipOut, setNewTipOut] = useState({ position: '', percentage: '', enabled: true, automatic: false })
   const [kitchenPoolPct, setKitchenPoolPct] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [inviteFocused, setInviteFocused] = useState(false)
@@ -75,7 +75,8 @@ export default function Team() {
       // Séparer la règle pool cuisine des autres règles
       const poolRule = allRules.find(r => ['kitchen_pool', 'cuisine', 'pool cuisine'].includes(r.position?.toLowerCase()))
       setKitchenPoolPct(poolRule?.percentage?.toString() || '')
-      setTipOutRules(allRules.filter(r => !['kitchen_pool', 'cuisine', 'pool cuisine'].includes(r.position?.toLowerCase())))
+      setTipOutRules(allRules.filter(r => !['kitchen_pool', 'cuisine', 'pool cuisine'].includes(r.position?.toLowerCase()))
+        .map(r => ({ ...r, enabled: r.enabled !== false, automatic: !!r.automatic })))
       setDeletionRequests(deletionRes.requests || [])
     } catch (err) {
       setError(err.message)
@@ -238,10 +239,18 @@ export default function Team() {
   const handleAddTipOut = () => {
     if (!newTipOut.position || !newTipOut.percentage) return
     setTipOutRules([...tipOutRules, {
-      position: newTipOut.position,
-      percentage: parseFloat(newTipOut.percentage)
+      position:   newTipOut.position,
+      percentage: parseFloat(newTipOut.percentage),
+      enabled:    newTipOut.enabled,
+      automatic:  newTipOut.automatic
     }])
-    setNewTipOut({ position: '', percentage: '' })
+    setNewTipOut({ position: '', percentage: '', enabled: true, automatic: false })
+  }
+
+  const handleToggleRule = (index, field) => {
+    const updated = [...tipOutRules]
+    updated[index] = { ...updated[index], [field]: !updated[index][field] }
+    setTipOutRules(updated)
   }
 
   const handleRemoveTipOut = (index) => {
@@ -680,18 +689,24 @@ export default function Team() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {tipOutRules.map((rule, index) => {
               const IconComponent = POSITION_ICONS[rule.position?.toLowerCase()] || POSITION_ICONS.default
+              const isActive = rule.enabled !== false
+              const isAuto   = !!rule.automatic
               return (
-                <div key={index} className="card-sm">
+                <div key={index} style={{
+                  background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+                  border: `1px solid ${isActive ? 'rgba(71,85,105,0.6)' : 'rgba(71,85,105,0.25)'}`,
+                  borderRadius: '14px', padding: '14px 16px',
+                  opacity: isActive ? 1 : 0.55, transition: 'all 0.2s'
+                }}>
+                  {/* Ligne 1 : icône + nom + % + actions */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-
-                    {/* Icône + nom */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                       <div style={{
                         width: 40, height: 40, borderRadius: '10px', flexShrink: 0,
                         background: '#1e293b', border: '1px solid #334155',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}>
-                        <IconComponent size={18} style={{ color: '#60a5fa' }} />
+                        <IconComponent size={18} style={{ color: isActive ? '#60a5fa' : '#475569' }} />
                       </div>
                       {editingTipOut === index ? (
                         <input
@@ -705,19 +720,26 @@ export default function Team() {
                           }}
                         />
                       ) : (
-                        <span style={{ color: '#f8fafc', fontWeight: 500, fontSize: '14px', textTransform: 'capitalize' }}>
-                          {rule.position}
-                        </span>
+                        <div>
+                          <span style={{ color: '#f8fafc', fontWeight: 500, fontSize: '14px', textTransform: 'capitalize' }}>
+                            {rule.position}
+                          </span>
+                          {isAuto && (
+                            <span style={{
+                              marginLeft: 8, fontSize: 10, fontWeight: 700,
+                              background: 'rgba(139,92,246,0.15)', color: '#a78bfa',
+                              border: '1px solid rgba(139,92,246,0.3)', borderRadius: 4,
+                              padding: '1px 6px', verticalAlign: 'middle'
+                            }}>AUTO</span>
+                          )}
+                        </div>
                       )}
                     </div>
 
-                    {/* Pourcentage + actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                       {editingTipOut === index ? (
                         <input
-                          type="number"
-                          step="0.1"
-                          value={rule.percentage}
+                          type="number" step="0.1" value={rule.percentage}
                           onChange={(e) => handleUpdateTipOut(index, 'percentage', e.target.value)}
                           style={{
                             width: '70px', padding: '6px 10px', background: '#0f172a',
@@ -730,36 +752,47 @@ export default function Team() {
                           {(rule.percentage || 0).toFixed(1)}%
                         </span>
                       )}
-
                       {editingTipOut === index ? (
-                        <button
-                          onClick={() => setEditingTipOut(null)}
-                          style={{
-                            padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                            background: 'rgba(16,185,129,0.1)', color: '#34d399'
-                          }}
-                        >
+                        <button onClick={() => setEditingTipOut(null)} style={{ padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'rgba(16,185,129,0.1)', color: '#34d399' }}>
                           <Check size={16} />
                         </button>
                       ) : (
-                        <button
-                          onClick={() => setEditingTipOut(index)}
-                          style={{
-                            padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                            background: 'transparent', color: '#64748b'
-                          }}
-                        >
+                        <button onClick={() => setEditingTipOut(index)} style={{ padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'transparent', color: '#64748b' }}>
                           <Edit3 size={16} />
                         </button>
                       )}
-                      <button
-                        onClick={() => handleRemoveTipOut(index)}
-                        style={{
-                          padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                          background: 'rgba(239,68,68,0.08)', color: '#f87171'
-                        }}
-                      >
+                      <button onClick={() => handleRemoveTipOut(index)} style={{ padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', color: '#f87171' }}>
                         <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Ligne 2 : switches Actif + Automatique */}
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+
+                    {/* Switch Actif */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '8px 12px' }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: isActive ? '#34d399' : '#64748b' }}>
+                        {isActive ? '● Actif' : '○ Inactif'}
+                      </span>
+                      <button
+                        onClick={() => handleToggleRule(index, 'enabled')}
+                        style={{ width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', background: isActive ? '#10b981' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.2s' }}
+                      >
+                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: isActive ? 21 : 3, transition: 'left 0.2s' }} />
+                      </button>
+                    </div>
+
+                    {/* Switch Automatique */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '8px 12px' }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: isAuto ? '#a78bfa' : '#64748b' }}>
+                        {isAuto ? '⚡ Auto' : '✋ Manuel'}
+                      </span>
+                      <button
+                        onClick={() => handleToggleRule(index, 'automatic')}
+                        style={{ width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', background: isAuto ? '#8b5cf6' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.2s' }}
+                      >
+                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: isAuto ? 21 : 3, transition: 'left 0.2s' }} />
                       </button>
                     </div>
                   </div>
@@ -816,6 +849,32 @@ export default function Team() {
                 >
                   <Plus size={16} />
                   {t('common.add')}
+                </button>
+              </div>
+            </div>
+
+            {/* Switches pour la nouvelle règle */}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '8px 12px' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: newTipOut.enabled ? '#34d399' : '#64748b' }}>
+                  {newTipOut.enabled ? '● Actif' : '○ Inactif'}
+                </span>
+                <button
+                  onClick={() => setNewTipOut(p => ({ ...p, enabled: !p.enabled }))}
+                  style={{ width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', background: newTipOut.enabled ? '#10b981' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.2s' }}
+                >
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: newTipOut.enabled ? 21 : 3, transition: 'left 0.2s' }} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '8px 12px' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: newTipOut.automatic ? '#a78bfa' : '#64748b' }}>
+                  {newTipOut.automatic ? '⚡ Auto' : '✋ Manuel'}
+                </span>
+                <button
+                  onClick={() => setNewTipOut(p => ({ ...p, automatic: !p.automatic }))}
+                  style={{ width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', background: newTipOut.automatic ? '#8b5cf6' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.2s' }}
+                >
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: newTipOut.automatic ? 21 : 3, transition: 'left 0.2s' }} />
                 </button>
               </div>
             </div>

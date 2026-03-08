@@ -78,8 +78,9 @@ export default function CashOut() {
       if (restResult.status === 'fulfilled') {
         const rules = restResult.value.restaurant?.tipOutRules || []
         setDistributions(rules.map(rule => ({
-          rule,
-          enabled: rule.position?.toLowerCase() !== 'manager',
+          rule: { ...rule, enabled: rule.enabled !== false, automatic: !!rule.automatic },
+          // Respecte le réglage manager (enabled), mais pas manager = actif par défaut
+          enabled: rule.enabled !== false && rule.position?.toLowerCase() !== 'manager',
           selectedPersons: [],
           meals:     {},
           donations: {}
@@ -99,6 +100,9 @@ export default function CashOut() {
     dist.rule?.position?.toLowerCase() === 'kitchen_pool' ||
     dist.rule?.position?.toLowerCase() === 'cuisine'
 
+  // Règle automatique : pool cuisine OU règle marquée automatic par le manager
+  const isAutomatic = (dist) => isKitchenPool(dist) || dist.rule?.automatic === true
+
   // Montant de tip-out par distribution
   const calcDistTipTotal = (dist) => {
     const pct = parseFloat(dist.rule?.percentage) || 0
@@ -115,7 +119,7 @@ export default function CashOut() {
   const tipOutTotal = distributions
     .filter(d => d.enabled)
     .reduce((sum, d) => {
-      if (isKitchenPool(d)) return sum + calcDistTipTotal(d)
+      if (isAutomatic(d)) return sum + calcDistTipTotal(d)
       return sum + (d.selectedPersons.length > 0 ? calcDistTipTotal(d) : 0)
     }, 0)
 
@@ -207,12 +211,13 @@ export default function CashOut() {
         .map(d => {
           const pct = parseFloat(d.rule?.percentage) || 0
           const total = calcDistTipTotal(d)
-          const pool = isKitchenPool(d)
+          const pool = isAutomatic(d)
           return {
             position:        d.rule?.position,
             percentage:      pct,
             totalAmount:     total,
-            isPool:          pool,
+            isPool:          isKitchenPool(d),
+            isAutomatic:     pool,
             persons: pool ? [] : d.selectedPersons.map(p => {
               const tipAmt   = calcPersonTip(d, d.selectedPersons.length)
               const meal     = parseFloat(d.meals?.[p.id])     || 0
@@ -482,7 +487,7 @@ export default function CashOut() {
           )}
 
           {/* ── Pool Cuisine — carte dédiée, toujours en premier ── */}
-          {distributions.filter(d => isKitchenPool(d)).map((dist, idx) => {
+          {distributions.filter(d => isKitchenPool(d) && d.rule?.enabled !== false).map((dist, idx) => {
             const pct       = parseFloat(dist.rule?.percentage) || 0
             const distTotal = calcDistTipTotal(dist)
             return (
@@ -596,14 +601,63 @@ export default function CashOut() {
             )
           })}
 
-          {/* ── Séparateur si pool cuisine + autres règles ── */}
-          {distributions.some(d => isKitchenPool(d)) && distributions.some(d => !isKitchenPool(d)) && (
-            <div style={{
-              display:        'flex',
-              alignItems:     'center',
-              gap:            12,
-              marginBottom:   16
-            }}>
+          {/* ── Règles automatiques (non-pool) — violet ── */}
+          {distributions.filter(d => !isKitchenPool(d) && d.rule?.automatic && d.rule?.enabled !== false).map((dist, idx) => {
+            const pct       = parseFloat(dist.rule?.percentage) || 0
+            const distTotal = calcDistTipTotal(dist)
+            return (
+              <div key={`auto-${idx}`} style={{
+                background:   'rgba(139,92,246,0.08)',
+                border:       '2px solid rgba(139,92,246,0.35)',
+                borderRadius: 16,
+                padding:      '20px 24px',
+                marginBottom: 16
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Users size={22} color="#a78bfa" />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <p style={{ margin: 0, fontWeight: 700, color: '#a78bfa', fontSize: 16, textTransform: 'capitalize' }}>
+                          {dist.rule?.position}
+                        </p>
+                        <span style={{ fontSize: 10, background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.4)', borderRadius: 4, padding: '2px 6px', fontWeight: 700, letterSpacing: '0.05em' }}>AUTO</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(167,139,250,0.6)', marginTop: 2 }}>
+                        Versé automatiquement — {pct}% des ventes
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => toggleDistribution(distributions.indexOf(dist))}
+                    style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: dist.enabled ? '#8b5cf6' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.2s' }}
+                  >
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: dist.enabled ? 23 : 3, transition: 'left 0.2s' }} />
+                  </button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 12, padding: '14px 18px' }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>Montant distribué automatiquement</p>
+                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(167,139,250,0.6)' }}>${totalSales.toFixed(2)} × {pct}%</p>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 28, fontWeight: 900, color: dist.enabled ? '#a78bfa' : 'rgba(255,255,255,0.2)', opacity: dist.enabled ? 1 : 0.5, transition: 'all 0.2s' }}>
+                    ${distTotal.toFixed(2)}
+                  </p>
+                </div>
+                {!dist.enabled && (
+                  <p style={{ margin: '10px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'center' }}>
+                    Règle désactivée pour ce service
+                  </p>
+                )}
+              </div>
+            )
+          })}
+
+          {/* ── Séparateur si règles auto + règles manuelles ── */}
+          {distributions.some(d => isAutomatic(d) && d.rule?.enabled !== false) && distributions.some(d => !isAutomatic(d) && d.rule?.enabled !== false) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Distributions équipe
@@ -612,8 +666,8 @@ export default function CashOut() {
             </div>
           )}
 
-          {/* ── Distributions régulières (hors kitchen pool) ── */}
-          {distributions.filter(d => !isKitchenPool(d)).map((dist, distIdx) => {
+          {/* ── Distributions manuelles (hors automatiques) ── */}
+          {distributions.filter(d => !isAutomatic(d) && d.rule?.enabled !== false).map((dist, distIdx) => {
             const pos       = dist.rule?.position?.toLowerCase() || 'default'
             const colors    = ROLE_COLORS[pos] || ROLE_COLORS.bar
             const Icon      = ROLE_ICONS[pos]  || ROLE_ICONS.default
