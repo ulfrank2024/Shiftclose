@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import PWAUpdatePrompt from './components/PWAUpdatePrompt'
 import InstallPrompt from './components/InstallPrompt'
+import ScrollToTop from './components/ScrollToTop'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import AcceptInvite from './pages/AcceptInvite'
@@ -121,6 +122,8 @@ function SuperAdminRoute({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      {/* Scroll en haut à chaque changement de page */}
+      <ScrollToTop />
       {/* Bannière mise à jour PWA (s'affiche quand nouvelle version dispo) */}
       <PWAUpdatePrompt />
       {/* Bouton installation PWA (Android, Desktop, iOS) */}
