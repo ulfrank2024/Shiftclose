@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer'
 
 // Create transporter
 const createTransporter = () => {
-  // For production, use real SMTP settings
+  // Option 1 : SMTP personnalisé
   if (process.env.SMTP_HOST) {
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -15,7 +15,19 @@ const createTransporter = () => {
     })
   }
 
-  // For development, log emails to console
+  // Option 2 : Gmail via Nodemailer (NODEMAILER_EMAIL + NODEMAILER_PASSWORD)
+  if (process.env.NODEMAILER_EMAIL && process.env.NODEMAILER_PASSWORD) {
+    console.log('📬 Email service: Gmail (Nodemailer)')
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.NODEMAILER_EMAIL,
+        pass: process.env.NODEMAILER_PASSWORD
+      }
+    })
+  }
+
+  // Fallback dev : log dans la console
   console.log('⚠️  SMTP not configured - emails will be logged to console')
   return null
 }
@@ -44,7 +56,7 @@ export const sendEmail = async ({ to, subject, html, text }) => {
 
     // Send actual email
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"ShiftClose" <noreply@shiftclose.com>',
+      from: process.env.SMTP_FROM || `"ShiftClose" <${process.env.NODEMAILER_EMAIL || 'noreply@shiftclose.com'}>`,
       to,
       subject,
       html,
