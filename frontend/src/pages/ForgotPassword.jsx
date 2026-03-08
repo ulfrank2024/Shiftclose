@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useLanguage } from '../contexts/LanguageContext'
 import { Globe, Loader2, Mail, ArrowLeft, CheckCircle } from 'lucide-react'
-import api from '../services/api'
+import { authAPI } from '../services/api'
 
 export default function ForgotPassword() {
   const { t } = useTranslation()
@@ -20,10 +20,10 @@ export default function ForgotPassword() {
     setLoading(true)
 
     try {
-      await api.post('/auth/forgot-password', { email })
+      await authAPI.forgotPassword(email)
       setSuccess(true)
     } catch (err) {
-      setError(err.response?.data?.message || t('auth.forgotPasswordError'))
+      setError(err.message || t('auth.forgotPasswordError'))
     } finally {
       setLoading(false)
     }

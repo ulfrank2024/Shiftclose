@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useLanguage } from '../contexts/LanguageContext'
 import { Globe, Loader2, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react'
-import api from '../services/api'
+import { authAPI } from '../services/api'
 
 export default function ResetPassword() {
   const { t } = useTranslation()
@@ -35,13 +35,13 @@ export default function ResetPassword() {
     setLoading(true)
 
     try {
-      await api.post('/auth/reset-password', { token, password })
+      await authAPI.resetPassword(token, password)
       setSuccess(true)
       setTimeout(() => {
         navigate('/login')
       }, 3000)
     } catch (err) {
-      setError(err.response?.data?.message || t('auth.resetPasswordError'))
+      setError(err.message || t('auth.resetPasswordError'))
     } finally {
       setLoading(false)
     }
