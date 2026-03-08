@@ -40,12 +40,16 @@ function computePeriodBounds(frequency, startDay, referenceDate, today = new Dat
 // Retourne { id, start_date, end_date, status }
 // ─────────────────────────────────────────────────────────────
 export async function getOrCreateCurrentPeriod(restaurantId) {
-  // 1. Chercher une période active existante
+  const todayStr = new Date().toISOString().split('T')[0]
+
+  // 1. Chercher une période active qui contient aujourd'hui
   const { data: existing } = await supabase
     .from('pay_periods')
     .select('*')
     .eq('restaurant_id', restaurantId)
     .eq('status', 'active')
+    .lte('start_date', todayStr)
+    .gte('end_date', todayStr)
     .order('created_at', { ascending: false })
     .limit(1)
     .single()

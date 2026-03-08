@@ -620,8 +620,12 @@ export const getDashboardStats = async (req, res) => {
   try {
     const { restaurantId } = req.params
     const userId = req.user.id
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+
+    // Utiliser la date locale du client si fournie, sinon UTC midnight
+    // Le frontend envoie ?todayStart=2026-03-08T04:00:00.000Z (minuit local)
+    const today = req.query.todayStart
+      ? new Date(req.query.todayStart)
+      : (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d })()
 
     // Vérifier le rôle de l'utilisateur dans ce restaurant
     const { data: membership } = await supabase

@@ -150,8 +150,11 @@ export const restaurantAPI = {
 
 // Reports API
 export const reportAPI = {
-  getStats: (restaurantId) =>
-    fetchWithAuth(`/reports/${restaurantId}/stats`),
+  getStats: (restaurantId) => {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    return fetchWithAuth(`/reports/${restaurantId}/stats?todayStart=${todayStart.toISOString()}`)
+  },
 
   getAll: (restaurantId, filters = {}) => {
     const params = new URLSearchParams(filters).toString()
