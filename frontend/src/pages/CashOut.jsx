@@ -30,6 +30,21 @@ const ROLE_COLORS = {
   donation:     { bg: 'rgba(244,63,94,0.12)',  color: '#fb7185', border: 'rgba(244,63,94,0.3)' }
 }
 
+// ── Noms d'affichage des positions ────────────────────────────────────────────
+const POSITION_LABELS = {
+  kitchen_pool:  'Pool Cuisine',
+  cuisine:       'Pool Cuisine',
+  'pool cuisine':'Pool Cuisine',
+  bar:           'Bar',
+  bartender:     'Bartender',
+  commis:        'Commis',
+  host:          'Hôte',
+  manager:       'Manager',
+  server:        'Serveur'
+}
+const formatPosition = (pos) =>
+  pos ? (POSITION_LABELS[pos.toLowerCase()] ?? pos) : 'Position'
+
 // ── Composant principal ────────────────────────────────────────────────────────
 export default function CashOut() {
   const { t }                   = useTranslation()
@@ -621,7 +636,7 @@ export default function CashOut() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <p style={{ margin: 0, fontWeight: 700, color: '#a78bfa', fontSize: 16, textTransform: 'capitalize' }}>
-                          {dist.rule?.position}
+                          {formatPosition(dist.rule?.position)}
                         </p>
                         <span style={{ fontSize: 10, background: 'rgba(139,92,246,0.2)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.4)', borderRadius: 4, padding: '2px 6px', fontWeight: 700, letterSpacing: '0.05em' }}>AUTO</span>
                       </div>
@@ -708,7 +723,7 @@ export default function CashOut() {
                     </div>
                     <div>
                       <p style={{ margin: 0, fontWeight: 700, color: '#fff', fontSize: 15 }}>
-                        {dist.rule?.position || 'Position'}
+                        {formatPosition(dist.rule?.position)}
                       </p>
                       <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
                         {pct}% des ventes — <strong style={{ color: colors.color }}>${distTotal.toFixed(2)}</strong>
@@ -1102,7 +1117,7 @@ export default function CashOut() {
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: pool || count === 0 ? 0 : 6 }}>
                             <span style={{ fontSize: 13, color: colors.color, fontWeight: 600 }}>
-                              {dist.rule?.position}
+                              {formatPosition(dist.rule?.position)}
                               {pool ? ' (pool)' : count > 0 ? ` (${count} pers.)` : ''}
                             </span>
                             <span style={{ fontSize: 13, fontWeight: 700, color: colors.color }}>

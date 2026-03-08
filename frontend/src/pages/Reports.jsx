@@ -9,6 +9,21 @@ import {
   UtensilsCrossed, Calculator, Image, BarChart3, UserPlus
 } from 'lucide-react'
 
+// ── Noms d'affichage des positions ────────────────────────────
+const POSITION_LABELS = {
+  kitchen_pool:  'Pool Cuisine',
+  cuisine:       'Pool Cuisine',
+  'pool cuisine':'Pool Cuisine',
+  bar:           'Bar',
+  bartender:     'Bartender',
+  commis:        'Commis',
+  host:          'Hôte',
+  manager:       'Manager',
+  server:        'Serveur'
+}
+const formatPosition = (pos) =>
+  pos ? (POSITION_LABELS[pos.toLowerCase()] ?? pos) : 'Position'
+
 // ── Export CSV ────────────────────────────────────────────────
 function exportCSV(reports, filename) {
   const headers = [
@@ -51,7 +66,7 @@ function exportStatsCSV(reports, monthLabel) {
 
   validated.forEach(r => {
     ;(r.tipOutBreakdown || []).forEach(item => {
-      const pos = item.position || item.role || 'Autre'
+      const pos = formatPosition(item.position || item.role || 'Autre')
       const pct = parseFloat(item.percentage) || 0
       if (!byPosition[pos]) byPosition[pos] = { pct, total: 0, persons: {} }
 
@@ -627,7 +642,7 @@ export default function Reports() {
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span style={{ color: '#93c5fd', fontWeight: 600, fontSize: 13 }}>
-                            {item.position || item.role || 'Position'}
+                            {formatPosition(item.position || item.role)}
                           </span>
                           {item.isPool && (
                             <span style={{
