@@ -621,9 +621,8 @@ export const getDashboardStats = async (req, res) => {
     const { restaurantId } = req.params
     const userId = req.user.id
 
-    // Pour un restaurant, "aujourd'hui" = les 24 dernières heures glissantes.
-    // Cela couvre les shifts de nuit qui chevauchent minuit.
-    const today = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    // Fenêtre 24h pour les stats personnelles (tip-out donné, tips reçus)
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
     // Vérifier le rôle de l'utilisateur dans ce restaurant
     const { data: membership } = await supabase
@@ -635,12 +634,11 @@ export const getDashboardStats = async (req, res) => {
 
     const isManager = membership?.role === 'manager'
 
-    // ── Stats restaurant (tous les rapports du jour) ─────────
+    // ── Stats restaurant : TOUS les rapports (cumulatif) ─────
     const { data: allReports, error } = await supabase
       .from('reports')
       .select('*')
       .eq('restaurant_id', restaurantId)
-      .gte('created_at', today.toISOString())
 
     if (error) {
       return res.status(500).json({ error: 'Erreur lors de la récupération' })
@@ -654,20 +652,23 @@ export const getDashboardStats = async (req, res) => {
       if (report.status === 'validated') validatedReports++
     })
 
-    // ── Stats personnelles (propres rapports de l'utilisateur) ─
-    const myReports = allReports?.filter(r => r.employee_id === userId) || []
+    // ── Stats personnelles : mes rapports des 24 dernières heures ─
+    const myReports = allReports?.filter(
+      r => r.employee_id === userId &&
+           new Date(r.created_at) >= last24h
+    ) || []
     let myTipOutGiven = 0
     myReports.forEach(report => {
       myTipOutGiven += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
     })
 
-    // ── Tips reçus aujourd'hui (de la part d'autres serveurs) ─
+    // ── Tips reçus (24h glissantes) ───────────────────────────
     const { data: receivedRows } = await supabase
       .from('tip_distributions')
       .select('amount')
       .eq('restaurant_id', restaurantId)
       .eq('to_employee_id', userId)
-      .gte('created_at', today.toISOString())
+      .gte('created_at', last24h.toISOString())
 
     const tipsReceivedToday = (receivedRows || []).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0)
 

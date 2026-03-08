@@ -224,7 +224,7 @@ export default function Dashboard() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#4ade80', fontSize: '12px' }}>
                 <TrendingUp size={13} />
-                <span>{t('dashboard.today')}</span>
+                <span>Cumul total</span>
               </div>
             </div>
           </div>
@@ -251,7 +251,7 @@ export default function Dashboard() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#60a5fa', fontSize: '12px' }}>
                 <TrendingUp size={13} />
-                <span>{t('dashboard.today')}</span>
+                <span>Cumul total</span>
               </div>
             </div>
           </div>
