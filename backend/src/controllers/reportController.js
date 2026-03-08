@@ -590,34 +590,33 @@ export const getDashboardStats = async (req, res) => {
 
     const isManager = membership?.role === 'manager'
 
-    // Requête rapports : tous pour manager, seulement les siens pour serveur
-    let reportsQuery = supabase
+    // ── Stats restaurant (tous les rapports du jour) ─────────
+    const { data: allReports, error } = await supabase
       .from('reports')
       .select('*')
       .eq('restaurant_id', restaurantId)
       .gte('created_at', today.toISOString())
 
-    if (!isManager) {
-      reportsQuery = reportsQuery.eq('employee_id', userId)
-    }
-
-    const { data: reports, error } = await reportsQuery
-
     if (error) {
       return res.status(500).json({ error: 'Erreur lors de la récupération' })
     }
 
-    let totalSales = 0, tipOutGiven = 0, pendingReports = 0, validatedReports = 0
-
-    reports?.forEach(report => {
-      totalSales  += parseFloat(report.total_sales)   || 0
-      // tip_out_amount = ce qui a été redistribué à l'équipe
-      tipOutGiven += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
+    let totalSales = 0, totalTipOut = 0, pendingReports = 0, validatedReports = 0
+    allReports?.forEach(report => {
+      totalSales  += parseFloat(report.total_sales)    || 0
+      totalTipOut += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
       if (report.status === 'pending')   pendingReports++
       if (report.status === 'validated') validatedReports++
     })
 
-    // Tips reçus aujourd'hui (de la part d'autres serveurs)
+    // ── Stats personnelles (propres rapports de l'utilisateur) ─
+    const myReports = allReports?.filter(r => r.employee_id === userId) || []
+    let myTipOutGiven = 0
+    myReports.forEach(report => {
+      myTipOutGiven += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
+    })
+
+    // ── Tips reçus aujourd'hui (de la part d'autres serveurs) ─
     const { data: receivedRows } = await supabase
       .from('tip_distributions')
       .select('amount')
@@ -631,13 +630,18 @@ export const getDashboardStats = async (req, res) => {
       success: true,
       isManager,
       stats: {
+        // Restaurant (tous)
         totalSales,
-        tipOutGiven,          // Ce que le serveur/restaurant a redistribué
-        tipsReceivedToday,    // Ce que l'employé a reçu aujourd'hui
-        totalTips: tipOutGiven, // Rétrocompatibilité
+        totalTipOut,
         pendingReports,
         validatedReports,
-        totalReports: reports?.length || 0
+        totalReports: allReports?.length || 0,
+        // Personnels (propres à l'utilisateur connecté)
+        myTipOutGiven,
+        tipsReceivedToday,
+        // Rétrocompatibilité
+        tipOutGiven: isManager ? totalTipOut : myTipOutGiven,
+        totalTips: isManager ? totalTipOut : myTipOutGiven
       }
     })
   } catch (error) {

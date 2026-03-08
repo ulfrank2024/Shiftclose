@@ -230,40 +230,87 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Tip-Out distribué (serveur/manager) ou Tips reçus aujourd'hui (sans cashout) */}
-        <div style={{
-          background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
-          border: '1px solid rgba(71,85,105,0.5)',
-          borderRadius: '18px'
-        }}>
-          <div className="stat-card-inner">
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
-                <p className="stat-label">
-                  {canDoCashout
-                    ? (isManager ? 'Tip-Out total (restaurant)' : 'Mon Tip-Out distribué')
-                    : 'Pourboires reçus (aujourd\'hui)'}
-                </p>
-                <p className="stat-value">
-                  {loading ? '—' : canDoCashout
-                    ? `$${(stats.tipOutGiven || stats.totalTips || 0).toFixed(2)}`
-                    : `$${myTipsToday.toFixed(2)}`
-                  }
-                </p>
+        {/* Tip-Out total restaurant — manager uniquement */}
+        {canDoCashout && isManager && (
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px'
+          }}>
+            <div className="stat-card-inner">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                  <p className="stat-label">Tip-Out total (restaurant)</p>
+                  <p className="stat-value">
+                    {loading ? '—' : `$${(stats.totalTipOut || 0).toFixed(2)}`}
+                  </p>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
+                  <TrendingUp style={{ color: '#60a5fa' }} size={20} />
+                </div>
               </div>
-              <div className="stat-icon" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
-                <TrendingUp style={{ color: '#60a5fa' }} size={20} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#60a5fa', fontSize: '12px' }}>
+                <TrendingUp size={13} />
+                <span>{t('dashboard.today')}</span>
               </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#60a5fa', fontSize: '12px' }}>
-              <TrendingUp size={13} />
-              <span>{t('dashboard.today')}</span>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Tips reçus aujourd'hui — pour serveurs avec cashout */}
-        {canDoCashout && !isManager && (
+        {/* Pourboires reçus aujourd'hui — employés sans cashout */}
+        {!canDoCashout && (
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px'
+          }}>
+            <div className="stat-card-inner">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                  <p className="stat-label">Pourboires reçus (aujourd'hui)</p>
+                  <p className="stat-value">{loading ? '—' : `$${myTipsToday.toFixed(2)}`}</p>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
+                  <TrendingUp style={{ color: '#60a5fa' }} size={20} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#60a5fa', fontSize: '12px' }}>
+                <TrendingUp size={13} />
+                <span>{t('dashboard.today')}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mon Tip-Out distribué — tous ceux qui font cash out */}
+        {canDoCashout && (
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px'
+          }}>
+            <div className="stat-card-inner">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                  <p className="stat-label">Mon Tip-Out distribué</p>
+                  <p className="stat-value">
+                    {loading ? '—' : `$${(stats.myTipOutGiven || 0).toFixed(2)}`}
+                  </p>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
+                  <DollarSign style={{ color: '#fbbf24' }} size={20} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#fbbf24', fontSize: '12px' }}>
+                <TrendingUp size={13} />
+                <span>{t('dashboard.today')}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tips reçus aujourd'hui — tous ceux qui font cash out */}
+        {canDoCashout && (
           <div style={{
             background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
             border: '1px solid rgba(71,85,105,0.5)',
