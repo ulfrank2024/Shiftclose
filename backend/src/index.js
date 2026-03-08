@@ -74,9 +74,10 @@ app.use((err, req, res, next) => {
   })
 })
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`
+// Start server seulement en développement local (pas sur Vercel serverless)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`
   ╔═══════════════════════════════════════════╗
   ║                                           ║
   ║   ShiftClose API Server                   ║
@@ -85,6 +86,7 @@ app.listen(PORT, () => {
   ║                                           ║
   ╚═══════════════════════════════════════════╝
   `)
-})
+  })
+}
 
 export default app
