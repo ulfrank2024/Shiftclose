@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { reportAPI, restaurantAPI, payPeriodAPI } from '../services/api'
 import {
@@ -142,6 +142,7 @@ function getMonthOptions() {
 export default function Reports() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { isManager, currentRestaurant, user } = useAuth()
 
   const [filterStatus, setFilterStatus] = useState('all')
@@ -191,6 +192,18 @@ export default function Reports() {
       .then(res => setPeriods(res.periods || []))
       .catch(() => {})
   }, [currentRestaurant?.id])
+
+  // Ouvrir le modal "Créer une période" si ?createPeriod=1 dans l'URL
+  useEffect(() => {
+    if (searchParams.get('createPeriod') === '1' && isManager) {
+      setPeriodForm({ start_date: '', end_date: '' })
+      setPeriodFormError('')
+      setManagePeriodView('create')
+      setShowManagePeriodsModal(true)
+      // Nettoyer le paramètre URL
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, isManager])
 
   useEffect(() => {
     if (isManager && currentRestaurant?.id) {

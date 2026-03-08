@@ -14,7 +14,9 @@ import {
   Users,
   Sparkles,
   Calendar,
-  RefreshCw
+  RefreshCw,
+  CalendarPlus,
+  AlertTriangle
 } from 'lucide-react'
 
 export default function Dashboard() {
@@ -520,6 +522,52 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ── Alerte : aucune période active (manager) ── */}
+      {!loading && isManager && !stats.currentPeriod && (
+        <Link
+          to="/reports?createPeriod=1"
+          style={{ textDecoration: 'none' }}
+        >
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: '14px',
+            padding: '18px 22px',
+            background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(234,88,12,0.08))',
+            border: '1px solid rgba(245,158,11,0.35)',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            transition: 'border-color 0.2s'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: '12px', flexShrink: 0,
+                backgroundColor: 'rgba(245,158,11,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <AlertTriangle size={20} style={{ color: '#fbbf24' }} />
+              </div>
+              <div>
+                <p style={{ color: 'white', fontWeight: 600, fontSize: '14px', margin: '0 0 3px' }}>
+                  Aucune période de paie active
+                </p>
+                <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>
+                  Les serveurs ne peuvent pas soumettre de Cash Out tant qu'aucune période n'est ouverte.
+                </p>
+              </div>
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '7px',
+              padding: '9px 16px', borderRadius: '10px', border: 'none',
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              color: 'white', fontWeight: 600, fontSize: '13px', flexShrink: 0
+            }}>
+              <CalendarPlus size={15} />
+              Créer une période
+            </div>
+          </div>
+        </Link>
+      )}
+
       {/* ── Quick Actions + Recent Activity ── */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr', gap: '28px'
@@ -623,6 +671,33 @@ export default function Dashboard() {
                       <Users style={{ color: '#a78bfa' }} size={20} />
                     </div>
                     <span style={{ color: 'white', fontWeight: 500, fontSize: '15px' }}>{t('nav.team')}</span>
+                  </div>
+                  <ArrowRight style={{ color: '#64748b' }} size={18} />
+                </Link>
+              )}
+
+              {isManager && (
+                <Link to="/reports?createPeriod=1" style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '16px 18px',
+                  background: 'linear-gradient(to right, rgba(5,150,105,0.1), transparent)',
+                  borderRadius: '14px', border: `1px solid ${!stats.currentPeriod && !loading ? 'rgba(245,158,11,0.4)' : 'rgba(5,150,105,0.15)'}`,
+                  textDecoration: 'none', transition: 'all 0.2s', position: 'relative'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{
+                      width: '42px', height: '42px', borderRadius: '12px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: !stats.currentPeriod && !loading ? 'rgba(245,158,11,0.2)' : 'rgba(5,150,105,0.2)'
+                    }}>
+                      <CalendarPlus style={{ color: !stats.currentPeriod && !loading ? '#fbbf24' : '#34d399' }} size={20} />
+                    </div>
+                    <div>
+                      <span style={{ color: 'white', fontWeight: 500, fontSize: '15px' }}>Périodes de paie</span>
+                      {!stats.currentPeriod && !loading && (
+                        <p style={{ color: '#fbbf24', fontSize: '11px', margin: '2px 0 0' }}>Aucune période active</p>
+                      )}
+                    </div>
                   </div>
                   <ArrowRight style={{ color: '#64748b' }} size={18} />
                 </Link>
