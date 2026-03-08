@@ -19,9 +19,8 @@ export function AuthProvider({ children }) {
         return
       }
 
-      // Vérifie le token avec plusieurs tentatives (Render cold start = 30-60s)
-      // Délais : 4s, 8s, 14s → total ~26s avant abandon
-      const RETRY_DELAYS = [4000, 8000, 14000]
+      // Vérifie le token avec 2 tentatives (Vercel cold start < 2s)
+      // Délais : 2s, puis abandon
       const tryGetProfile = async (attempt = 0) => {
         try {
           const { user: userData } = await authAPI.getProfile()
@@ -30,9 +29,9 @@ export function AuthProvider({ children }) {
           const isNetworkError = !err.message || err.message === 'Failed to fetch' ||
             err.message.includes('NetworkError') || err.message.includes('network') ||
             err.message.includes('fetch') || err.message.includes('ECONNREFUSED')
-          if (isNetworkError && attempt < RETRY_DELAYS.length) {
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[attempt]))
-            return tryGetProfile(attempt + 1)
+          if (isNetworkError && attempt === 0) {
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            return tryGetProfile(1)
           }
           return { userData: null, error: err }
         }
