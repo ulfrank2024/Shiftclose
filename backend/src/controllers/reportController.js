@@ -645,8 +645,22 @@ export const getDashboardStats = async (req, res) => {
       .gte('created_at', today.toISOString())
 
     if (error) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération' })
+      return res.status(500).json({ error: 'Erreur lors de la récupération', debug: error.message })
     }
+
+    // Debug temporaire — à retirer après diagnostic
+    console.log('[STATS DEBUG]', {
+      restaurantId,
+      userId,
+      todayISO: today.toISOString(),
+      reportsFound: allReports?.length ?? 0,
+      reportSample: allReports?.[0] ? {
+        id: allReports[0].id,
+        created_at: allReports[0].created_at,
+        total_sales: allReports[0].total_sales,
+        employee_id: allReports[0].employee_id
+      } : null
+    })
 
     let totalSales = 0, totalTipOut = 0, pendingReports = 0, validatedReports = 0
     allReports?.forEach(report => {
