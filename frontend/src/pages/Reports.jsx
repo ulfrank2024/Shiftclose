@@ -158,6 +158,12 @@ export default function Reports() {
   const [closingPeriod, setClosingPeriod] = useState(false)
   const [showCloseModal, setShowCloseModal] = useState(false)
 
+  // Déplacement de rapport vers une autre période
+  const [showMovePeriodModal, setShowMovePeriodModal] = useState(false)
+  const [movingReport, setMovingReport] = useState(null)
+  const [moveTargetPeriodId, setMoveTargetPeriodId] = useState('')
+  const [movingLoading, setMovingLoading] = useState(false)
+
   // Manager: saisir pour un serveur
   const [teamMembers, setTeamMembers] = useState([])
   const [showForUserModal, setShowForUserModal] = useState(false)
@@ -301,6 +307,30 @@ export default function Reports() {
   const handleCashoutForUser = (member) => {
     setShowForUserModal(false)
     navigate(`/cash-out?forUserId=${member.id}&forUserName=${encodeURIComponent(member.firstName + ' ' + member.lastName)}`)
+  }
+
+  const handleOpenMovePeriod = (report) => {
+    setMovingReport(report)
+    setMoveTargetPeriodId('')
+    setShowMovePeriodModal(true)
+  }
+
+  const handleMovePeriod = async () => {
+    if (!movingReport || !moveTargetPeriodId) return
+    setMovingLoading(true)
+    try {
+      await reportAPI.movePeriod(movingReport.id, moveTargetPeriodId)
+      setReports(prev => prev.map(r =>
+        r.id === movingReport.id ? { ...r, payPeriodId: moveTargetPeriodId } : r
+      ))
+      setShowMovePeriodModal(false)
+      setMovingReport(null)
+      fetchReports()
+    } catch (err) {
+      setError(err.message || 'Erreur lors du déplacement.')
+    } finally {
+      setMovingLoading(false)
+    }
   }
 
   const getStatusBadge = (status) => {
@@ -568,6 +598,19 @@ export default function Reports() {
                       </>
                     )}
 
+                    {isManager && periods.length > 0 && (
+                      <button
+                        onClick={() => handleOpenMovePeriod(report)}
+                        title="Changer de période"
+                        style={{
+                          padding: '7px', borderRadius: '9px', border: '1px solid rgba(139,92,246,0.3)',
+                          cursor: 'pointer', backgroundColor: 'rgba(139,92,246,0.08)', color: '#a78bfa'
+                        }}
+                      >
+                        <CalendarDays size={16} />
+                      </button>
+                    )}
+
                     <button
                       onClick={() => setSelectedReport(report)}
                       title={t('reports.details')}
@@ -625,7 +668,7 @@ export default function Reports() {
                 )}
 
                 <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', margin: '0 0 24px' }}>
-                  La clôture va <strong style={{ color: 'white' }}>générer un export CSV</strong> de la période et créer automatiquement la période suivante.
+                  La clôture va <strong style={{ color: 'white' }}>générer un export CSV</strong> de la période. Vous devrez créer manuellement la prochaine période dans les paramètres.
                 </p>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -949,6 +992,80 @@ export default function Reports() {
           </div>
         )
       })()}
+
+      {/* ── Modal Changer de période ── */}
+      {showMovePeriodModal && movingReport && (
+        <div style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px'
+        }} onClick={e => e.target === e.currentTarget && setShowMovePeriodModal(false)}>
+          <div style={{
+            background: 'rgba(15,23,42,0.97)', border: '1px solid rgba(139,92,246,0.3)',
+            borderRadius: '20px', maxWidth: '400px', width: '100%',
+            backdropFilter: 'blur(20px)', padding: '24px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div>
+                <h2 style={{ color: 'white', fontWeight: 700, fontSize: '17px', margin: '0 0 4px' }}>Changer de période</h2>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>{movingReport.employeeName}</p>
+              </div>
+              <button onClick={() => setShowMovePeriodModal(false)} style={{ padding: '6px', border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px' }}>
+                Déplacer vers la période :
+              </label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={moveTargetPeriodId}
+                  onChange={e => setMoveTargetPeriodId(e.target.value)}
+                  style={{
+                    width: '100%', padding: '10px 32px 10px 14px', borderRadius: '10px',
+                    backgroundColor: '#1e293b', border: '1px solid #334155',
+                    color: 'white', fontSize: '14px', appearance: 'none'
+                  }}
+                >
+                  <option value="">— Sélectionner une période —</option>
+                  {periods.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {formatPeriodLabel(p)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowMovePeriodModal(false)}
+                style={{ flex: 1, padding: '11px', borderRadius: '10px', border: '1px solid #334155', backgroundColor: 'transparent', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleMovePeriod}
+                disabled={movingLoading || !moveTargetPeriodId}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  padding: '11px', borderRadius: '10px', border: 'none',
+                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                  color: 'white', fontWeight: 600, cursor: (movingLoading || !moveTargetPeriodId) ? 'not-allowed' : 'pointer',
+                  opacity: (movingLoading || !moveTargetPeriodId) ? 0.6 : 1
+                }}
+              >
+                {movingLoading
+                  ? <><Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> Déplacement...</>
+                  : <><CalendarDays size={15} /> Confirmer</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

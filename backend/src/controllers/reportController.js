@@ -93,9 +93,15 @@ export const createReport = async (req, res) => {
     const legacyCashInHand = cashInHand || physicalCash
     const difference       = legacyCashInHand - expectedCash
 
-    // ── Récupérer ou créer la période de paie courante ───────
+    // ── Récupérer la période de paie courante ───────────────
     const currentPeriod = await getOrCreateCurrentPeriod(restaurantId)
-    const payPeriodId = currentPeriod?.id || null
+    if (!currentPeriod) {
+      return res.status(403).json({
+        error: 'Aucune période de paie active. Contactez votre manager.',
+        code: 'NO_ACTIVE_PERIOD'
+      })
+    }
+    const payPeriodId = currentPeriod.id
 
     // ── Insert report ────────────────────────────────────────
     const reportData = {
@@ -763,6 +769,67 @@ export const getDashboardStats = async (req, res) => {
     })
   } catch (error) {
     console.error('Get dashboard stats error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// PUT /reports/:reportId/move-period
+// Déplacer un rapport vers une autre période (manager seulement)
+// ─────────────────────────────────────────────────────────────
+export const moveReportPeriod = async (req, res) => {
+  try {
+    const { reportId } = req.params
+    const { periodId } = req.body
+
+    if (!periodId) {
+      return res.status(400).json({ error: 'periodId requis' })
+    }
+
+    // Vérifier que le rapport existe
+    const { data: report, error: reportErr } = await supabase
+      .from('reports')
+      .select('restaurant_id')
+      .eq('id', reportId)
+      .single()
+
+    if (reportErr || !report) {
+      return res.status(404).json({ error: 'Rapport introuvable' })
+    }
+
+    // Vérifier que le manager a accès à ce restaurant
+    const { data: membership } = await supabase
+      .from('user_restaurants')
+      .select('role')
+      .eq('user_id', req.user.id)
+      .eq('restaurant_id', report.restaurant_id)
+      .single()
+
+    if (!membership || membership.role !== 'manager') {
+      return res.status(403).json({ error: 'Accès refusé' })
+    }
+
+    // Vérifier que la période cible appartient au même restaurant
+    const { data: targetPeriod, error: periodErr } = await supabase
+      .from('pay_periods')
+      .select('id')
+      .eq('id', periodId)
+      .eq('restaurant_id', report.restaurant_id)
+      .single()
+
+    if (periodErr || !targetPeriod) {
+      return res.status(404).json({ error: 'Période introuvable' })
+    }
+
+    // Mettre à jour le rapport et ses distributions
+    await Promise.all([
+      supabase.from('reports').update({ pay_period_id: periodId }).eq('id', reportId),
+      supabase.from('tip_distributions').update({ pay_period_id: periodId }).eq('report_id', reportId)
+    ])
+
+    res.json({ success: true })
+  } catch (error) {
+    console.error('moveReportPeriod error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

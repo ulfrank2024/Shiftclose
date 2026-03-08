@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { verifyToken, requireRole, requireRestaurantAccess } from '../middleware/auth.js'
 import {
   getCurrentPeriod,
+  createPeriod,
   listPeriods,
   updatePeriod,
   closePeriod,
@@ -19,6 +20,9 @@ router.get('/:restaurantId/current', requireRestaurantAccess, getCurrentPeriod)
 
 // GET  /api/pay-periods/:restaurantId          → Liste toutes les périodes
 router.get('/:restaurantId', requireRestaurantAccess, listPeriods)
+
+// POST /api/pay-periods/:restaurantId          → Créer une période (manager)
+router.post('/:restaurantId', requireRole('manager'), createPeriod)
 
 // GET  /api/pay-periods/:restaurantId/:periodId/summary → Résumé (manager)
 router.get('/:restaurantId/:periodId/summary', requireRole('manager'), getPeriodSummary)

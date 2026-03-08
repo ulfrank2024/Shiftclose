@@ -36,14 +36,12 @@ function computePeriodBounds(frequency, startDay, referenceDate, today = new Dat
 }
 
 // ─────────────────────────────────────────────────────────────
-// Internal : Récupère ou crée la période active du restaurant
-// Retourne { id, start_date, end_date, status }
+// Internal : Récupère la période active du restaurant (sans auto-création)
+// Retourne { id, start_date, end_date, status } ou null
 // ─────────────────────────────────────────────────────────────
 export async function getOrCreateCurrentPeriod(restaurantId) {
   const todayStr = new Date().toISOString().split('T')[0]
-
-  // 1. Chercher une période active qui contient aujourd'hui
-  const { data: existing } = await supabase
+  const { data } = await supabase
     .from('pay_periods')
     .select('*')
     .eq('restaurant_id', restaurantId)
@@ -53,45 +51,12 @@ export async function getOrCreateCurrentPeriod(restaurantId) {
     .order('created_at', { ascending: false })
     .limit(1)
     .single()
-
-  if (existing) return existing
-
-  // 2. Lire la config du restaurant pour calculer les bornes
-  const { data: restaurant } = await supabase
-    .from('restaurants')
-    .select('pay_period_frequency, pay_period_start_day, pay_period_reference_date')
-    .eq('id', restaurantId)
-    .single()
-
-  const frequency     = restaurant?.pay_period_frequency      || 'biweekly'
-  const startDay      = restaurant?.pay_period_start_day      ?? 1
-  const referenceDate = restaurant?.pay_period_reference_date || null
-
-  const bounds = computePeriodBounds(frequency, startDay, referenceDate)
-
-  // 3. Créer la nouvelle période
-  const { data: newPeriod, error } = await supabase
-    .from('pay_periods')
-    .insert({
-      restaurant_id: restaurantId,
-      start_date:    bounds.start_date,
-      end_date:      bounds.end_date,
-      status:        'active'
-    })
-    .select()
-    .single()
-
-  if (error) {
-    console.error('Error creating pay period:', error)
-    return null
-  }
-
-  return newPeriod
+  return data || null
 }
 
 // ─────────────────────────────────────────────────────────────
 // GET /pay-periods/:restaurantId/current
-// Retourne (ou crée) la période active
+// Retourne la période active ou null
 // ─────────────────────────────────────────────────────────────
 export const getCurrentPeriod = async (req, res) => {
   try {
@@ -99,7 +64,7 @@ export const getCurrentPeriod = async (req, res) => {
     const period = await getOrCreateCurrentPeriod(restaurantId)
 
     if (!period) {
-      return res.status(500).json({ error: 'Impossible de récupérer la période courante' })
+      return res.json({ success: true, period: null, stats: null })
     }
 
     // Stats rapides de la période
@@ -248,41 +213,70 @@ export const closePeriod = async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la clôture' })
     }
 
-    // Calculer les bornes de la prochaine période
-    const { data: restaurant } = await supabase
-      .from('restaurants')
-      .select('pay_period_frequency, pay_period_start_day, pay_period_reference_date')
-      .eq('id', restaurantId)
-      .single()
-
-    const frequency = restaurant?.pay_period_frequency || 'biweekly'
-    const daysInCycle = frequency === 'weekly' ? 7 : 14
-
-    const nextStart = new Date(new Date(period.end_date).getTime() + 86400000)
-    const nextEnd   = new Date(nextStart.getTime() + (daysInCycle - 1) * 86400000)
-
-    const { data: nextPeriod } = await supabase
-      .from('pay_periods')
-      .insert({
-        restaurant_id: restaurantId,
-        start_date:    nextStart.toISOString().split('T')[0],
-        end_date:      nextEnd.toISOString().split('T')[0],
-        status:        'active'
-      })
-      .select()
-      .single()
-
     // Résumé pour export CSV
     const summary = await buildPeriodSummary(restaurantId, periodId)
 
     res.json({
-      success:    true,
+      success:      true,
       closedPeriod: formatPeriod({ ...period, status: 'closed' }),
-      nextPeriod:   nextPeriod ? formatPeriod(nextPeriod) : null,
       summary
     })
   } catch (error) {
     console.error('closePeriod error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// POST /pay-periods/:restaurantId
+// Créer manuellement une nouvelle période (manager seulement)
+// ─────────────────────────────────────────────────────────────
+export const createPeriod = async (req, res) => {
+  try {
+    const { restaurantId } = req.params
+    const { start_date, end_date } = req.body
+
+    if (!start_date || !end_date) {
+      return res.status(400).json({ error: 'start_date et end_date requis' })
+    }
+
+    if (new Date(start_date) >= new Date(end_date)) {
+      return res.status(400).json({ error: 'La date de fin doit être après la date de début' })
+    }
+
+    // Vérifier chevauchement avec une période active existante
+    const { data: overlap } = await supabase
+      .from('pay_periods')
+      .select('id')
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'active')
+      .lte('start_date', end_date)
+      .gte('end_date', start_date)
+      .limit(1)
+      .single()
+
+    if (overlap) {
+      return res.status(409).json({ error: 'Une période active existe déjà sur cette plage de dates' })
+    }
+
+    const { data: newPeriod, error } = await supabase
+      .from('pay_periods')
+      .insert({
+        restaurant_id: restaurantId,
+        start_date,
+        end_date,
+        status: 'active'
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de la création' })
+    }
+
+    res.status(201).json({ success: true, period: formatPeriod(newPeriod) })
+  } catch (error) {
+    console.error('createPeriod error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

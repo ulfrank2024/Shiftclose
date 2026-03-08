@@ -6,7 +6,8 @@ import {
   getReport,
   validateReport,
   getDashboardStats,
-  getMyReceivedTips
+  getMyReceivedTips,
+  moveReportPeriod
 } from '../controllers/reportController.js'
 
 const router = Router()
@@ -31,5 +32,8 @@ router.get('/detail/:reportId', getReport)
 
 // Validate/reject report (Manager only)
 router.put('/:reportId/validate', requireRole('manager'), validateReport)
+
+// Move report to another pay period (Manager only)
+router.put('/:reportId/move-period', requireRole('manager'), moveReportPeriod)
 
 export default router

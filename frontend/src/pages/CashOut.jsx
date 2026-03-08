@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { reportAPI, restaurantAPI } from '../services/api'
+import { reportAPI, restaurantAPI, payPeriodAPI } from '../services/api'
 import {
   Check, AlertCircle, Loader,
   ChevronLeft, ChevronRight, Users,
@@ -62,6 +62,8 @@ export default function CashOut() {
   const [error, setError]           = useState('')
   const [teamMembers, setTeamMembers] = useState([])
   const [tipOutRules, setTipOutRules] = useState([])
+  const [noPeriod, setNoPeriod]     = useState(false)
+  const [periodCheckDone, setPeriodCheckDone] = useState(false)
 
   const totalSteps  = 4
   const stepLabels  = ['Ventes', 'Distributions', 'Preuve', 'Résumé']
@@ -75,6 +77,20 @@ export default function CashOut() {
   // Preuve photo
   const [proofFile, setProofFile]       = useState(null)
   const [proofPreview, setProofPreview] = useState(null)
+
+  // ── Vérification période de paie active ───────────────────────────────────
+  useEffect(() => {
+    if (!currentRestaurant?.id) return
+    payPeriodAPI.getCurrent(currentRestaurant.id)
+      .then(res => {
+        setNoPeriod(!res.period)
+        setPeriodCheckDone(true)
+      })
+      .catch(() => {
+        // En cas d'erreur réseau, on laisse passer (le backend bloquera si besoin)
+        setPeriodCheckDone(true)
+      })
+  }, [currentRestaurant?.id])
 
   // ── Chargement équipe + règles tip-out ─────────────────────────────────────
   useEffect(() => {
@@ -315,6 +331,38 @@ export default function CashOut() {
   }
 
   // ── Rendu ──────────────────────────────────────────────────────────────────
+
+  // Écran bloquant si aucune période active
+  if (periodCheckDone && noPeriod) {
+    return (
+      <div style={{ maxWidth: 480, margin: '60px auto', padding: '16px', textAlign: 'center' }}>
+        <div style={{
+          background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)',
+          borderRadius: '20px', padding: '40px 32px'
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <h2 style={{ color: 'white', fontWeight: 700, fontSize: '20px', margin: '0 0 12px' }}>
+            Aucune période de paie active
+          </h2>
+          <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: 1.6, margin: '0 0 28px' }}>
+            Votre manager n'a pas encore ouvert de période de paie.<br />
+            Contactez votre manager pour débloquer le Cash Out.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              padding: '12px 24px', borderRadius: '12px', border: 'none',
+              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              color: 'white', fontWeight: 600, fontSize: '15px', cursor: 'pointer'
+            }}
+          >
+            ← Retour au tableau de bord
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 80px' }}>
 

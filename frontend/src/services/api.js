@@ -193,7 +193,13 @@ export const reportAPI = {
     }),
 
   getMyTips: (restaurantId) =>
-    fetchWithAuth(`/reports/${restaurantId}/my-tips`)
+    fetchWithAuth(`/reports/${restaurantId}/my-tips`),
+
+  movePeriod: (reportId, periodId) =>
+    fetchWithAuth(`/reports/${reportId}/move-period`, {
+      method: 'PUT',
+      body: JSON.stringify({ periodId })
+    })
 }
 
 // Deletion Requests API
@@ -310,7 +316,13 @@ export const payPeriodAPI = {
     }),
 
   getSummary: (restaurantId, periodId) =>
-    fetchWithAuth(`/pay-periods/${restaurantId}/${periodId}/summary`)
+    fetchWithAuth(`/pay-periods/${restaurantId}/${periodId}/summary`),
+
+  create: (restaurantId, data) =>
+    fetchWithAuth(`/pay-periods/${restaurantId}`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
 }
 
 // Admin API (Super Admin only)
