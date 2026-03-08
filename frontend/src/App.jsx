@@ -29,13 +29,47 @@ function ProtectedRoute({ children }) {
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">Chargement...</p>
+          <p className="text-slate-400 text-sm">Connexion en cours…</p>
+          <p className="text-slate-600 text-xs mt-2">Le serveur démarre, veuillez patienter</p>
         </div>
       </div>
     )
   }
 
   if (!isAuthenticated) {
+    // Si un token existe encore → le backend n'a pas répondu (cold start Render)
+    // On ne redirige PAS vers login : on affiche un écran "réessayer"
+    const hasToken = !!localStorage.getItem('token')
+    if (hasToken) {
+      return (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+          <div className="text-center max-w-sm">
+            <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <h2 style={{ color: 'white', fontSize: '18px', fontWeight: 700, marginBottom: '10px' }}>
+              Serveur indisponible
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
+              Le serveur met du temps à démarrer. Cela arrive après une période d'inactivité.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '12px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                color: 'white', fontWeight: 600, fontSize: '15px'
+              }}
+            >
+              Réessayer
+            </button>
+          </div>
+        </div>
+      )
+    }
     return <Navigate to="/login" replace />
   }
 
