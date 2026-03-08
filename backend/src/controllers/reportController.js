@@ -570,37 +570,75 @@ export const validateReport = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // Dashboard stats
+// Manager → stats globales du restaurant
+// Serveur  → ses propres rapports + tips reçus aujourd'hui
 // ─────────────────────────────────────────────────────────────
 export const getDashboardStats = async (req, res) => {
   try {
     const { restaurantId } = req.params
+    const userId = req.user.id
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const { data: reports, error } = await supabase
+    // Vérifier le rôle de l'utilisateur dans ce restaurant
+    const { data: membership } = await supabase
+      .from('user_restaurants')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('restaurant_id', restaurantId)
+      .single()
+
+    const isManager = membership?.role === 'manager'
+
+    // Requête rapports : tous pour manager, seulement les siens pour serveur
+    let reportsQuery = supabase
       .from('reports')
       .select('*')
       .eq('restaurant_id', restaurantId)
       .gte('created_at', today.toISOString())
 
+    if (!isManager) {
+      reportsQuery = reportsQuery.eq('employee_id', userId)
+    }
+
+    const { data: reports, error } = await reportsQuery
+
     if (error) {
       return res.status(500).json({ error: 'Erreur lors de la récupération' })
     }
 
-    let totalSales = 0, totalTips = 0, pendingReports = 0, validatedReports = 0
+    let totalSales = 0, tipOutGiven = 0, pendingReports = 0, validatedReports = 0
 
     reports?.forEach(report => {
-      totalSales += parseFloat(report.total_sales)  || 0
-      // tip_out_amount = total distribué à l'équipe (nouveau système)
-      // total_tips = ancien système (cashTips + cardTips), souvent 0
-      totalTips  += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
+      totalSales  += parseFloat(report.total_sales)   || 0
+      // tip_out_amount = ce qui a été redistribué à l'équipe
+      tipOutGiven += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
       if (report.status === 'pending')   pendingReports++
       if (report.status === 'validated') validatedReports++
     })
 
+    // Tips reçus aujourd'hui (de la part d'autres serveurs)
+    const { data: receivedRows } = await supabase
+      .from('tip_distributions')
+      .select('amount')
+      .eq('restaurant_id', restaurantId)
+      .eq('to_employee_id', userId)
+      .gte('created_at', today.toISOString())
+
+    const tipsReceivedToday = (receivedRows || []).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0)
+
     res.json({
       success: true,
-      stats: { totalSales, totalTips, pendingReports, validatedReports, totalReports: reports?.length || 0 }
+      isManager,
+      stats: {
+        totalSales,
+        tipOutGiven,          // Ce que le serveur/restaurant a redistribué
+        tipsReceivedToday,    // Ce que l'employé a reçu aujourd'hui
+        totalTips: tipOutGiven, // Rétrocompatibilité
+        pendingReports,
+        validatedReports,
+        totalReports: reports?.length || 0
+      }
     })
   } catch (error) {
     console.error('Get dashboard stats error:', error)

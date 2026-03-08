@@ -24,7 +24,8 @@ export default function Dashboard() {
 
   const [stats, setStats] = useState({
     totalSales: 0,
-    totalTips: 0,
+    tipOutGiven: 0,
+    tipsReceivedToday: 0,
     pendingReports: 0,
     validatedReports: 0,
     totalReports: 0
@@ -42,7 +43,7 @@ export default function Dashboard() {
         const today = new Date().toISOString().split('T')[0]
 
         if (canDoCashout) {
-          // Serveur / Manager avec cash out : stats du restaurant + activité récente
+          // Serveur / Manager avec cash out : stats + activité récente
           const [statsRes, reportsRes] = await Promise.allSettled([
             reportAPI.getStats(currentRestaurant.id),
             reportAPI.getAll(currentRestaurant.id)
@@ -229,7 +230,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Pourboires — reçus aujourd'hui pour employés sans cashout, total pour les autres */}
+        {/* Tip-Out distribué (serveur/manager) ou Tips reçus aujourd'hui (sans cashout) */}
         <div style={{
           background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
           border: '1px solid rgba(71,85,105,0.5)',
@@ -239,11 +240,13 @@ export default function Dashboard() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
               <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
                 <p className="stat-label">
-                  {canDoCashout ? t('dashboard.totalTips') : 'Pourboires reçus (aujourd\'hui)'}
+                  {canDoCashout
+                    ? (isManager ? 'Tip-Out total (restaurant)' : 'Mon Tip-Out distribué')
+                    : 'Pourboires reçus (aujourd\'hui)'}
                 </p>
                 <p className="stat-value">
                   {loading ? '—' : canDoCashout
-                    ? `$${stats.totalTips.toFixed(2)}`
+                    ? `$${(stats.tipOutGiven || stats.totalTips || 0).toFixed(2)}`
                     : `$${myTipsToday.toFixed(2)}`
                   }
                 </p>
@@ -258,6 +261,33 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Tips reçus aujourd'hui — pour serveurs avec cashout */}
+        {canDoCashout && !isManager && (
+          <div style={{
+            background: 'linear-gradient(145deg, #1e293b 0%, #1a2332 100%)',
+            border: '1px solid rgba(71,85,105,0.5)',
+            borderRadius: '18px'
+          }}>
+            <div className="stat-card-inner">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                  <p className="stat-label">Tips reçus (aujourd'hui)</p>
+                  <p className="stat-value">
+                    {loading ? '—' : `$${(stats.tipsReceivedToday || 0).toFixed(2)}`}
+                  </p>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
+                  <DollarSign style={{ color: '#34d399' }} size={20} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#34d399', fontSize: '12px' }}>
+                <TrendingUp size={13} />
+                <span>De mes collègues</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Pending Reports — seulement si cashout activé */}
         {canDoCashout && (
