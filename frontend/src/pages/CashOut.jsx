@@ -990,26 +990,46 @@ export default function CashOut() {
           </div>
 
           {/* Bouton passer cette étape */}
-          <button
-            onClick={handleNext}
-            style={{
-              width:          '100%',
-              padding:        '14px',
-              background:     'transparent',
-              border:         '1px solid rgba(255,255,255,0.12)',
-              borderRadius:   12,
-              color:          'rgba(255,255,255,0.5)',
-              cursor:         'pointer',
-              fontSize:       14,
-              display:        'flex',
-              alignItems:     'center',
-              justifyContent: 'center',
-              gap:            8
-            }}
-          >
-            <SkipForward size={16} />
-            Passer cette étape
-          </button>
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+            <button
+              onClick={handleBack}
+              style={{
+                padding:        '14px 20px',
+                background:     'rgba(255,255,255,0.05)',
+                border:         '1px solid rgba(255,255,255,0.12)',
+                borderRadius:   12,
+                color:          'rgba(255,255,255,0.7)',
+                cursor:         'pointer',
+                fontSize:       14,
+                display:        'flex',
+                alignItems:     'center',
+                gap:            6
+              }}
+            >
+              <ChevronLeft size={18} />
+              Retour
+            </button>
+            <button
+              onClick={handleNext}
+              style={{
+                flex:           1,
+                padding:        '14px',
+                background:     'transparent',
+                border:         '1px solid rgba(255,255,255,0.12)',
+                borderRadius:   12,
+                color:          'rgba(255,255,255,0.5)',
+                cursor:         'pointer',
+                fontSize:       14,
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                gap:            8
+              }}
+            >
+              <SkipForward size={16} />
+              Passer cette étape
+            </button>
+          </div>
         </div>
       )}
 
