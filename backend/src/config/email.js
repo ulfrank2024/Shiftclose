@@ -1,39 +1,25 @@
-import nodemailer from 'nodemailer'
-import dotenv from 'dotenv'
+import { Resend } from 'resend'
 
-dotenv.config()
-
-// Gmail transporter configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.NODEMAILER_EMAIL,
-    pass: process.env.NODEMAILER_PASSWORD
-  }
-})
-
-// Verify connection
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ Email configuration error:', error.message)
-  } else {
-    console.log('✅ Email server ready')
-  }
-})
+const resend = new Resend(process.env.RESEND_API_KEY)
+const FROM = 'ChefTips <noreply@cheftips.app>'
 
 export const sendEmail = async ({ to, subject, html }) => {
   try {
-    const info = await transporter.sendMail({
-      from: `"ShiftClose" <${process.env.NODEMAILER_EMAIL}>`,
-      to,
-      subject,
-      html
-    })
-    console.log('Email sent:', info.messageId)
-    return { success: true, messageId: info.messageId }
-  } catch (error) {
-    console.error('Email error:', error)
-    return { success: false, error: error.message }
+    if (!process.env.RESEND_API_KEY) {
+      console.log('⚠️  RESEND_API_KEY non configuré — email loggué seulement')
+      console.log(`To: ${to}\nSubject: ${subject}`)
+      return { success: true, messageId: 'dev-mode' }
+    }
+    const { data, error } = await resend.emails.send({ from: FROM, to, subject, html })
+    if (error) {
+      console.error('Resend error:', error)
+      return { success: false, error: error.message }
+    }
+    console.log('Email sent via Resend:', data.id)
+    return { success: true, messageId: data.id }
+  } catch (err) {
+    console.error('Email error:', err)
+    return { success: false, error: err.message }
   }
 }
 
@@ -381,4 +367,4 @@ export const emailTemplates = {
   })
 }
 
-export default transporter
+export default { sendEmail }
