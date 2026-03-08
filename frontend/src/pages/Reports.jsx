@@ -7,7 +7,7 @@ import {
   FileText, Check, X, Clock, ChevronDown, Download,
   Eye, Loader, AlertCircle, DollarSign, Users, Gift,
   UtensilsCrossed, Calculator, Image, BarChart3, UserPlus,
-  CalendarDays, Lock
+  CalendarDays, Lock, Plus, Pencil
 } from 'lucide-react'
 
 // ── Noms d'affichage des positions ────────────────────────────
@@ -157,6 +157,15 @@ export default function Reports() {
   const [periods, setPeriods] = useState([])
   const [closingPeriod, setClosingPeriod] = useState(false)
   const [showCloseModal, setShowCloseModal] = useState(false)
+
+  // Gestion des périodes (modal dédié)
+  const [showManagePeriodsModal, setShowManagePeriodsModal] = useState(false)
+  const [managePeriodView, setManagePeriodView] = useState('list') // 'list' | 'create' | 'edit'
+  const [editingPeriod, setEditingPeriod] = useState(null)
+  const [periodForm, setPeriodForm] = useState({ start_date: '', end_date: '' })
+  const [periodFormError, setPeriodFormError] = useState('')
+  const [savingPeriod, setSavingPeriod] = useState(false)
+  const [closingPeriodId, setClosingPeriodId] = useState(null)
 
   // Déplacement de rapport vers une autre période
   const [showMovePeriodModal, setShowMovePeriodModal] = useState(false)
@@ -309,6 +318,69 @@ export default function Reports() {
     navigate(`/cash-out?forUserId=${member.id}&forUserName=${encodeURIComponent(member.firstName + ' ' + member.lastName)}`)
   }
 
+  const refreshPeriods = () => {
+    if (!currentRestaurant?.id) return
+    payPeriodAPI.getAll(currentRestaurant.id)
+      .then(res => setPeriods(res.periods || []))
+      .catch(() => {})
+  }
+
+  const openManagePeriods = () => {
+    setManagePeriodView('list')
+    setPeriodFormError('')
+    setShowManagePeriodsModal(true)
+  }
+
+  const handleCreatePeriod = async () => {
+    setPeriodFormError('')
+    if (!periodForm.start_date || !periodForm.end_date) return setPeriodFormError('Les deux dates sont requises.')
+    if (periodForm.start_date >= periodForm.end_date) return setPeriodFormError('La date de fin doit être après la date de début.')
+    setSavingPeriod(true)
+    try {
+      await payPeriodAPI.create(currentRestaurant.id, periodForm)
+      setPeriodForm({ start_date: '', end_date: '' })
+      setManagePeriodView('list')
+      refreshPeriods()
+    } catch (e) {
+      setPeriodFormError(e.message || 'Erreur lors de la création.')
+    } finally {
+      setSavingPeriod(false)
+    }
+  }
+
+  const handleEditPeriodSave = async () => {
+    if (!editingPeriod) return
+    setPeriodFormError('')
+    if (!periodForm.start_date || !periodForm.end_date) return setPeriodFormError('Les deux dates sont requises.')
+    if (periodForm.start_date >= periodForm.end_date) return setPeriodFormError('La date de fin doit être après la date de début.')
+    setSavingPeriod(true)
+    try {
+      await payPeriodAPI.update(currentRestaurant.id, editingPeriod.id, periodForm)
+      setEditingPeriod(null)
+      setPeriodForm({ start_date: '', end_date: '' })
+      setManagePeriodView('list')
+      refreshPeriods()
+    } catch (e) {
+      setPeriodFormError(e.message || 'Erreur lors de la modification.')
+    } finally {
+      setSavingPeriod(false)
+    }
+  }
+
+  const handleClosePeriodManage = async (period) => {
+    setClosingPeriodId(period.id)
+    try {
+      const res = await payPeriodAPI.close(currentRestaurant.id, period.id)
+      if (res.summary) exportPeriodSummaryCSV(res.summary, period)
+      refreshPeriods()
+      fetchReports()
+    } catch (e) {
+      setError(e.message || 'Erreur lors de la clôture.')
+    } finally {
+      setClosingPeriodId(null)
+    }
+  }
+
   const handleOpenMovePeriod = (report) => {
     setMovingReport(report)
     setMoveTargetPeriodId('')
@@ -452,19 +524,26 @@ export default function Reports() {
             </button>
           )}
 
-          {/* Clôturer la période (manager — période active existante) */}
-          {isManager && periods.some(p => p.status === 'active') && (
+          {/* Gérer les périodes (manager) */}
+          {isManager && (
             <button
-              onClick={() => setShowCloseModal(true)}
+              onClick={openManagePeriods}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '9px 14px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.3)',
-                backgroundColor: 'rgba(239,68,68,0.08)',
-                color: '#f87171', fontSize: '13px', cursor: 'pointer'
+                padding: '9px 14px', borderRadius: '10px',
+                border: '1px solid rgba(5,150,105,0.35)',
+                backgroundColor: 'rgba(5,150,105,0.08)',
+                color: '#34d399', fontSize: '13px', fontWeight: 600, cursor: 'pointer'
               }}
             >
-              <Lock size={15} />
-              Clôturer la période
+              <CalendarDays size={15} />
+              Périodes
+              {periods.some(p => p.status === 'active') && (
+                <span style={{
+                  width: 7, height: 7, borderRadius: '50%',
+                  backgroundColor: '#34d399', display: 'inline-block'
+                }} />
+              )}
             </button>
           )}
 
@@ -992,6 +1071,176 @@ export default function Reports() {
           </div>
         )
       })()}
+
+      {/* ── Modal Gestion des Périodes ── */}
+      {showManagePeriodsModal && (
+        <div style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px'
+        }} onClick={e => e.target === e.currentTarget && setShowManagePeriodsModal(false)}>
+          <div style={{
+            background: 'rgba(15,23,42,0.98)', border: '1px solid rgba(5,150,105,0.3)',
+            borderRadius: '20px', maxWidth: '480px', width: '100%', maxHeight: '85vh',
+            display: 'flex', flexDirection: 'column',
+            backdropFilter: 'blur(20px)', boxShadow: '0 25px 50px rgba(0,0,0,0.6)'
+          }}>
+
+            {/* Header modal */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(51,65,85,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {managePeriodView !== 'list' && (
+                  <button
+                    onClick={() => { setManagePeriodView('list'); setPeriodFormError('') }}
+                    style={{ padding: '5px', border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer' }}
+                  >
+                    ←
+                  </button>
+                )}
+                <div>
+                  <h2 style={{ color: 'white', fontWeight: 700, fontSize: '17px', margin: 0 }}>
+                    {managePeriodView === 'create' ? 'Créer une période' : managePeriodView === 'edit' ? 'Modifier la période' : 'Périodes de paie'}
+                  </h2>
+                  {managePeriodView === 'list' && (
+                    <p style={{ color: '#475569', fontSize: '12px', margin: '3px 0 0' }}>
+                      {periods.filter(p => p.status === 'active').length} active · {periods.filter(p => p.status !== 'active').length} clôturée(s)
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {managePeriodView === 'list' && (
+                  <button
+                    onClick={() => { setPeriodForm({ start_date: '', end_date: '' }); setPeriodFormError(''); setManagePeriodView('create') }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '7px 13px', borderRadius: '9px', border: 'none',
+                      background: 'linear-gradient(135deg, #059669, #047857)',
+                      color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+                    }}
+                  >
+                    <Plus size={14} /> Créer
+                  </button>
+                )}
+                <button onClick={() => setShowManagePeriodsModal(false)} style={{ padding: '6px', border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Corps */}
+            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+
+              {/* Vue liste */}
+              {managePeriodView === 'list' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {periods.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#475569', padding: '32px 0', fontSize: '14px' }}>
+                      Aucune période. Créez votre première période.
+                    </p>
+                  ) : periods.map(p => (
+                    <div key={p.id} style={{
+                      display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+                      justifyContent: 'space-between', gap: '10px',
+                      padding: '14px 16px', borderRadius: '12px',
+                      backgroundColor: p.status === 'active' ? 'rgba(5,150,105,0.07)' : 'rgba(30,41,59,0.5)',
+                      border: `1px solid ${p.status === 'active' ? 'rgba(5,150,105,0.3)' : '#334155'}`
+                    }}>
+                      <div>
+                        <p style={{ color: 'white', fontWeight: 600, fontSize: '14px', margin: '0 0 4px' }}>
+                          {formatPeriodLabel(p)}
+                        </p>
+                        <span style={{
+                          padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500,
+                          backgroundColor: p.status === 'active' ? 'rgba(5,150,105,0.15)' : 'rgba(71,85,105,0.3)',
+                          color: p.status === 'active' ? '#34d399' : '#64748b'
+                        }}>
+                          {p.status === 'active' ? '🟢 Active' : '🔒 Clôturée'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                        {p.status === 'active' ? (
+                          <>
+                            <button
+                              onClick={() => { setEditingPeriod(p); setPeriodForm({ start_date: p.startDate, end_date: p.endDate }); setPeriodFormError(''); setManagePeriodView('edit') }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}
+                            >
+                              <Pencil size={12} /> Modifier
+                            </button>
+                            <button
+                              onClick={() => handleClosePeriodManage(p)}
+                              disabled={closingPeriodId === p.id}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}
+                            >
+                              {closingPeriodId === p.id
+                                ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                : <Lock size={12} />}
+                              Clôturer
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => payPeriodAPI.getSummary(currentRestaurant.id, p.id)
+                              .then(res => { if (res.summary) exportPeriodSummaryCSV(res.summary, p) })
+                              .catch(() => {})}
+                            style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(59,130,246,0.3)', backgroundColor: 'rgba(59,130,246,0.07)', color: '#60a5fa', fontSize: '12px', cursor: 'pointer' }}
+                          >
+                            <Download size={12} /> CSV
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Vue créer / modifier */}
+              {(managePeriodView === 'create' || managePeriodView === 'edit') && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {periodFormError && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', color: '#fca5a5', fontSize: '13px' }}>
+                      <AlertCircle size={14} />{periodFormError}
+                    </div>
+                  )}
+                  <div>
+                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>Date de début</label>
+                    <input
+                      type="date"
+                      value={periodForm.start_date}
+                      onChange={e => setPeriodForm(f => ({ ...f, start_date: e.target.value }))}
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', backgroundColor: 'rgba(30,41,59,0.8)', border: '1px solid #334155', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>Date de fin</label>
+                    <input
+                      type="date"
+                      value={periodForm.end_date}
+                      onChange={e => setPeriodForm(f => ({ ...f, end_date: e.target.value }))}
+                      style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', backgroundColor: 'rgba(30,41,59,0.8)', border: '1px solid #334155', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <button
+                    onClick={managePeriodView === 'create' ? handleCreatePeriod : handleEditPeriodSave}
+                    disabled={savingPeriod}
+                    style={{
+                      padding: '13px', borderRadius: '11px', border: 'none',
+                      background: managePeriodView === 'create'
+                        ? 'linear-gradient(135deg, #059669, #047857)'
+                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                      color: 'white', fontWeight: 600, fontSize: '14px',
+                      cursor: savingPeriod ? 'not-allowed' : 'pointer', opacity: savingPeriod ? 0.7 : 1
+                    }}
+                  >
+                    {savingPeriod
+                      ? (managePeriodView === 'create' ? 'Création...' : 'Sauvegarde...')
+                      : (managePeriodView === 'create' ? '+ Créer la période' : 'Sauvegarder les modifications')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal Changer de période ── */}
       {showMovePeriodModal && movingReport && (
