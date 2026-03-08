@@ -645,7 +645,7 @@ export const getDashboardStats = async (req, res) => {
     }
 
     let totalSales = 0, totalTipOut = 0, pendingReports = 0, validatedReports = 0
-    let myTotalSales = 0, myTotalTipOut = 0
+    let myTotalSales = 0, myTotalTipOut = 0, myPendingReports = 0, myValidatedReports = 0, myTotalReports = 0
     allReports?.forEach(report => {
       totalSales  += parseFloat(report.total_sales)    || 0
       totalTipOut += parseFloat(report.tip_out_amount) || parseFloat(report.total_tips) || 0
@@ -655,6 +655,9 @@ export const getDashboardStats = async (req, res) => {
       if (report.employee_id === userId) {
         myTotalSales  += parseFloat(report.total_sales)    || 0
         myTotalTipOut += parseFloat(report.tip_out_amount) || 0
+        myTotalReports++
+        if (report.status === 'pending')   myPendingReports++
+        if (report.status === 'validated') myValidatedReports++
       }
     })
 
@@ -693,11 +696,12 @@ export const getDashboardStats = async (req, res) => {
           .eq('restaurant_id', restaurantId)
           .or(`pay_period_id.eq.${period.id},and(pay_period_id.is.null,created_at.gte.${periodStart},created_at.lte.${periodEnd})`)
 
-        let periodTotalSales = 0, periodTotalTipOut = 0, periodMyTipOut = 0, periodMyReports = 0
+        let periodTotalSales = 0, periodTotalTipOut = 0, periodMyTipOut = 0, periodMyReports = 0, periodMySales = 0
         for (const r of periodReports || []) {
           periodTotalSales  += parseFloat(r.total_sales)    || 0
           periodTotalTipOut += parseFloat(r.tip_out_amount) || 0
           if (r.employee_id === userId) {
+            periodMySales   += parseFloat(r.total_sales)    || 0
             periodMyTipOut  += parseFloat(r.tip_out_amount) || 0
             periodMyReports += 1
           }
@@ -721,6 +725,7 @@ export const getDashboardStats = async (req, res) => {
           status:          period.status,
           totalSales:      periodTotalSales,
           totalTipOut:     periodTotalTipOut,
+          mySales:         periodMySales,
           myTipOut:        periodMyTipOut,
           myReportCount:   periodMyReports,
           myTipsReceived:  periodMyReceived
@@ -743,6 +748,9 @@ export const getDashboardStats = async (req, res) => {
         // Cumul personnel (tous les rapports de cet employé)
         myTotalSales,
         myTotalTipOut,
+        myPendingReports,
+        myValidatedReports,
+        myTotalReports,
         // Personnels 24h
         myTipOutGiven,
         tipsReceivedToday,

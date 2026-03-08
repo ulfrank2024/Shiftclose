@@ -349,7 +349,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
                   <p className="stat-label">{t('dashboard.pendingReports')}</p>
-                  <p className="stat-value">{loading ? '—' : stats.pendingReports}</p>
+                  <p className="stat-value">{loading ? '—' : (isManager ? stats.pendingReports : (stats.myPendingReports || 0))}</p>
                 </div>
                 <div className="stat-icon" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
                   <Clock style={{ color: '#fbbf24' }} size={20} />
@@ -358,7 +358,9 @@ export default function Dashboard() {
               <div style={{ height: '6px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%', borderRadius: '9999px', backgroundColor: '#f59e0b',
-                  width: `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`,
+                  width: isManager
+                    ? `${stats.totalReports ? (stats.pendingReports / stats.totalReports) * 100 : 0}%`
+                    : `${stats.myTotalReports ? ((stats.myPendingReports || 0) / stats.myTotalReports) * 100 : 0}%`,
                   transition: 'width 0.5s ease'
                 }} />
               </div>
@@ -402,7 +404,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
                   <p className="stat-label">{t('dashboard.validatedReports')}</p>
-                  <p className="stat-value">{loading ? '—' : stats.validatedReports}</p>
+                  <p className="stat-value">{loading ? '—' : (isManager ? stats.validatedReports : (stats.myValidatedReports || 0))}</p>
                 </div>
                 <div className="stat-icon" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
                   <CheckCircle style={{ color: '#34d399' }} size={20} />
@@ -411,7 +413,9 @@ export default function Dashboard() {
               <div style={{ height: '6px', backgroundColor: '#334155', borderRadius: '9999px', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%', borderRadius: '9999px', backgroundColor: '#10b981',
-                  width: `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`,
+                  width: isManager
+                    ? `${stats.totalReports ? (stats.validatedReports / stats.totalReports) * 100 : 0}%`
+                    : `${stats.myTotalReports ? ((stats.myValidatedReports || 0) / stats.myTotalReports) * 100 : 0}%`,
                   transition: 'width 0.5s ease'
                 }} />
               </div>
@@ -465,7 +469,7 @@ export default function Dashboard() {
                   {isManager ? 'Ventes resto (période)' : 'Mes ventes (période)'}
                 </p>
                 <p style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: 0 }}>
-                  ${(isManager ? stats.currentPeriod.totalSales : stats.currentPeriod.totalSales).toFixed(2)}
+                  ${(isManager ? stats.currentPeriod.totalSales : (stats.currentPeriod.mySales || 0)).toFixed(2)}
                 </p>
               </div>
             )}
