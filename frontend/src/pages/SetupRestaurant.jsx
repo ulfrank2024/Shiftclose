@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { setupAPI, authAPI } from '../services/api'
+
+const BACKEND_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '')
 import {
   Building2, User, Lock, Eye, EyeOff, Phone, MapPin, Camera,
   Check, AlertCircle, ChevronRight, ChevronLeft, Zap, Mail, ShieldCheck, X
@@ -33,11 +35,15 @@ export default function SetupRestaurant() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting]   = useState(false)
+  const [retryMsg, setRetryMsg]       = useState('')
   const [error, setError]             = useState('')
   const [success, setSuccess]         = useState(false)
   const [focusedField, setFocusedField] = useState(null)
 
   useEffect(() => {
+    // Ping le backend pour le réveiller pendant que l'user remplit le formulaire
+    fetch(`${BACKEND_BASE}/health`, { signal: AbortSignal.timeout(30000) }).catch(() => {})
+
     setupAPI.getInfo(token)
       .then(res => setInfo(res.invitation))
       .catch(err => setInfoError(err.message))
@@ -93,31 +99,52 @@ export default function SetupRestaurant() {
   const handleSubmit = async () => {
     setSubmitting(true)
     setError('')
-    try {
-      const res = await setupAPI.complete(token, {
-        firstName:         form.firstName,
-        lastName:          form.lastName,
-        password:          form.password,
-        phone:             form.phone || undefined,
-        restaurantAddress: form.restaurantAddress || undefined
-      })
+    setRetryMsg('')
 
-      // Stocker le token JWT avant l'upload de photo
-      localStorage.setItem('token', res.token)
-      localStorage.setItem('currentRestaurant', JSON.stringify(res.user.restaurants[0]))
+    const MAX_RETRIES = 4
+    const RETRY_DELAY = 6000 // 6s entre chaque tentative
 
-      // Upload photo si sélectionnée
-      if (form.photo) {
-        try { await authAPI.uploadPhoto(form.photo) } catch (e) { /* non-bloquant */ }
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (attempt > 1) setRetryMsg(`Serveur en démarrage... (${attempt}/${MAX_RETRIES})`)
+
+        const res = await setupAPI.complete(token, {
+          firstName:         form.firstName,
+          lastName:          form.lastName,
+          password:          form.password,
+          phone:             form.phone || undefined,
+          restaurantAddress: form.restaurantAddress || undefined
+        })
+
+        // Succès — stocker le token et uploader la photo
+        setRetryMsg('')
+        localStorage.setItem('token', res.token)
+        localStorage.setItem('currentRestaurant', JSON.stringify(res.user.restaurants[0]))
+
+        if (form.photo) {
+          try { await authAPI.uploadPhoto(form.photo) } catch (e) { /* non-bloquant */ }
+        }
+
+        setSuccess(true)
+        setTimeout(() => navigate('/dashboard'), 2200)
+        return // sortir de la boucle
+
+      } catch (err) {
+        const isNetworkError = !err.message || err.message === 'Failed to fetch' || err.message.includes('network') || err.message.includes('unavailable')
+
+        if (attempt < MAX_RETRIES && isNetworkError) {
+          setRetryMsg(`Serveur en démarrage, nouvelle tentative dans ${RETRY_DELAY / 1000}s... (${attempt}/${MAX_RETRIES})`)
+          await new Promise(r => setTimeout(r, RETRY_DELAY))
+        } else {
+          setError(err.message || 'Erreur lors de la configuration')
+          setRetryMsg('')
+          setSubmitting(false)
+          return
+        }
       }
-
-      setSuccess(true)
-      setTimeout(() => navigate('/dashboard'), 2200)
-    } catch (err) {
-      setError(err.message || 'Erreur lors de la configuration')
-    } finally {
-      setSubmitting(false)
     }
+
+    setSubmitting(false)
   }
 
   // ─── Styles ────────────────────────────────────────────────
@@ -201,12 +228,20 @@ export default function SetupRestaurant() {
         </button>
       )}
       {onSubmit ? (
-        <button onClick={onSubmit} disabled={submitting} style={{ flex: 2, padding: '14px', background: submitting ? 'rgba(51,65,85,0.8)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none', borderRadius: '14px', color: 'white', fontWeight: 600, fontSize: '15px', cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: submitting ? 'none' : '0 8px 24px rgba(16,185,129,0.4)', opacity: submitting ? 0.7 : 1 }}>
-          {submitting
-            ? <><div style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Création...</>
-            : <><Check size={18} /> Créer mon compte</>
-          }
-        </button>
+        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {retryMsg && (
+            <div style={{ padding: '8px 12px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '10px', color: '#fbbf24', fontSize: '12px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <div style={{ width: '12px', height: '12px', border: '2px solid rgba(245,158,11,0.3)', borderTopColor: '#f59e0b', borderRadius: '50%', animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+              {retryMsg}
+            </div>
+          )}
+          <button onClick={onSubmit} disabled={submitting} style={{ width: '100%', padding: '14px', background: submitting ? 'rgba(51,65,85,0.8)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none', borderRadius: '14px', color: 'white', fontWeight: 600, fontSize: '15px', cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: submitting ? 'none' : '0 8px 24px rgba(16,185,129,0.4)', opacity: submitting ? 0.7 : 1 }}>
+            {submitting
+              ? <><div style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> {retryMsg ? 'Nouvelle tentative...' : 'Création...'}</>
+              : <><Check size={18} /> Créer mon compte</>
+            }
+          </button>
+        </div>
       ) : (
         <button onClick={onNext || handleNext} style={{ flex: step === 1 ? '1 1 100%' : 2, padding: '14px', background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', border: 'none', borderRadius: '14px', color: 'white', fontWeight: 600, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 8px 24px rgba(245,158,11,0.4)' }}>
           {nextLabel} <ChevronRight size={18} />
