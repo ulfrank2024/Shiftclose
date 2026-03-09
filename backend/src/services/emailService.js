@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM = 'ChefTips <noreply@cheftips.app>'
+const FROM = 'ShiftClose <noreply@cheftips.app>'
 
 export const sendEmail = async ({ to, subject, html, text }) => {
   try {

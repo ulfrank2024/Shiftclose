@@ -62,7 +62,8 @@ export default function CashOut() {
   const [error, setError]           = useState('')
   const [teamMembers, setTeamMembers] = useState([])
   const [tipOutRules, setTipOutRules] = useState([])
-  const [noPeriod, setNoPeriod]     = useState(false)
+  const [noPeriod, setNoPeriod]         = useState(false)
+  const [currentPeriod, setCurrentPeriod] = useState(null)
   const [periodCheckDone, setPeriodCheckDone] = useState(false)
 
   const totalSteps  = 4
@@ -84,6 +85,7 @@ export default function CashOut() {
     payPeriodAPI.getCurrent(currentRestaurant.id)
       .then(res => {
         setNoPeriod(!res.period)
+        setCurrentPeriod(res.period || null)
         setPeriodCheckDone(true)
       })
       .catch(() => {
@@ -371,23 +373,35 @@ export default function CashOut() {
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 }}>
           {forUserId ? `Saisir pour ${forUserName || 'un employé'}` : 'Cash Out'}
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.45)', margin: '4px 0 0', fontSize: 14 }}>
-          {currentRestaurant?.name || 'Mon Restaurant'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+          <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0, fontSize: 14 }}>
+            {currentRestaurant?.name || 'Mon Restaurant'}
+          </p>
+          {currentPeriod && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'rgba(99,102,241,0.12)',
+              border: '1px solid rgba(99,102,241,0.35)',
+              borderRadius: 8, padding: '3px 10px',
+              fontSize: 12, color: '#a5b4fc', fontWeight: 600
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
+              Période du {new Date(currentPeriod.start_date + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}
+              {' au '}
+              {new Date(currentPeriod.end_date + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+          )}
           {forUserId && (
             <span style={{
-              marginLeft: 8,
               background: 'rgba(251,191,36,0.15)',
               border: '1px solid rgba(251,191,36,0.3)',
-              borderRadius: 6,
-              padding: '2px 8px',
-              fontSize: 11,
-              color: '#fbbf24',
-              fontWeight: 600
+              borderRadius: 6, padding: '2px 8px',
+              fontSize: 11, color: '#fbbf24', fontWeight: 600
             }}>
               Soumission Manager
             </span>
           )}
-        </p>
+        </div>
       </div>
 
       {/* ── Barre de progression ── */}

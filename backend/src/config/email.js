@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM = 'ChefTips <noreply@cheftips.app>'
+const FROM = 'ShiftClose <noreply@cheftips.app>'
 
 export const sendEmail = async ({ to, subject, html }) => {
   try {
@@ -46,7 +46,7 @@ export const emailTemplates = {
       </head>
       <body>
         <div class="container">
-          <div class="logo"><span class="logo-text">S</span></div>
+          <div class="logo"><span class="logo-text">ShiftClose</span></div>
           <h1>Vous êtes invité(e) !</h1>
           <p>Bonjour,</p>
           <p><span class="highlight">${inviterName}</span> vous invite à rejoindre l'équipe de <span class="highlight">${restaurantName}</span> sur ShiftClose.</p>
@@ -85,7 +85,7 @@ export const emailTemplates = {
       </head>
       <body>
         <div class="container">
-          <div class="logo"><span class="logo-text">S</span></div>
+          <div class="logo"><span class="logo-text">ShiftClose</span></div>
           <h1>Rapport validé ✓</h1>
           <p>Bonjour ${employeeName},</p>
           <p>Votre rapport de Cash Out du <strong style="color: #f8fafc;">${date}</strong> a été validé par votre manager.</p>
@@ -173,7 +173,7 @@ export const emailTemplates = {
       <body style="font-family:'Segoe UI',Arial,sans-serif;background-color:#0f172a;color:#f8fafc;padding:20px;margin:0;">
         <div style="max-width:600px;margin:0 auto;background-color:#1e293b;border-radius:16px;padding:40px;">
           <div style="text-align:center;margin-bottom:30px;">
-            <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#ffffff;font-size:28px;font-weight:bold;padding:16px 24px;border-radius:16px;display:inline-block;">S</span>
+            <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#ffffff;font-size:20px;font-weight:bold;padding:14px 24px;border-radius:16px;display:inline-block;">ShiftClose</span>
           </div>
           <h1 style="color:#10b981;text-align:center;margin-bottom:24px;font-size:24px;">🎉 Bienvenue dans l'équipe !</h1>
           <p style="color:#94a3b8;line-height:1.7;font-size:16px;margin:16px 0;">Bonjour <strong style="color:#f8fafc;">${firstName}</strong>,</p>
@@ -220,7 +220,7 @@ export const emailTemplates = {
         <body style="font-family:'Segoe UI',Arial,sans-serif;background-color:#0f172a;color:#f8fafc;padding:20px;margin:0;">
           <div style="max-width:600px;margin:0 auto;background-color:#1e293b;border-radius:16px;padding:40px;">
             <div style="text-align:center;margin-bottom:28px;">
-              <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-size:26px;font-weight:bold;padding:14px 22px;border-radius:14px;display:inline-block;">S</span>
+              <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-size:18px;font-weight:bold;padding:12px 20px;border-radius:14px;display:inline-block;">ShiftClose</span>
             </div>
             <h1 style="color:#f8fafc;text-align:center;margin-bottom:6px;font-size:22px;">Nouveau rapport soumis</h1>
             <p style="color:#64748b;text-align:center;margin-bottom:28px;font-size:14px;">${restaurantName}</p>
@@ -348,7 +348,7 @@ export const emailTemplates = {
       </head>
       <body>
         <div class="container">
-          <div class="logo"><span class="logo-text">S</span></div>
+          <div class="logo"><span class="logo-text">ShiftClose</span></div>
           <h1>Bienvenue ${firstName} !</h1>
           <p>Merci d'avoir rejoint ShiftClose. Votre compte est maintenant actif et prêt à l'emploi.</p>
           <div class="features">
