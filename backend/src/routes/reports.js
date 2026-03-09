@@ -6,6 +6,7 @@ import {
   getReport,
   validateReport,
   deleteReport,
+  resubmitReport,
   getDashboardStats,
   getMyReceivedTips,
   moveReportPeriod
@@ -36,6 +37,9 @@ router.put('/:reportId/validate', requireRole('manager'), validateReport)
 
 // Move report to another pay period (Manager only)
 router.put('/:reportId/move-period', requireRole('manager'), moveReportPeriod)
+
+// Resubmit a rejected report (Employee — owner only)
+router.put('/:reportId/resubmit', resubmitReport)
 
 // Delete report (Manager only)
 router.delete('/:reportId', requireRole('manager'), deleteReport)

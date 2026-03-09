@@ -54,8 +54,10 @@ export default function CashOut() {
   const proofInputRef           = useRef(null)
 
   // Params URL pour soumission manager au nom d'un employé
-  const forUserId   = searchParams.get('forUserId')
-  const forUserName = searchParams.get('forUserName')
+  const forUserId    = searchParams.get('forUserId')
+  const forUserName  = searchParams.get('forUserName')
+  // Edition d'un rapport rejeté
+  const editReportId = searchParams.get('editReportId')
 
   const [step, setStep]             = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -94,25 +96,70 @@ export default function CashOut() {
       })
   }, [currentRestaurant?.id])
 
-  // ── Chargement équipe + règles tip-out ─────────────────────────────────────
+  // ── Chargement équipe + règles tip-out (+ pré-remplissage si edition) ──────
   useEffect(() => {
     if (!currentRestaurant?.id) return
     const load = async () => {
-      const [teamResult, restResult] = await Promise.allSettled([
+      const queries = [
         restaurantAPI.getTeam(currentRestaurant.id),
-        restaurantAPI.get(currentRestaurant.id)
-      ])
+        restaurantAPI.get(currentRestaurant.id),
+        ...(editReportId ? [reportAPI.get(editReportId)] : [])
+      ]
+      const [teamResult, restResult, reportResult] = await Promise.allSettled(queries)
 
       if (teamResult.status === 'fulfilled') {
         const members = (teamResult.value.members || []).filter(m => m.id !== user?.id)
         setTeamMembers(members)
       }
 
+      const rules = restResult.status === 'fulfilled'
+        ? (restResult.value.restaurant?.tipOutRules || [])
+        : []
+
+      // Mode édition : pré-remplir depuis le rapport rejeté
+      if (editReportId && reportResult?.status === 'fulfilled') {
+        const rep = reportResult.value.report
+        if (rep) {
+          setSales({
+            totalSales: String(rep.totalSales || ''),
+            comptant:   String(rep.cashAmount  || '')
+          })
+          if (rep.proofImageBase64) setProofPreview(rep.proofImageBase64)
+
+          const breakdown = rep.tipOutBreakdown || []
+          setDistributions(rules.map(rule => {
+            const matchItem = breakdown.find(b => b.position === rule.position)
+            if (!matchItem) {
+              return {
+                rule: { ...rule, enabled: rule.enabled !== false, automatic: !!rule.automatic },
+                enabled: rule.enabled !== false && rule.position?.toLowerCase() !== 'manager',
+                selectedPersons: [], meals: {}, donations: {}
+              }
+            }
+            return {
+              rule: { ...rule, enabled: true, automatic: !!rule.automatic },
+              enabled: true,
+              selectedPersons: (matchItem.persons || [])
+                .filter(p => p.personId)
+                .map(p => ({ id: p.personId, name: p.personName })),
+              meals: Object.fromEntries(
+                (matchItem.persons || []).filter(p => p.personId && p.meal > 0)
+                  .map(p => [p.personId, String(p.meal)])
+              ),
+              donations: Object.fromEntries(
+                (matchItem.persons || []).filter(p => p.personId && p.donation > 0)
+                  .map(p => [p.personId, String(p.donation)])
+              )
+            }
+          }))
+          return
+        }
+      }
+
+      // Mode normal
       if (restResult.status === 'fulfilled') {
-        const rules = restResult.value.restaurant?.tipOutRules || []
         setDistributions(rules.map(rule => ({
           rule: { ...rule, enabled: rule.enabled !== false, automatic: !!rule.automatic },
-          // Respecte le réglage manager (enabled), mais pas manager = actif par défaut
           enabled: rule.enabled !== false && rule.position?.toLowerCase() !== 'manager',
           selectedPersons: [],
           meals:     {},
@@ -282,7 +329,11 @@ export default function CashOut() {
         ...(forUserId ? { forUserId } : {})
       }
 
-      await reportAPI.create(currentRestaurant?.id, payload)
+      if (editReportId) {
+        await reportAPI.resubmit(editReportId, payload)
+      } else {
+        await reportAPI.create(currentRestaurant?.id, payload)
+      }
       navigate('/reports')
     } catch (err) {
       setError(err.message || 'Une erreur est survenue')
@@ -371,7 +422,7 @@ export default function CashOut() {
       {/* ── Titre ── */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 }}>
-          {forUserId ? `Saisir pour ${forUserName || 'un employé'}` : 'Cash Out'}
+          {editReportId ? 'Modifier & Renvoyer' : forUserId ? `Saisir pour ${forUserName || 'un employé'}` : 'Cash Out'}
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
           <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0, fontSize: 14 }}>

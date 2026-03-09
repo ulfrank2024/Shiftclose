@@ -7,7 +7,7 @@ import {
   FileText, Check, X, Clock, ChevronDown, Download,
   Eye, Loader, AlertCircle, DollarSign, Users, Gift,
   UtensilsCrossed, Calculator, Image, BarChart3, UserPlus,
-  CalendarDays, Lock, Plus, Pencil, Trash2
+  CalendarDays, Lock, Plus, Pencil, Trash2, RefreshCw
 } from 'lucide-react'
 
 // ── Noms d'affichage des positions ────────────────────────────
@@ -678,6 +678,20 @@ export default function Reports() {
                     )}
                   </div>
 
+                  {/* Raison de rejet (employé) */}
+                  {report.status === 'rejected' && report.validationNote && (
+                    <div style={{
+                      width: '100%', padding: '8px 12px', borderRadius: '8px',
+                      backgroundColor: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)',
+                      display: 'flex', alignItems: 'flex-start', gap: '6px'
+                    }}>
+                      <AlertCircle size={13} color="#f87171" style={{ flexShrink: 0, marginTop: 2 }} />
+                      <span style={{ color: '#fca5a5', fontSize: '12px', lineHeight: 1.5 }}>
+                        <strong>Raison :</strong> {report.validationNote}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Statut + actions */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     {getStatusBadge(report.status)}
@@ -707,6 +721,23 @@ export default function Reports() {
                           <X size={16} />
                         </button>
                       </>
+                    )}
+
+                    {/* Bouton Modifier & Renvoyer — employé concerné, rapport rejeté */}
+                    {!isManager && report.status === 'rejected' && report.employeeId === user?.id && (
+                      <button
+                        onClick={() => navigate(`/cash-out?editReportId=${report.id}`)}
+                        title="Modifier et renvoyer"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '5px',
+                          padding: '7px 11px', borderRadius: '9px',
+                          border: '1px solid rgba(99,102,241,0.35)',
+                          cursor: 'pointer', backgroundColor: 'rgba(99,102,241,0.1)',
+                          color: '#a5b4fc', fontSize: '12px', fontWeight: 600
+                        }}
+                      >
+                        <RefreshCw size={14} /> Modifier
+                      </button>
                     )}
 
                     {isManager && periods.length > 0 && (
@@ -1109,6 +1140,36 @@ export default function Reports() {
                       ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
                       : <Check size={16} />}
                     {t('reports.validate')}
+                  </button>
+                </div>
+              )}
+
+              {/* Bouton Modifier & Renvoyer (employé sur rapport rejeté) */}
+              {!isManager && selectedReport.status === 'rejected' && selectedReport.employeeId === user?.id && (
+                <div style={{ padding: '0 24px 8px' }}>
+                  {selectedReport.validationNote && (
+                    <div style={{
+                      display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 14px',
+                      backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+                      borderRadius: '10px', marginBottom: '10px'
+                    }}>
+                      <AlertCircle size={14} color="#f87171" style={{ flexShrink: 0, marginTop: 2 }} />
+                      <span style={{ color: '#fca5a5', fontSize: '13px', lineHeight: 1.5 }}>
+                        <strong>Raison du rejet :</strong> {selectedReport.validationNote}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => { setSelectedReport(null); navigate(`/cash-out?editReportId=${selectedReport.id}`) }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      padding: '13px', borderRadius: '11px', border: 'none',
+                      background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white',
+                      fontWeight: 600, fontSize: '14px', cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(99,102,241,0.3)'
+                    }}
+                  >
+                    <RefreshCw size={16} /> Modifier & Renvoyer
                   </button>
                 </div>
               )}

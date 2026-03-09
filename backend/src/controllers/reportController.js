@@ -745,6 +745,150 @@ export const deleteReport = async (req, res) => {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Resubmit a rejected report (Employee only)
+// PUT /reports/:reportId/resubmit
+// ─────────────────────────────────────────────────────────────
+export const resubmitReport = async (req, res) => {
+  try {
+    const { reportId } = req.params
+    const {
+      totalSales: rawTotalSales,
+      comptant, cashAmount,
+      tipOutBreakdown = [],
+      tipOutTotal: rawTipOutTotal,
+      dueBack: rawDueBack,
+      proofImageBase64
+    } = req.body
+
+    // Fetch existing report
+    const { data: report, error: fetchErr } = await supabase
+      .from('reports').select('*').eq('id', reportId).single()
+
+    if (fetchErr || !report) {
+      return res.status(404).json({ error: 'Rapport non trouvé' })
+    }
+    if (report.status !== 'rejected') {
+      return res.status(400).json({ error: 'Seuls les rapports rejetés peuvent être renvoyés' })
+    }
+    if (report.employee_id !== req.user.id) {
+      return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres rapports' })
+    }
+
+    // Vérifier période active
+    const currentPeriod = await getOrCreateCurrentPeriod(report.restaurant_id)
+    if (!currentPeriod) {
+      return res.status(403).json({
+        error: 'Aucune période de paie active. Contactez votre manager.',
+        code: 'NO_ACTIVE_PERIOD'
+      })
+    }
+
+    const totalSales   = parseFloat(rawTotalSales) || 0
+    const physicalCash = parseFloat(comptant) || parseFloat(cashAmount) || 0
+    const tipOutTotal  = rawTipOutTotal !== undefined
+      ? parseFloat(rawTipOutTotal) || 0
+      : tipOutBreakdown.reduce((s, b) => s + (parseFloat(b.totalAmount || b.amount) || 0), 0)
+    const dueBack = rawDueBack !== undefined
+      ? parseFloat(rawDueBack) || 0
+      : tipOutTotal + physicalCash
+
+    // Mettre à jour le rapport — remettre en 'pending'
+    await supabase.from('reports').update({
+      total_sales:       totalSales,
+      cash_amount:       physicalCash,
+      tip_out_amount:    tipOutTotal,
+      due_back:          dueBack,
+      tip_out_breakdown: JSON.stringify(tipOutBreakdown),
+      proof_image_base64: proofImageBase64 !== undefined ? proofImageBase64 : report.proof_image_base64,
+      status:            'pending',
+      validated_by:      null,
+      validated_by_name: null,
+      validation_note:   null,
+      validated_at:      null,
+      pay_period_id:     currentPeriod.id
+    }).eq('id', reportId)
+
+    // Supprimer les anciennes distributions (annulées)
+    await supabase.from('tip_distributions').delete().eq('report_id', reportId)
+
+    // Insérer les nouvelles distributions
+    const reportDate = new Date().toISOString().split('T')[0]
+    const fromName   = `${req.user.first_name} ${req.user.last_name}`
+    const distributions = []
+
+    for (const item of tipOutBreakdown) {
+      const position = item.position || item.role || 'unknown'
+      const pct      = parseFloat(item.percentage) || 0
+      const total    = parseFloat(item.totalAmount ?? item.amount) || 0
+
+      if (item.isPool || item.isAutomatic || position.toLowerCase().includes('pool') || position.toLowerCase().includes('cuisine')) {
+        if (total > 0) {
+          distributions.push({
+            report_id: reportId, restaurant_id: report.restaurant_id,
+            from_employee_id: req.user.id, from_employee_name: fromName,
+            to_employee_id: null, to_employee_name: 'Pool Cuisine',
+            role: position, percentage: pct, base_amount: totalSales,
+            amount: total, is_donation: false, is_meal_deduction: false,
+            report_date: reportDate, pay_period_id: currentPeriod.id
+          })
+        }
+      } else if (item.persons?.length > 0) {
+        for (const p of item.persons) {
+          const net = parseFloat(p.net ?? p.tipAmount) || 0
+          if (net === 0 && !p.personId) continue
+          distributions.push({
+            report_id: reportId, restaurant_id: report.restaurant_id,
+            from_employee_id: req.user.id, from_employee_name: fromName,
+            to_employee_id: p.personId || null, to_employee_name: p.personName || 'Inconnu',
+            role: position, percentage: pct, base_amount: totalSales,
+            amount: net, is_donation: false, is_meal_deduction: false,
+            report_date: reportDate, pay_period_id: currentPeriod.id
+          })
+        }
+      }
+    }
+
+    if (distributions.length > 0) {
+      await supabase.from('tip_distributions').insert(distributions)
+    }
+
+    // Notifier les managers
+    ;(async () => {
+      try {
+        const [{ data: managers }, { data: restRow }] = await Promise.all([
+          supabase.from('user_restaurants')
+            .select('user_id, users!inner(first_name, last_name, email)')
+            .eq('restaurant_id', report.restaurant_id).eq('role', 'manager'),
+          supabase.from('restaurants').select('name').eq('id', report.restaurant_id).single()
+        ])
+        if (!managers?.length) return
+        const restaurantName = restRow?.name || 'Restaurant'
+        const dateStr = new Date().toLocaleDateString('fr-CA')
+        const timeStr = new Date().toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })
+
+        for (const mgr of managers) {
+          const u = mgr.users
+          await sendEmail({
+            to: u.email,
+            ...emailTemplates.reportSubmitted(
+              `${u.first_name} ${u.last_name}`,
+              report.employee_name,
+              restaurantName, dateStr, timeStr,
+              totalSales, tipOutTotal, dueBack, []
+            )
+          })
+        }
+      } catch (e) { console.warn('Resubmit manager notification error:', e.message) }
+    })()
+
+    res.json({ success: true, message: 'Rapport renvoyé avec succès' })
+  } catch (error) {
+    console.error('Resubmit report error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // Dashboard stats
 // Manager → stats globales du restaurant
 // Serveur  → ses propres rapports + tips reçus aujourd'hui

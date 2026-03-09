@@ -201,6 +201,12 @@ export const reportAPI = {
       body: JSON.stringify({ periodId })
     }),
 
+  resubmit: (reportId, data) =>
+    fetchWithAuth(`/reports/${reportId}/resubmit`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+
   delete: (reportId) =>
     fetchWithAuth(`/reports/${reportId}`, { method: 'DELETE' })
 }
