@@ -656,7 +656,7 @@ export const validateReport = async (req, res) => {
 
       // 4. Email de rejet à l'employé
       if (report.employee_email) {
-        const tpl = emailTemplates.reportRejected(report.employee_name, date, note || '')
+        const tpl = emailTemplates.reportRejected(report.employee_name, date, note || '', reportId)
         await sendEmail({ to: report.employee_email, ...tpl }).catch(e => console.error('email rejected:', e))
       }
     }
@@ -725,11 +725,12 @@ export const deleteReport = async (req, res) => {
       }
     }
 
-    // 2. Email à l'employé
+    // 2. Email à l'employé (suppression = rejet définitif, pas de CTA modifier)
     if (report.employee_email) {
       const tpl = emailTemplates.reportRejected(
         report.employee_name, date,
-        'Votre rapport a été supprimé par le manager.'
+        'Votre rapport a été supprimé par le manager.',
+        null  // pas de lien modifier
       )
       await sendEmail({ to: report.employee_email, ...tpl }).catch(e => console.error('email delete:', e))
     }

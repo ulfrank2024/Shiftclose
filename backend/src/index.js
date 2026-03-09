@@ -3,6 +3,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import dotenv from 'dotenv'
+import { rateLimit } from 'express-rate-limit'
 
 // Load environment variables
 dotenv.config()
@@ -46,6 +47,30 @@ app.use(morgan('dev'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
+// ── Rate limiting ────────────────────────────────────────────
+// Note: sur Vercel serverless, le store est par instance.
+// C'est mieux que rien contre les bursts, mais pas global.
+
+// Routes auth sensibles : 10 tentatives / 15 min par IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Trop de tentatives, réessayez dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development'
+})
+
+// API générale : 200 requêtes / 15 min par IP
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { error: 'Trop de requêtes, réessayez dans quelques minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development'
+})
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -56,12 +81,12 @@ app.get('/health', (req, res) => {
 })
 
 // API Routes
-app.use('/api/auth', authRoutes)
-app.use('/api/restaurants', restaurantRoutes)
-app.use('/api/reports', reportRoutes)
-app.use('/api/invitations', invitationRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/pay-periods', payPeriodRoutes)
+app.use('/api/auth', authLimiter, authRoutes)
+app.use('/api/restaurants', apiLimiter, restaurantRoutes)
+app.use('/api/reports', apiLimiter, reportRoutes)
+app.use('/api/invitations', apiLimiter, invitationRoutes)
+app.use('/api/admin', apiLimiter, adminRoutes)
+app.use('/api/pay-periods', apiLimiter, payPeriodRoutes)
 
 // 404 handler
 app.use((req, res) => {

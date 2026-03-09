@@ -172,6 +172,10 @@ export default function Reports() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null) // reportId
   const [deleteLoading, setDeleteLoading] = useState(false)
 
+  // Rejet avec raison
+  const [showRejectModal, setShowRejectModal] = useState(null) // reportId
+  const [rejectNote, setRejectNote] = useState('')
+
   // Déplacement de rapport vers une autre période
   const [showMovePeriodModal, setShowMovePeriodModal] = useState(false)
   const [movingReport, setMovingReport] = useState(null)
@@ -306,17 +310,27 @@ export default function Reports() {
     }
   }
 
-  const handleReject = async (reportId) => {
+  const handleReject = async (reportId, note = '') => {
     setActionLoading(reportId)
     try {
-      await reportAPI.validate(reportId, 'rejected')
-      setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'rejected' } : r))
-      if (selectedReport?.id === reportId) setSelectedReport(prev => ({ ...prev, status: 'rejected' }))
+      await reportAPI.validate(reportId, 'rejected', note)
+      setReports(prev => prev.map(r =>
+        r.id === reportId ? { ...r, status: 'rejected', validationNote: note } : r
+      ))
+      if (selectedReport?.id === reportId)
+        setSelectedReport(prev => ({ ...prev, status: 'rejected', validationNote: note }))
+      setShowRejectModal(null)
+      setRejectNote('')
     } catch (err) {
       setError(err.message || 'Erreur lors du rejet.')
     } finally {
       setActionLoading(null)
     }
+  }
+
+  const openRejectModal = (reportId) => {
+    setRejectNote('')
+    setShowRejectModal(reportId)
   }
 
   const handleDelete = async (reportId) => {
@@ -710,7 +724,7 @@ export default function Reports() {
                           {isActing ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={16} />}
                         </button>
                         <button
-                          onClick={() => handleReject(report.id)}
+                          onClick={() => openRejectModal(report.id)}
                           disabled={isActing}
                           title={t('reports.reject')}
                           style={{
@@ -1114,7 +1128,7 @@ export default function Reports() {
               {isManager && selectedReport.status === 'pending' && (
                 <div style={{ padding: '16px 24px 8px', display: 'flex', gap: '10px' }}>
                   <button
-                    onClick={() => handleReject(selectedReport.id)}
+                    onClick={() => openRejectModal(selectedReport.id)}
                     disabled={actionLoading === selectedReport.id}
                     style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
@@ -1360,6 +1374,78 @@ export default function Reports() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Rejet avec raison ── */}
+      {showRejectModal && (
+        <div style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '16px'
+        }} onClick={e => e.target === e.currentTarget && !actionLoading && setShowRejectModal(null)}>
+          <div style={{
+            background: 'rgba(15,23,42,0.97)', border: '1px solid rgba(239,68,68,0.35)',
+            borderRadius: '20px', maxWidth: '420px', width: '100%',
+            backdropFilter: 'blur(20px)', boxShadow: '0 25px 50px rgba(0,0,0,0.6)', padding: '24px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ padding: '10px', backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: '12px', flexShrink: 0 }}>
+                <X size={20} color="#f87171" />
+              </div>
+              <div>
+                <h2 style={{ color: 'white', fontWeight: 700, fontSize: '16px', margin: 0 }}>Rejeter le rapport</h2>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 0' }}>L'employé recevra un email avec la raison</p>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
+                Raison du rejet <span style={{ color: '#475569' }}>(optionnel mais recommandé)</span>
+              </label>
+              <textarea
+                value={rejectNote}
+                onChange={e => setRejectNote(e.target.value)}
+                placeholder="Ex: Montant des ventes incorrect, veuillez vérifier votre total..."
+                rows={3}
+                style={{
+                  width: '100%', padding: '11px 14px', borderRadius: '10px',
+                  backgroundColor: 'rgba(30,41,59,0.8)', border: '1px solid #334155',
+                  color: 'white', fontSize: '14px', outline: 'none', resize: 'vertical',
+                  boxSizing: 'border-box', lineHeight: 1.5,
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => { setShowRejectModal(null); setRejectNote('') }}
+                disabled={!!actionLoading}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: '11px',
+                  border: '1px solid #334155', backgroundColor: 'transparent',
+                  color: '#94a3b8', fontWeight: 500, cursor: 'pointer'
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleReject(showRejectModal, rejectNote.trim())}
+                disabled={!!actionLoading}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  padding: '12px', borderRadius: '11px', border: 'none',
+                  background: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: 'white',
+                  fontWeight: 600, cursor: actionLoading ? 'not-allowed' : 'pointer',
+                  opacity: actionLoading ? 0.7 : 1
+                }}
+              >
+                {actionLoading
+                  ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Rejet...</>
+                  : <><X size={16} /> Confirmer le rejet</>}
+              </button>
             </div>
           </div>
         </div>
