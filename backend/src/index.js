@@ -19,29 +19,41 @@ import payPeriodRoutes from './routes/payPeriods.js'
 const app = express()
 const PORT = process.env.PORT || 5000
 
-// Middleware
-app.use(helmet())
-
-// CORS configuration - accept multiple origins in development
+// ── CORS — doit être configuré AVANT helmet et tout le reste ──
 // Supporte plusieurs URLs séparées par des virgules dans FRONTEND_URL
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'https://cheftips.app',
+  'https://www.cheftips.app',
   ...(process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(',').map(u => u.trim())
+    ? process.env.FRONTEND_URL.split(',').map(u => u.trim()).filter(Boolean)
     : [])
-].filter(Boolean)
+].filter((v, i, a) => v && a.indexOf(v) === i) // déduplique
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
+    // Autoriser les requêtes sans origin (apps mobiles, PWA, curl)
     if (!origin) return callback(null, true)
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true)
-    }
-    return callback(new Error('Not allowed by CORS'))
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+    // En dev, tout autoriser
+    if (process.env.NODE_ENV === 'development') return callback(null, true)
+    console.warn('CORS blocked:', origin)
+    return callback(null, false) // retourner false au lieu d'une Error
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200 // certains navigateurs (IE11) n'acceptent pas 204
+}
+
+// Répondre aux preflight OPTIONS sur TOUTES les routes
+app.options('*', cors(corsOptions))
+app.use(cors(corsOptions))
+
+// Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }))
 app.use(morgan('dev'))
 app.use(express.json({ limit: '10mb' }))
@@ -58,7 +70,8 @@ const authLimiter = rateLimit({
   message: { error: 'Trop de tentatives, réessayez dans 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'development'
+  // Skip preflight OPTIONS et dev local
+  skip: (req) => req.method === 'OPTIONS' || process.env.NODE_ENV === 'development'
 })
 
 // API générale : 200 requêtes / 15 min par IP
@@ -68,7 +81,8 @@ const apiLimiter = rateLimit({
   message: { error: 'Trop de requêtes, réessayez dans quelques minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'development'
+  // Skip preflight OPTIONS et dev local
+  skip: (req) => req.method === 'OPTIONS' || process.env.NODE_ENV === 'development'
 })
 
 // Health check
