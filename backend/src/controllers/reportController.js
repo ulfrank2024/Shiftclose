@@ -504,7 +504,8 @@ export const getMyReceivedTips = async (req, res) => {
     const byDate   = {}
 
     for (const dist of distributions || []) {
-      const amount = parseFloat(dist.amount) || 0
+      const amount     = parseFloat(dist.amount) || 0
+      const cancelled  = dist.status === 'cancelled'
       const item = {
         id:               dist.id,
         fromEmployeeId:   dist.from_employee_id,
@@ -515,7 +516,11 @@ export const getMyReceivedTips = async (req, res) => {
         isDonation:       dist.is_donation,
         reportDate:       dist.report_date,
         payPeriodId:      dist.pay_period_id,
-        createdAt:        dist.created_at
+        createdAt:        dist.created_at,
+        // Annulation
+        cancelled,
+        cancelledReason:  dist.cancelled_reason || null,
+        cancelledAt:      dist.cancelled_at || null
       }
 
       // Groupement par période
@@ -530,16 +535,17 @@ export const getMyReceivedTips = async (req, res) => {
           items:     []
         }
       }
-      byPeriod[pId].total += amount
+      if (!cancelled) byPeriod[pId].total += amount
       byPeriod[pId].items.push(item)
 
       // Groupement par date (compatibilité ancienne)
       const d = dist.report_date
       if (!byDate[d]) byDate[d] = { date: d, total: 0, items: [] }
-      byDate[d].total += amount
+      if (!cancelled) byDate[d].total += amount
       byDate[d].items.push(item)
     }
 
+    // Total uniquement sur les tips actifs
     const totalReceived = Object.values(byDate).reduce((sum, d) => sum + d.total, 0)
 
     res.json({
@@ -597,14 +603,62 @@ export const validateReport = async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la validation' })
     }
 
+    const date = new Date(report.created_at).toLocaleDateString('fr-CA')
+
     if (status === 'validated' && report.employee_email) {
-      const date = new Date(report.created_at).toLocaleDateString('fr-CA')
       const template = emailTemplates.reportValidated(
         report.employee_name,
         date,
         report.net_tips?.toFixed(2) || '0.00'
       )
-      await sendEmail({ to: report.employee_email, ...template })
+      await sendEmail({ to: report.employee_email, ...template }).catch(e => console.error('email validated:', e))
+    }
+
+    if (status === 'rejected') {
+      // 1. Récupérer les distributions actives liées à ce rapport
+      const { data: tipDists } = await supabase
+        .from('tip_distributions')
+        .select('id, to_employee_id, to_employee_name, amount')
+        .eq('report_id', reportId)
+        .eq('status', 'active')
+
+      // 2. Marquer les distributions comme annulées
+      if (tipDists?.length) {
+        await supabase
+          .from('tip_distributions')
+          .update({
+            status: 'cancelled',
+            cancelled_reason: note || 'Rapport rejeté par le manager',
+            cancelled_at: new Date().toISOString()
+          })
+          .eq('report_id', reportId)
+
+        // 3. Notifier chaque bénéficiaire par email
+        for (const dist of tipDists) {
+          if (!dist.to_employee_id || dist.amount <= 0) continue
+          const { data: recipient } = await supabase
+            .from('users')
+            .select('email, first_name')
+            .eq('id', dist.to_employee_id)
+            .single()
+          if (recipient?.email) {
+            const tpl = emailTemplates.tipCancelled(
+              recipient.first_name,
+              report.employee_name,
+              date,
+              dist.amount,
+              note || 'Rapport rejeté par le manager'
+            )
+            await sendEmail({ to: recipient.email, ...tpl }).catch(e => console.error('email tipCancelled:', e))
+          }
+        }
+      }
+
+      // 4. Email de rejet à l'employé
+      if (report.employee_email) {
+        const tpl = emailTemplates.reportRejected(report.employee_name, date, note || '')
+        await sendEmail({ to: report.employee_email, ...tpl }).catch(e => console.error('email rejected:', e))
+      }
     }
 
     res.json({
@@ -613,6 +667,79 @@ export const validateReport = async (req, res) => {
     })
   } catch (error) {
     console.error('Validate report error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Delete report (Manager only)
+// ─────────────────────────────────────────────────────────────
+export const deleteReport = async (req, res) => {
+  try {
+    const { reportId } = req.params
+
+    const { data: report } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('id', reportId)
+      .single()
+
+    if (!report) return res.status(404).json({ error: 'Rapport non trouvé' })
+
+    const date = new Date(report.created_at).toLocaleDateString('fr-CA')
+
+    // 1. Annuler les distributions actives + notifier les bénéficiaires
+    const { data: tipDists } = await supabase
+      .from('tip_distributions')
+      .select('id, to_employee_id, amount')
+      .eq('report_id', reportId)
+      .eq('status', 'active')
+
+    if (tipDists?.length) {
+      await supabase
+        .from('tip_distributions')
+        .update({
+          status: 'cancelled',
+          cancelled_reason: 'Rapport supprimé par le manager',
+          cancelled_at: new Date().toISOString()
+        })
+        .eq('report_id', reportId)
+
+      for (const dist of tipDists) {
+        if (!dist.to_employee_id || dist.amount <= 0) continue
+        const { data: recipient } = await supabase
+          .from('users')
+          .select('email, first_name')
+          .eq('id', dist.to_employee_id)
+          .single()
+        if (recipient?.email) {
+          const tpl = emailTemplates.tipCancelled(
+            recipient.first_name,
+            report.employee_name,
+            date,
+            dist.amount,
+            'Rapport supprimé par le manager'
+          )
+          await sendEmail({ to: recipient.email, ...tpl }).catch(e => console.error('email tipCancelled:', e))
+        }
+      }
+    }
+
+    // 2. Email à l'employé
+    if (report.employee_email) {
+      const tpl = emailTemplates.reportRejected(
+        report.employee_name, date,
+        'Votre rapport a été supprimé par le manager.'
+      )
+      await sendEmail({ to: report.employee_email, ...tpl }).catch(e => console.error('email delete:', e))
+    }
+
+    // 3. Supprimer le rapport (cascade supprime les distributions)
+    await supabase.from('reports').delete().eq('id', reportId)
+
+    res.json({ success: true, message: 'Rapport supprimé' })
+  } catch (error) {
+    console.error('Delete report error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

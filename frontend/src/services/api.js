@@ -199,7 +199,10 @@ export const reportAPI = {
     fetchWithAuth(`/reports/${reportId}/move-period`, {
       method: 'PUT',
       body: JSON.stringify({ periodId })
-    })
+    }),
+
+  delete: (reportId) =>
+    fetchWithAuth(`/reports/${reportId}`, { method: 'DELETE' })
 }
 
 // Deletion Requests API

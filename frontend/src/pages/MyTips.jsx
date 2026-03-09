@@ -324,32 +324,33 @@ export default function MyTips() {
                 {items.map((dist, idx) => {
                   const roleColor = ROLE_COLORS[dist.role] || '#94a3b8'
                   const roleLabel = ROLE_LABELS[dist.role] || dist.role
+                  const cancelled = dist.cancelled
                   return (
                     <div key={idx} style={{
                       display: 'flex', alignItems: 'center', gap: '14px',
                       padding: '12px 14px', borderRadius: '12px',
-                      backgroundColor: 'rgba(51,65,85,0.3)',
-                      marginBottom: idx < items.length - 1 ? '8px' : 0
+                      backgroundColor: cancelled ? 'rgba(239,68,68,0.06)' : 'rgba(51,65,85,0.3)',
+                      border: cancelled ? '1px solid rgba(239,68,68,0.2)' : 'none',
+                      marginBottom: idx < items.length - 1 ? '8px' : 0,
+                      opacity: cancelled ? 0.75 : 1
                     }}>
-                      <div style={{
-                        width: '38px', height: '38px', borderRadius: '50%',
-                        backgroundColor: 'rgba(59,130,246,0.15)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                      }}>
-                        <User size={16} color="#60a5fa" />
+                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: cancelled ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <User size={16} color={cancelled ? '#f87171' : '#60a5fa'} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ color: 'white', fontSize: '14px', fontWeight: 500, margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ color: cancelled ? '#94a3b8' : 'white', fontSize: '14px', fontWeight: 500, margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {dist.fromEmployeeName}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500, backgroundColor: `${roleColor}20`, color: roleColor }}>
-                            {roleLabel}
-                          </span>
+                          <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500, backgroundColor: `${roleColor}20`, color: roleColor }}>{roleLabel}</span>
                           <span style={{ color: '#64748b', fontSize: '11px' }}>{dist.reportDate}</span>
+                          {cancelled && <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 600, backgroundColor: 'rgba(239,68,68,0.15)', color: '#f87171' }}>Annulé</span>}
                         </div>
+                        {cancelled && dist.cancelledReason && (
+                          <p style={{ color: '#64748b', fontSize: '11px', margin: '4px 0 0', fontStyle: 'italic' }}>"{dist.cancelledReason}"</p>
+                        )}
                       </div>
-                      <p style={{ color: '#34d399', fontSize: '17px', fontWeight: 700, margin: 0, flexShrink: 0 }}>
+                      <p style={{ color: cancelled ? '#f87171' : '#34d399', fontSize: '17px', fontWeight: 700, margin: 0, flexShrink: 0, textDecoration: cancelled ? 'line-through' : 'none' }}>
                         +{fmt(dist.amount)}
                       </p>
                     </div>
@@ -369,7 +370,7 @@ export default function MyTips() {
       {viewMode === 'date' && tipsData.map((group) => {
         const isOpen = !!expandedKeys[group.date]
         const items = group.items || group.distributions || []
-        const dayTotal = items.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
+        const dayTotal = items.filter(d => !d.cancelled).reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0)
 
         return (
           <div key={group.date} style={{

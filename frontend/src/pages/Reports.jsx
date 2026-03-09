@@ -7,7 +7,7 @@ import {
   FileText, Check, X, Clock, ChevronDown, Download,
   Eye, Loader, AlertCircle, DollarSign, Users, Gift,
   UtensilsCrossed, Calculator, Image, BarChart3, UserPlus,
-  CalendarDays, Lock, Plus, Pencil
+  CalendarDays, Lock, Plus, Pencil, Trash2
 } from 'lucide-react'
 
 // ── Noms d'affichage des positions ────────────────────────────
@@ -168,6 +168,10 @@ export default function Reports() {
   const [savingPeriod, setSavingPeriod] = useState(false)
   const [closingPeriodId, setClosingPeriodId] = useState(null)
 
+  // Suppression de rapport
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null) // reportId
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
   // Déplacement de rapport vers une autre période
   const [showMovePeriodModal, setShowMovePeriodModal] = useState(false)
   const [movingReport, setMovingReport] = useState(null)
@@ -312,6 +316,21 @@ export default function Reports() {
       setError(err.message || 'Erreur lors du rejet.')
     } finally {
       setActionLoading(null)
+    }
+  }
+
+  const handleDelete = async (reportId) => {
+    setDeleteLoading(true)
+    try {
+      await reportAPI.delete(reportId)
+      setReports(prev => prev.filter(r => r.id !== reportId))
+      if (selectedReport?.id === reportId) setSelectedReport(null)
+      setShowDeleteConfirm(null)
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la suppression.')
+      setShowDeleteConfirm(null)
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -713,6 +732,19 @@ export default function Reports() {
                     >
                       <Eye size={16} />
                     </button>
+
+                    {isManager && (
+                      <button
+                        onClick={() => setShowDeleteConfirm(report.id)}
+                        title="Supprimer le rapport"
+                        style={{
+                          padding: '7px', borderRadius: '9px', border: '1px solid rgba(239,68,68,0.3)',
+                          cursor: 'pointer', backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171'
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1049,7 +1081,7 @@ export default function Reports() {
 
               {/* Boutons validation */}
               {isManager && selectedReport.status === 'pending' && (
-                <div style={{ padding: '16px 24px', display: 'flex', gap: '10px' }}>
+                <div style={{ padding: '16px 24px 8px', display: 'flex', gap: '10px' }}>
                   <button
                     onClick={() => handleReject(selectedReport.id)}
                     disabled={actionLoading === selectedReport.id}
@@ -1077,6 +1109,23 @@ export default function Reports() {
                       ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
                       : <Check size={16} />}
                     {t('reports.validate')}
+                  </button>
+                </div>
+              )}
+
+              {/* Bouton supprimer (manager) */}
+              {isManager && (
+                <div style={{ padding: selectedReport.status === 'pending' ? '0 16px 16px' : '16px 24px' }}>
+                  <button
+                    onClick={() => { setSelectedReport(null); setShowDeleteConfirm(selectedReport.id) }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      padding: '11px', borderRadius: '11px', border: '1px solid rgba(239,68,68,0.3)',
+                      backgroundColor: 'rgba(239,68,68,0.07)', color: '#f87171',
+                      fontWeight: 500, fontSize: '13px', cursor: 'pointer'
+                    }}
+                  >
+                    <Trash2 size={15} /> Supprimer ce rapport
                   </button>
                 </div>
               )}
@@ -1250,6 +1299,62 @@ export default function Reports() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Confirmation Suppression ── */}
+      {showDeleteConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '16px'
+        }} onClick={e => e.target === e.currentTarget && !deleteLoading && setShowDeleteConfirm(null)}>
+          <div style={{
+            background: 'rgba(15,23,42,0.97)', border: '1px solid rgba(239,68,68,0.35)',
+            borderRadius: '20px', maxWidth: '380px', width: '100%',
+            backdropFilter: 'blur(20px)', boxShadow: '0 25px 50px rgba(0,0,0,0.6)', padding: '24px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ padding: '10px', backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: '12px', flexShrink: 0 }}>
+                <Trash2 size={20} color="#f87171" />
+              </div>
+              <div>
+                <h2 style={{ color: 'white', fontWeight: 700, fontSize: '16px', margin: 0 }}>Supprimer le rapport</h2>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 0' }}>Cette action est irréversible</p>
+              </div>
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', margin: '0 0 20px' }}>
+              Le rapport sera supprimé et tous les <strong style={{ color: 'white' }}>tip-outs associés seront annulés</strong>.
+              Les bénéficiaires recevront une notification par email.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                disabled={deleteLoading}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: '11px',
+                  border: '1px solid #334155', backgroundColor: 'transparent',
+                  color: '#94a3b8', fontWeight: 500, cursor: 'pointer'
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleDelete(showDeleteConfirm)}
+                disabled={deleteLoading}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  padding: '12px', borderRadius: '11px', border: 'none',
+                  background: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: 'white',
+                  fontWeight: 600, cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                  opacity: deleteLoading ? 0.7 : 1
+                }}
+              >
+                {deleteLoading
+                  ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Suppression...</>
+                  : <><Trash2 size={16} /> Supprimer</>}
+              </button>
             </div>
           </div>
         </div>

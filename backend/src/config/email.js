@@ -103,6 +103,54 @@ export const emailTemplates = {
     `
   }),
 
+  reportRejected: (employeeName, date, reason) => ({
+    subject: `Votre rapport du ${date} a été rejeté`,
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>body{font-family:'Segoe UI',Arial,sans-serif;background-color:#0f172a;color:#f8fafc;padding:20px;margin:0}
+    .c{max-width:600px;margin:0 auto;background:#1e293b;border-radius:16px;padding:40px}
+    .logo-text{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-size:20px;font-weight:bold;padding:14px 24px;border-radius:16px;display:inline-block}
+    h1{color:#ef4444;text-align:center;margin-bottom:24px;font-size:24px}
+    p{color:#94a3b8;line-height:1.7;font-size:16px;margin:16px 0}
+    .reason{background:#0f172a;border-left:3px solid #ef4444;padding:16px 20px;border-radius:0 10px 10px 0;margin:20px 0}
+    .footer{text-align:center;margin-top:40px;padding-top:24px;border-top:1px solid #334155;color:#64748b;font-size:14px}
+    </style></head><body><div class="c">
+    <div style="text-align:center;margin-bottom:30px"><span class="logo-text">ShiftClose</span></div>
+    <h1>Rapport rejeté ✗</h1>
+    <p>Bonjour <strong style="color:#f8fafc">${employeeName}</strong>,</p>
+    <p>Votre rapport de Cash Out du <strong style="color:#f8fafc">${date}</strong> a été rejeté par votre manager.</p>
+    ${reason ? `<div class="reason"><p style="margin:0;color:#fca5a5;font-size:14px"><strong>Raison :</strong> ${reason}</p></div>` : ''}
+    <p>Si vous avez des questions, contactez votre manager directement.</p>
+    <p style="text-align:center">Les pourboires distribués dans ce rapport ont également été annulés.</p>
+    <div class="footer"><p>© 2026 ShiftClose - Tous droits réservés</p></div>
+    </div></body></html>`
+  }),
+
+  tipCancelled: (recipientName, senderName, date, amount, reason) => ({
+    subject: `Pourboire annulé — ${senderName} · ${date}`,
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>body{font-family:'Segoe UI',Arial,sans-serif;background-color:#0f172a;color:#f8fafc;padding:20px;margin:0}
+    .c{max-width:600px;margin:0 auto;background:#1e293b;border-radius:16px;padding:40px}
+    .logo-text{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-size:20px;font-weight:bold;padding:14px 24px;border-radius:16px;display:inline-block}
+    h1{color:#f59e0b;text-align:center;margin-bottom:24px;font-size:22px}
+    p{color:#94a3b8;line-height:1.7;font-size:16px;margin:16px 0}
+    .amount-box{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:14px;padding:20px;text-align:center;margin:20px 0}
+    .reason{background:#0f172a;border-left:3px solid #f59e0b;padding:16px 20px;border-radius:0 10px 10px 0;margin:20px 0}
+    .footer{text-align:center;margin-top:40px;padding-top:24px;border-top:1px solid #334155;color:#64748b;font-size:14px}
+    </style></head><body><div class="c">
+    <div style="text-align:center;margin-bottom:30px"><span class="logo-text">ShiftClose</span></div>
+    <h1>⚠️ Pourboire annulé</h1>
+    <p>Bonjour <strong style="color:#f8fafc">${recipientName}</strong>,</p>
+    <p>Le pourboire que vous avez reçu de <strong style="color:#f8fafc">${senderName}</strong> du <strong style="color:#f8fafc">${date}</strong> a été annulé suite au rejet de son rapport.</p>
+    <div class="amount-box">
+      <p style="color:#94a3b8;font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em">Montant annulé</p>
+      <p style="color:#ef4444;font-size:36px;font-weight:900;margin:0;text-decoration:line-through">$${parseFloat(amount).toFixed(2)}</p>
+    </div>
+    ${reason ? `<div class="reason"><p style="margin:0;color:#fcd34d;font-size:14px"><strong>Raison :</strong> ${reason}</p></div>` : ''}
+    <p>Ce montant a été retiré de votre total de pourboires reçus.</p>
+    <div class="footer"><p>© 2026 ShiftClose - Tous droits réservés</p></div>
+    </div></body></html>`
+  }),
+
   restaurantSetup: (restaurantName, setupLink) => ({
     subject: `ShiftClose — Configurez votre restaurant "${restaurantName}"`,
     html: `
