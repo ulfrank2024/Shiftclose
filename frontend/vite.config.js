@@ -14,26 +14,29 @@ export default defineConfig({
       manifest: {
         name: 'ShiftClose - Cash Out Manager',
         short_name: 'ShiftClose',
-        description: 'Application de gestion de Cash Out pour la restauration',
+        description: 'Gestion de Cash Out et de pourboires pour la restauration',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
+        display_override: ['window-controls-overlay', 'standalone', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/',
-        start_url: '/',
+        start_url: '/?source=pwa',
         lang: 'fr',
         categories: ['business', 'finance', 'productivity'],
-        screenshots: [],
+        prefer_related_applications: false,
         icons: [
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'pwa-512x512.png',
@@ -41,11 +44,26 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'maskable'
           }
+        ],
+        shortcuts: [
+          {
+            name: 'Cash Out',
+            short_name: 'Cash Out',
+            description: 'Démarrer un rapport de caisse',
+            url: '/cash-out',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Mes rapports',
+            short_name: 'Rapports',
+            description: 'Voir mes rapports',
+            url: '/reports',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          }
         ]
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Stratégie réseau d'abord pour les appels API, cache pour les assets
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\/api\/.*/i,
@@ -57,13 +75,12 @@ export default defineConfig({
             }
           }
         ],
-        // Nettoyage du cache obsolète
         cleanupOutdatedCaches: true,
-        skipWaiting: false,
-        clientsClaim: false
+        skipWaiting: true,
+        clientsClaim: true
       },
       devOptions: {
-        enabled: false  // Mettre true pour tester le SW en dev
+        enabled: false
       }
     })
   ],
