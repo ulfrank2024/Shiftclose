@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 import { getAppUrl } from './appUrl.js'
 
-const FROM = 'ShiftClose <noreply@cheftips.app>'
+const FROM = 'ShiftClose <hello@cheftips.app>'
 
 export const sendEmail = async ({ to, subject, html, text }) => {
   try {
@@ -21,7 +21,7 @@ export const sendEmail = async ({ to, subject, html, text }) => {
       // En-têtes anti-spam
       headers: {
         'X-Entity-Ref-ID': `shiftclose-${Date.now()}`,
-        'List-Unsubscribe': `<mailto:noreply@cheftips.app?subject=unsubscribe>`,
+        'List-Unsubscribe': `<mailto:hello@cheftips.app?subject=unsubscribe>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
       }
     })
