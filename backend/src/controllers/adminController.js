@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import { supabase } from '../config/supabase.js'
 import { sendEmail, emailTemplates } from '../config/email.js'
+import { getAppUrl } from '../config/appUrl.js'
 
 // Get dashboard stats (Super Admin only)
 export const getStats = async (req, res) => {
@@ -288,7 +289,7 @@ export const inviteRestaurant = async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la création de l\'invitation' })
     }
 
-    const setupLink = `${process.env.FRONTEND_URL}/setup-restaurant/${token}`
+    const setupLink = `${getAppUrl()}/setup-restaurant/${token}`
     const template = emailTemplates.restaurantSetup(restaurantName, setupLink)
 
     await sendEmail({ to: email, ...template })

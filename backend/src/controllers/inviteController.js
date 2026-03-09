@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase.js'
 import { sendEmail, emailTemplates } from '../config/email.js'
 import { generateToken } from '../middleware/auth.js'
 import crypto from 'crypto'
+import { getAppUrl } from '../config/appUrl.js'
 
 // Send invitation to join restaurant
 export const sendInvitation = async (req, res) => {
@@ -89,7 +90,7 @@ export const sendInvitation = async (req, res) => {
     }
 
     // Generate invite link
-    const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}`
+    const inviteLink = `${getAppUrl()}/invite/${token}`
 
     // Send email (non-blocking — link is returned regardless)
     try {
@@ -177,7 +178,7 @@ export const acceptInvitation = async (req, res) => {
 
     // Send welcome email to the employee
     try {
-      const appLink = `${process.env.FRONTEND_URL}/dashboard`
+      const appLink = `${getAppUrl()}/dashboard`
       const template = emailTemplates.welcomeEmployee(
         req.user.first_name,
         invitation.restaurant_name,

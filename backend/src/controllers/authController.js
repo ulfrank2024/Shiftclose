@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { supabase } from '../config/supabase.js'
 import { generateToken } from '../middleware/auth.js'
 import { sendEmail } from '../services/emailService.js'
+import { getAppUrl } from '../config/appUrl.js'
 
 // Register new manager with restaurant
 export const register = async (req, res) => {
@@ -580,7 +581,7 @@ export const forgotPassword = async (req, res) => {
     }
 
     // Send reset email
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
+    const resetUrl = `${getAppUrl()}/reset-password/${resetToken}`
 
     await sendEmail({
       to: user.email,

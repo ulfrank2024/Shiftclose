@@ -1,8 +1,9 @@
 import { Resend } from 'resend'
+import { getAppUrl } from './appUrl.js'
 
 const FROM = 'ShiftClose <noreply@cheftips.app>'
 
-export const sendEmail = async ({ to, subject, html }) => {
+export const sendEmail = async ({ to, subject, html, text }) => {
   try {
     if (!process.env.RESEND_API_KEY) {
       console.log('⚠️  RESEND_API_KEY non configuré — email loggué seulement')
@@ -10,7 +11,20 @@ export const sendEmail = async ({ to, subject, html }) => {
       return { success: true, messageId: 'dev-mode' }
     }
     const resend = new Resend(process.env.RESEND_API_KEY)
-    const { data, error } = await resend.emails.send({ from: FROM, to, subject, html })
+    const { data, error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject,
+      html,
+      // Version texte plain (aide contre le spam)
+      text: text || subject,
+      // En-têtes anti-spam
+      headers: {
+        'X-Entity-Ref-ID': `shiftclose-${Date.now()}`,
+        'List-Unsubscribe': `<mailto:noreply@cheftips.app?subject=unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+      }
+    })
     if (error) {
       console.error('Resend error:', error)
       return { success: false, error: error.message }
@@ -104,8 +118,7 @@ export const emailTemplates = {
   }),
 
   reportRejected: (employeeName, date, reason, reportId) => {
-    const appUrl = process.env.FRONTEND_URL?.split(',')[0]?.trim() || 'https://cheftips.app'
-    const editUrl = reportId ? `${appUrl}/cash-out?editReportId=${reportId}` : `${appUrl}/reports`
+    const editUrl = reportId ? `${getAppUrl()}/cash-out?editReportId=${reportId}` : `${getAppUrl()}/reports`
     return {
       subject: `Votre rapport du ${date} a été rejeté`,
       html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -322,7 +335,7 @@ export const emailTemplates = {
               </table>
             </div>` : ''}
 
-            <a href="${process.env.FRONTEND_URL}/reports" style="display:block;width:fit-content;margin:0 auto 24px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#ffffff !important;padding:14px 36px;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">Valider le rapport →</a>
+            <a href="${getAppUrl()}/reports" style="display:block;width:fit-content;margin:0 auto 24px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#ffffff !important;padding:14px 36px;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">Valider le rapport →</a>
             <div style="text-align:center;padding-top:24px;border-top:1px solid #334155;color:#64748b;font-size:13px;">© 2026 ShiftClose</div>
           </div>
         </body></html>`
@@ -371,7 +384,7 @@ export const emailTemplates = {
               </table>
             </div>` : ''}
 
-            <a href="${process.env.FRONTEND_URL}/my-tips" style="display:block;width:fit-content;margin:0 auto 24px;background:linear-gradient(135deg,#10b981,#059669);color:#ffffff !important;padding:14px 36px;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">Voir mes pourboires →</a>
+            <a href="${getAppUrl()}/my-tips" style="display:block;width:fit-content;margin:0 auto 24px;background:linear-gradient(135deg,#10b981,#059669);color:#ffffff !important;padding:14px 36px;text-decoration:none;border-radius:12px;font-weight:600;font-size:15px;">Voir mes pourboires →</a>
             <div style="text-align:center;padding-top:24px;border-top:1px solid #334155;color:#64748b;font-size:13px;">© 2026 ShiftClose</div>
           </div>
         </body></html>`
@@ -410,7 +423,7 @@ export const emailTemplates = {
             <div class="feature"><span class="check">✓</span> Équilibrez votre caisse facilement</div>
             <div class="feature"><span class="check">✓</span> Suivez votre historique de rapports</div>
           </div>
-          <a href="${process.env.FRONTEND_URL}/dashboard" class="button">Accéder à l'application</a>
+          <a href="${getAppUrl()}/dashboard" class="button">Accéder à l'application</a>
           <div class="footer">
             <p>© 2026 ShiftClose - Tous droits réservés</p>
           </div>
