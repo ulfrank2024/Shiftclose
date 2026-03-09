@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { setupAPI, authAPI } from '../services/api'
 
 const BACKEND_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '')
@@ -19,7 +19,6 @@ const BG = 'linear-gradient(160deg, #0a1628 0%, #0f172a 50%, #0c1220 100%)'
 
 export default function SetupRestaurant() {
   const { token }   = useParams()
-  const navigate    = useNavigate()
   const fileRef     = useRef()
 
   const [info, setInfo]               = useState(null)
@@ -126,7 +125,8 @@ export default function SetupRestaurant() {
         }
 
         setSuccess(true)
-        setTimeout(() => navigate('/dashboard'), 2200)
+        // window.location.href force un rechargement complet → AuthContext se réinitialise avec le nouveau token
+        setTimeout(() => { window.location.href = '/dashboard' }, 2200)
         return // sortir de la boucle
 
       } catch (err) {
