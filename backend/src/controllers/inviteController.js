@@ -320,7 +320,7 @@ export const getSetupInvitationInfo = async (req, res) => {
 export const completeRestaurantSetup = async (req, res) => {
   try {
     const { token } = req.params
-    const { firstName, lastName, password } = req.body
+    const { firstName, lastName, password, phone, restaurantAddress } = req.body
 
     if (!firstName || !lastName || !password) {
       return res.status(400).json({ error: 'Prénom, nom et mot de passe requis' })
@@ -362,15 +362,18 @@ export const completeRestaurantSetup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt)
 
     // Create manager user
+    const userInsert = {
+      email: invitation.email,
+      password: hashedPassword,
+      first_name: firstName,
+      last_name: lastName,
+      role: 'manager'
+    }
+    if (phone) userInsert.phone = phone.trim()
+
     const { data: newUser, error: userError } = await supabase
       .from('users')
-      .insert({
-        email: invitation.email,
-        password: hashedPassword,
-        first_name: firstName,
-        last_name: lastName,
-        role: 'manager'
-      })
+      .insert(userInsert)
       .select()
       .single()
 
@@ -380,12 +383,15 @@ export const completeRestaurantSetup = async (req, res) => {
     }
 
     // Create restaurant
+    const restaurantInsert = {
+      name: invitation.restaurant_name,
+      created_by: newUser.id
+    }
+    if (restaurantAddress) restaurantInsert.address = restaurantAddress.trim()
+
     const { data: newRestaurant, error: restaurantError } = await supabase
       .from('restaurants')
-      .insert({
-        name: invitation.restaurant_name,
-        created_by: newUser.id
-      })
+      .insert(restaurantInsert)
       .select()
       .single()
 
