@@ -437,9 +437,9 @@ export default function CashOut() {
               fontSize: 12, color: '#a5b4fc', fontWeight: 600
             }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
-              Période du {new Date(currentPeriod.start_date + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}
+              Période du {new Date((currentPeriod.startDate || currentPeriod.start_date) + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })}
               {' au '}
-              {new Date(currentPeriod.end_date + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {new Date((currentPeriod.endDate || currentPeriod.end_date) + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', year: 'numeric' })}
             </span>
           )}
           {forUserId && (
