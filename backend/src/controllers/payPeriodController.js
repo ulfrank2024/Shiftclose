@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js'
+import { sendEmail, emailTemplates } from '../config/email.js'
 
 // ─────────────────────────────────────────────────────────────
 // Helper : Calcule les bornes de la période courante
@@ -213,12 +214,76 @@ export const closePeriod = async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la clôture' })
     }
 
+    // ── Auto-lancer la période suivante (si pending et start_date >= end_date clôturée) ──
+    let nextPeriod = null
+    const { data: pending } = await supabase
+      .from('pay_periods')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'pending')
+      .gte('start_date', period.end_date)  // commence après ou le jour même
+      .order('start_date', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (pending) {
+      const { data: activated } = await supabase
+        .from('pay_periods')
+        .update({ status: 'active' })
+        .eq('id', pending.id)
+        .select()
+        .single()
+      nextPeriod = activated ? formatPeriod(activated) : null
+    } else {
+      // Aucune période suivante → notifier le super admin par email
+      try {
+        const { data: admins } = await supabase
+          .from('users')
+          .select('email, first_name')
+          .eq('role', 'superadmin')
+        const { data: restaurant } = await supabase
+          .from('restaurants')
+          .select('name')
+          .eq('id', restaurantId)
+          .single()
+        const restaurantName = restaurant?.name || 'Inconnu'
+
+        for (const admin of admins || []) {
+          await sendEmail({
+            to: admin.email,
+            subject: `⚠️ ShiftClose — Aucune période de paie active : ${restaurantName}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;background:#0f172a;padding:30px;border-radius:16px;max-width:600px;margin:0 auto">
+                <div style="text-align:center;margin-bottom:24px">
+                  <span style="background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;font-size:20px;font-weight:bold;padding:12px 24px;border-radius:14px;display:inline-block">ShiftClose</span>
+                </div>
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:20px;margin-bottom:20px">
+                  <h2 style="color:#f87171;margin:0 0 10px;font-size:18px">⚠️ Aucune période de paie active</h2>
+                  <p style="color:#94a3b8;margin:0;font-size:14px;line-height:1.6">
+                    Bonjour ${admin.first_name},<br><br>
+                    Le restaurant <strong style="color:#f8fafc">${restaurantName}</strong> vient de clôturer sa période de paie
+                    <strong style="color:#f8fafc">(${period.start_date} → ${period.end_date})</strong>
+                    et <strong style="color:#fca5a5">aucune période suivante n'est planifiée</strong>.
+                  </p>
+                </div>
+                <p style="color:#94a3b8;font-size:14px;line-height:1.6">
+                  Les serveurs ne pourront pas effectuer de Cash Out jusqu'à ce qu'une nouvelle période soit créée et lancée par le manager.
+                </p>
+                <p style="color:#64748b;font-size:13px;margin-top:24px">© ${new Date().getFullYear()} ShiftClose</p>
+              </div>`
+          }).catch(() => {})
+        }
+      } catch (e) { /* non-bloquant */ }
+    }
+
     // Résumé pour export CSV
     const summary = await buildPeriodSummary(restaurantId, periodId)
 
     res.json({
       success:      true,
       closedPeriod: formatPeriod({ ...period, status: 'closed' }),
+      nextPeriod,
+      autoLaunched: !!nextPeriod,
       summary
     })
   } catch (error) {
@@ -229,7 +294,7 @@ export const closePeriod = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /pay-periods/:restaurantId
-// Créer manuellement une nouvelle période (manager seulement)
+// Créer manuellement une nouvelle période — statut 'pending'
 // ─────────────────────────────────────────────────────────────
 export const createPeriod = async (req, res) => {
   try {
@@ -244,19 +309,19 @@ export const createPeriod = async (req, res) => {
       return res.status(400).json({ error: 'La date de fin doit être après la date de début' })
     }
 
-    // Vérifier chevauchement avec une période active existante
+    // Vérifier chevauchement avec une période active ou pending existante
     const { data: overlap } = await supabase
       .from('pay_periods')
       .select('id')
       .eq('restaurant_id', restaurantId)
-      .eq('status', 'active')
+      .in('status', ['active', 'pending'])
       .lte('start_date', end_date)
       .gte('end_date', start_date)
       .limit(1)
-      .single()
+      .maybeSingle()
 
     if (overlap) {
-      return res.status(409).json({ error: 'Une période active existe déjà sur cette plage de dates' })
+      return res.status(409).json({ error: 'Une période existe déjà sur cette plage de dates' })
     }
 
     const { data: newPeriod, error } = await supabase
@@ -265,7 +330,7 @@ export const createPeriod = async (req, res) => {
         restaurant_id: restaurantId,
         start_date,
         end_date,
-        status: 'active'
+        status: 'pending'  // Le manager doit cliquer "Lancer" pour l'activer
       })
       .select()
       .single()
@@ -277,6 +342,61 @@ export const createPeriod = async (req, res) => {
     res.status(201).json({ success: true, period: formatPeriod(newPeriod) })
   } catch (error) {
     console.error('createPeriod error:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// PUT /pay-periods/:restaurantId/:periodId/launch
+// Lancer une période planifiée → devient 'active' (une seule active à la fois)
+// ─────────────────────────────────────────────────────────────
+export const launchPeriod = async (req, res) => {
+  try {
+    const { restaurantId, periodId } = req.params
+
+    // Vérifier que la période est bien 'pending' et appartient au restaurant
+    const { data: period, error: fetchErr } = await supabase
+      .from('pay_periods')
+      .select('*')
+      .eq('id', periodId)
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'pending')
+      .single()
+
+    if (fetchErr || !period) {
+      return res.status(404).json({ error: 'Période planifiée introuvable' })
+    }
+
+    // Vérifier qu'aucune autre période n'est déjà active
+    const { data: activePeriod } = await supabase
+      .from('pay_periods')
+      .select('id, start_date, end_date')
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle()
+
+    if (activePeriod) {
+      return res.status(409).json({
+        error: `Une période est déjà active (${activePeriod.start_date} → ${activePeriod.end_date}). Clôturez-la d'abord.`
+      })
+    }
+
+    // Activer la période
+    const { data: launched, error: launchErr } = await supabase
+      .from('pay_periods')
+      .update({ status: 'active' })
+      .eq('id', periodId)
+      .select()
+      .single()
+
+    if (launchErr) {
+      return res.status(500).json({ error: 'Erreur lors du lancement' })
+    }
+
+    res.json({ success: true, period: formatPeriod(launched) })
+  } catch (error) {
+    console.error('launchPeriod error:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }

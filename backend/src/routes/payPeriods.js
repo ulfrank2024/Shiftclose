@@ -6,6 +6,7 @@ import {
   listPeriods,
   updatePeriod,
   closePeriod,
+  launchPeriod,
   getPeriodSummary,
   recalculatePeriod
 } from '../controllers/payPeriodController.js'
@@ -29,6 +30,9 @@ router.get('/:restaurantId/:periodId/summary', requireRole('manager'), getPeriod
 
 // PUT  /api/pay-periods/:restaurantId/recalculate       → Recalculer la période active (manager)
 router.put('/:restaurantId/recalculate', requireRole('manager'), recalculatePeriod)
+
+// PUT  /api/pay-periods/:restaurantId/:periodId/launch  → Lancer une période planifiée (manager)
+router.put('/:restaurantId/:periodId/launch', requireRole('manager'), launchPeriod)
 
 // PUT  /api/pay-periods/:restaurantId/:periodId/close   → Clôturer (manager)
 router.put('/:restaurantId/:periodId/close', requireRole('manager'), closePeriod)

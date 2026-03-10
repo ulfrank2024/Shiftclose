@@ -7,7 +7,7 @@ import {
   FileText, Check, X, Clock, ChevronDown, Download,
   Eye, Loader, AlertCircle, DollarSign, Users, Gift,
   UtensilsCrossed, Calculator, Image, BarChart3, UserPlus,
-  CalendarDays, Lock, Plus, Pencil, Trash2, RefreshCw
+  CalendarDays, Lock, Plus, Pencil, Trash2, RefreshCw, Play
 } from 'lucide-react'
 
 // ── Noms d'affichage des positions ────────────────────────────
@@ -167,6 +167,7 @@ export default function Reports() {
   const [periodFormError, setPeriodFormError] = useState('')
   const [savingPeriod, setSavingPeriod] = useState(false)
   const [closingPeriodId, setClosingPeriodId] = useState(null)
+  const [launchingPeriodId, setLaunchingPeriodId] = useState(null)
 
   // Suppression de rapport
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null) // reportId
@@ -294,7 +295,8 @@ export default function Reports() {
   const formatPeriodLabel = (p) => {
     const start = new Date(p.startDate + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
     const end   = new Date(p.endDate   + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
-    return `${start} → ${end} ${p.status === 'active' ? '(active)' : '(clôturée)'}`
+    const statusLabel = p.status === 'active' ? '(active)' : p.status === 'pending' ? '(planifiée)' : '(clôturée)'
+    return `${start} → ${end} ${statusLabel}`
   }
 
   const handleValidate = async (reportId) => {
@@ -424,6 +426,19 @@ export default function Reports() {
       setError(e.message || 'Erreur lors de la clôture.')
     } finally {
       setClosingPeriodId(null)
+    }
+  }
+
+  const handleLaunchPeriod = async (period) => {
+    setLaunchingPeriodId(period.id)
+    try {
+      await payPeriodAPI.launch(currentRestaurant.id, period.id)
+      refreshPeriods()
+      fetchReports()
+    } catch (e) {
+      setError(e.message || 'Erreur lors du lancement.')
+    } finally {
+      setLaunchingPeriodId(null)
     }
   }
 
@@ -584,10 +599,11 @@ export default function Reports() {
             >
               <CalendarDays size={15} />
               Périodes
-              {periods.some(p => p.status === 'active') && (
+              {periods.some(p => p.status === 'active' || p.status === 'pending') && (
                 <span style={{
                   width: 7, height: 7, borderRadius: '50%',
-                  backgroundColor: '#34d399', display: 'inline-block'
+                  backgroundColor: periods.some(p => p.status === 'active') ? '#34d399' : '#60a5fa',
+                  display: 'inline-block'
                 }} />
               )}
             </button>
@@ -1239,7 +1255,9 @@ export default function Reports() {
                   </h2>
                   {managePeriodView === 'list' && (
                     <p style={{ color: '#475569', fontSize: '12px', margin: '3px 0 0' }}>
-                      {periods.filter(p => p.status === 'active').length} active · {periods.filter(p => p.status !== 'active').length} clôturée(s)
+                      {periods.filter(p => p.status === 'active').length} active
+                      {periods.filter(p => p.status === 'pending').length > 0 && ` · ${periods.filter(p => p.status === 'pending').length} planifiée(s)`}
+                      {periods.filter(p => p.status === 'closed').length > 0 && ` · ${periods.filter(p => p.status === 'closed').length} clôturée(s)`}
                     </p>
                   )}
                 </div>
@@ -1274,59 +1292,85 @@ export default function Reports() {
                     <p style={{ textAlign: 'center', color: '#475569', padding: '32px 0', fontSize: '14px' }}>
                       Aucune période. Créez votre première période.
                     </p>
-                  ) : periods.map(p => (
-                    <div key={p.id} style={{
-                      display: 'flex', flexWrap: 'wrap', alignItems: 'center',
-                      justifyContent: 'space-between', gap: '10px',
-                      padding: '14px 16px', borderRadius: '12px',
-                      backgroundColor: p.status === 'active' ? 'rgba(5,150,105,0.07)' : 'rgba(30,41,59,0.5)',
-                      border: `1px solid ${p.status === 'active' ? 'rgba(5,150,105,0.3)' : '#334155'}`
-                    }}>
-                      <div>
-                        <p style={{ color: 'white', fontWeight: 600, fontSize: '14px', margin: '0 0 4px' }}>
-                          {formatPeriodLabel(p)}
-                        </p>
-                        <span style={{
-                          padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500,
-                          backgroundColor: p.status === 'active' ? 'rgba(5,150,105,0.15)' : 'rgba(71,85,105,0.3)',
-                          color: p.status === 'active' ? '#34d399' : '#64748b'
-                        }}>
-                          {p.status === 'active' ? '🟢 Active' : '🔒 Clôturée'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                        {p.status === 'active' ? (
-                          <>
+                  ) : periods.map(p => {
+                    const isActive  = p.status === 'active'
+                    const isPending = p.status === 'pending'
+                    const isClosed  = p.status === 'closed'
+                    return (
+                      <div key={p.id} style={{
+                        display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+                        justifyContent: 'space-between', gap: '10px',
+                        padding: '14px 16px', borderRadius: '12px',
+                        backgroundColor: isActive  ? 'rgba(5,150,105,0.07)'
+                                        : isPending ? 'rgba(59,130,246,0.05)'
+                                        : 'rgba(30,41,59,0.5)',
+                        border: `1px solid ${isActive  ? 'rgba(5,150,105,0.3)'
+                                            : isPending ? 'rgba(59,130,246,0.25)'
+                                            : '#334155'}`
+                      }}>
+                        <div>
+                          <p style={{ color: 'white', fontWeight: 600, fontSize: '14px', margin: '0 0 4px' }}>
+                            {formatPeriodLabel(p)}
+                          </p>
+                          <span style={{
+                            padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 500,
+                            backgroundColor: isActive  ? 'rgba(5,150,105,0.15)'
+                                           : isPending ? 'rgba(59,130,246,0.15)'
+                                           : 'rgba(71,85,105,0.3)',
+                            color: isActive  ? '#34d399'
+                                 : isPending ? '#60a5fa'
+                                 : '#64748b'
+                          }}>
+                            {isActive ? '🟢 Active' : isPending ? '🕐 Planifiée' : '🔒 Clôturée'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                          {isActive && (
+                            <>
+                              <button
+                                onClick={() => { setEditingPeriod(p); setPeriodForm({ start_date: p.startDate, end_date: p.endDate }); setPeriodFormError(''); setManagePeriodView('edit') }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}
+                              >
+                                <Pencil size={12} /> Modifier
+                              </button>
+                              <button
+                                onClick={() => handleClosePeriodManage(p)}
+                                disabled={closingPeriodId === p.id}
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}
+                              >
+                                {closingPeriodId === p.id
+                                  ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                  : <Lock size={12} />}
+                                Clôturer
+                              </button>
+                            </>
+                          )}
+                          {isPending && (
                             <button
-                              onClick={() => { setEditingPeriod(p); setPeriodForm({ start_date: p.startDate, end_date: p.endDate }); setPeriodFormError(''); setManagePeriodView('edit') }}
-                              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '12px', cursor: 'pointer' }}
+                              onClick={() => handleLaunchPeriod(p)}
+                              disabled={launchingPeriodId === p.id}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 13px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #059669, #047857)', color: 'white', fontSize: '12px', fontWeight: 600, cursor: launchingPeriodId === p.id ? 'not-allowed' : 'pointer', opacity: launchingPeriodId === p.id ? 0.7 : 1 }}
                             >
-                              <Pencil size={12} /> Modifier
-                            </button>
-                            <button
-                              onClick={() => handleClosePeriodManage(p)}
-                              disabled={closingPeriodId === p.id}
-                              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171', fontSize: '12px', cursor: 'pointer' }}
-                            >
-                              {closingPeriodId === p.id
+                              {launchingPeriodId === p.id
                                 ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
-                                : <Lock size={12} />}
-                              Clôturer
+                                : <Play size={12} />}
+                              Lancer
                             </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => payPeriodAPI.getSummary(currentRestaurant.id, p.id)
-                              .then(res => { if (res.summary) exportPeriodSummaryCSV(res.summary, p) })
-                              .catch(() => {})}
-                            style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(59,130,246,0.3)', backgroundColor: 'rgba(59,130,246,0.07)', color: '#60a5fa', fontSize: '12px', cursor: 'pointer' }}
-                          >
-                            <Download size={12} /> CSV
-                          </button>
-                        )}
+                          )}
+                          {isClosed && (
+                            <button
+                              onClick={() => payPeriodAPI.getSummary(currentRestaurant.id, p.id)
+                                .then(res => { if (res.summary) exportPeriodSummaryCSV(res.summary, p) })
+                                .catch(() => {})}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 11px', borderRadius: '8px', border: '1px solid rgba(59,130,246,0.3)', backgroundColor: 'rgba(59,130,246,0.07)', color: '#60a5fa', fontSize: '12px', cursor: 'pointer' }}
+                            >
+                              <Download size={12} /> CSV
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
 

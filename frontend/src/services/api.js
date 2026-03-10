@@ -331,7 +331,10 @@ export const payPeriodAPI = {
     fetchWithAuth(`/pay-periods/${restaurantId}`, {
       method: 'POST',
       body: JSON.stringify(data)
-    })
+    }),
+
+  launch: (restaurantId, periodId) =>
+    fetchWithAuth(`/pay-periods/${restaurantId}/${periodId}/launch`, { method: 'PUT' })
 }
 
 // Admin API (Super Admin only)
